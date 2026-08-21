@@ -1,8 +1,14 @@
 """
 Chat API endpoint for the Project Intelligence Hub.
 
-Handles AI-powered Q&A queries using the RAG pipeline to answer
+Handles AI-powered Q&A queries using the Strands agent to answer
 questions based on uploaded project data.
+
+The Strands agent can:
+- Perform multiple iterative searches
+- Filter by category
+- Reason step-by-step before answering
+- Cite sources properly
 """
 
 import logging
@@ -10,7 +16,7 @@ import logging
 from fastapi import APIRouter, HTTPException, status
 
 from models.schemas import ChatRequest, ChatResponse
-from services.rag_pipeline import RAGPipeline
+from services.strands_agent import StrandsRAGAgent
 
 logger = logging.getLogger(__name__)
 
@@ -20,14 +26,13 @@ router = APIRouter()
 @router.post("/chat", response_model=ChatResponse)
 def chat(request: ChatRequest):
     """
-    Process a chat question using the RAG pipeline.
+    Process a chat question using the Strands RAG agent.
 
     - Validates the question is not empty or whitespace-only.
-    - Instantiates RAGPipeline and calls query() to retrieve relevant
-      context and generate an answer via the Groq API.
-    - If no relevant chunks are found, the RAGPipeline returns an
-      appropriate message asking the user to upload relevant files.
-    - If the Groq API fails, returns 503 Service Unavailable.
+    - Instantiates StrandsRAGAgent which uses tools to search the
+      knowledge base, filter by category, and reason before answering.
+    - The agent can make multiple searches if needed for comprehensive answers.
+    - If the AI service fails, returns 503 Service Unavailable.
 
     Returns:
         ChatResponse with the generated answer and list of source file names.
@@ -40,11 +45,14 @@ def chat(request: ChatRequest):
         )
 
     try:
-        pipeline = RAGPipeline()
-        response = pipeline.query(question=request.question.strip())
-        return response
+        agent = StrandsRAGAgent()
+        result = agent.query(question=request.question.strip())
+        return ChatResponse(
+            answer=result["answer"],
+            sources=result["sources"],
+        )
     except RuntimeError as e:
-        logger.error("RAG pipeline error: %s", str(e))
+        logger.error("Strands agent error: %s", str(e))
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail="AI service is unavailable. Please try again later.",

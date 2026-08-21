@@ -13,3 +13,4 @@ httpx
 pytest
 hypothesis
 pytest-asyncio
+strands-agents[litellm]>=1.0.0
