@@ -1,0 +1,38 @@
+{
+  "sprint": "Sprint 6",
+  "dates": "2026-06-17 to 2026-06-28",
+  "velocity": 54,
+  "planned_vs_delivered": {
+    "planned": 56,
+    "delivered": 54,
+    "carried_over": 2
+  },
+  "team_satisfaction": 3.8,
+  "what_went_well": [
+    "CI/CD pipeline improvements reduced deploy time by 40%",
+    "Cross-team collaboration on API design was effective",
+    "New monitoring dashboards caught 3 issues before production"
+  ],
+  "what_to_improve": [
+    "Sprint planning estimates still 15% over-optimistic",
+    "Code review turnaround time averaging 2 days (target: 1 day)",
+    "Testing environment instability caused 6 hours of blocked work"
+  ],
+  "action_items": [
+    {
+      "item": "Add buffer factor to planning estimates",
+      "owner": "Scrum Master",
+      "due": "Sprint 7"
+    },
+    {
+      "item": "Implement PR size limits and review SLA",
+      "owner": "Tech Lead",
+      "due": "Sprint 7"
+    },
+    {
+      "item": "Dedicate time for test env stability fixes",
+      "owner": "DevOps",
+      "due": "Sprint 7-8"
+    }
+  ]
+}

@@ -1,0 +1,11 @@
+Finding_ID,Category,Severity,Description,Status,Owner,Due_Date,Days_Open
+AUD-001,Access Control,High,Privileged accounts lack MFA,Open,Security Team,2026-08-15,45
+AUD-002,Data Protection,Critical,PII data unencrypted in staging DB,In Progress,DBA Team,2026-07-30,60
+AUD-003,Change Management,Medium,Missing approval records for 12 changes,Closed,Release Mgmt,2026-06-15,0
+AUD-004,Logging,High,Audit logs not retained for 90 days,Open,Platform Team,2026-09-01,30
+AUD-005,Vendor Management,Medium,3 vendor contracts expired without renewal,In Progress,Procurement,2026-08-30,22
+AUD-006,Business Continuity,High,DR test not conducted in 18 months,Open,Operations,2026-09-15,15
+AUD-007,Code Quality,Low,Static analysis findings not triaged,Closed,Dev Lead,2026-05-30,0
+AUD-008,Compliance,Critical,SOX controls gap in financial module,In Progress,Compliance Team,2026-08-01,55
+AUD-009,Network Security,Medium,Firewall rules not reviewed quarterly,Open,Network Team,2026-09-30,10
+AUD-010,Identity Management,High,Orphaned accounts detected (47 accounts),In Progress,IAM Team,2026-08-15,38

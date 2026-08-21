@@ -1,0 +1,64 @@
+{
+  "release": "v2.0 - Digital Platform",
+  "start_date": "2026-01-06",
+  "target_date": "2026-09-30",
+  "total_story_points": 480,
+  "completed_points": 312,
+  "velocity_average": 52,
+  "sprints": [
+    {
+      "id": 1,
+      "name": "Sprint 1",
+      "planned": 48,
+      "completed": 45,
+      "velocity": 45
+    },
+    {
+      "id": 2,
+      "name": "Sprint 2",
+      "planned": 50,
+      "completed": 52,
+      "velocity": 52
+    },
+    {
+      "id": 3,
+      "name": "Sprint 3",
+      "planned": 52,
+      "completed": 48,
+      "velocity": 48
+    },
+    {
+      "id": 4,
+      "name": "Sprint 4",
+      "planned": 52,
+      "completed": 55,
+      "velocity": 55
+    },
+    {
+      "id": 5,
+      "name": "Sprint 5",
+      "planned": 54,
+      "completed": 58,
+      "velocity": 58
+    },
+    {
+      "id": 6,
+      "name": "Sprint 6",
+      "planned": 54,
+      "completed": 54,
+      "velocity": 54
+    }
+  ],
+  "risks": [
+    {
+      "description": "Key developer on leave in Sprint 8",
+      "impact": "medium",
+      "mitigation": "Cross-train team members"
+    },
+    {
+      "description": "Third-party API integration delayed",
+      "impact": "high",
+      "mitigation": "Build mock service layer"
+    }
+  ]
+}

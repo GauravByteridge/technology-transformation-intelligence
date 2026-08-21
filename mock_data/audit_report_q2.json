@@ -1,0 +1,25 @@
+{
+  "audit_id": "INT-AUDIT-2026-Q2",
+  "audit_type": "Internal Technology Audit",
+  "period": "Q2 2026 (Apr - Jun)",
+  "auditor": "Deloitte Internal Audit Services",
+  "overall_rating": "Needs Improvement",
+  "summary": {
+    "total_findings": 10,
+    "critical": 2,
+    "high": 4,
+    "medium": 3,
+    "low": 1,
+    "closed": 2,
+    "in_progress": 4,
+    "open": 4
+  },
+  "recommendations": [
+    "Implement MFA for all privileged accounts within 30 days",
+    "Encrypt all PII data at rest and in transit",
+    "Establish quarterly access review process",
+    "Conduct DR test by end of Q3 2026",
+    "Remediate SOX control gaps before year-end audit"
+  ],
+  "next_audit_date": "2026-10-15"
+}

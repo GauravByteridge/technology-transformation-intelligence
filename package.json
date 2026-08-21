@@ -1,0 +1,16 @@
+{
+  "name": "project-intelligence-hub",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Project Intelligence Hub - RAG-based POC for file upload, processing, AI chat and visualization",
+  "scripts": {
+    "build:backend": "cd backend && python -m venv .venv && .venv\\Scripts\\pip install -r requirements.txt",
+    "build:frontend": "cd frontend && npm install",
+    "build": "npm run build:backend && npm run build:frontend",
+    "init:db": "cd backend && .venv\\Scripts\\python -m db.init_db",
+    "start:backend": "cd backend && .venv\\Scripts\\uvicorn main:app --reload --port 8000",
+    "start:frontend": "cd frontend && npm run dev",
+    "start": "start cmd /k npm run start:backend && start cmd /k npm run start:frontend",
+    "test": "cd backend && .venv\\Scripts\\pytest tests/ -v"
+  }
+}

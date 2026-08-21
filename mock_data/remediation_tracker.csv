@@ -1,0 +1,11 @@
+Ticket_ID,Finding_Source,Title,Priority,Status,Assigned_To,Created,Target_Date,Percent_Complete
+REM-001,AUD-001,Implement MFA for privileged accounts,P1,In Progress,IAM Team,2026-05-01,2026-08-15,65
+REM-002,AUD-002,Encrypt staging database PII fields,P1,In Progress,DBA Team,2026-05-15,2026-07-30,80
+REM-003,AUD-004,Configure 90-day log retention,P2,Not Started,Platform Team,2026-06-01,2026-09-01,0
+REM-004,AUD-006,Schedule and execute DR test,P2,In Progress,Operations,2026-06-10,2026-09-15,30
+REM-005,AUD-008,Close SOX control gaps,P1,In Progress,Compliance,2026-05-20,2026-08-01,45
+REM-006,CTRL-003,Automate privileged access reviews,P2,Planning,IAM Team,2026-06-25,2026-10-01,10
+REM-007,CTRL-006,Fix backup job failures,P1,Completed,Ops Team,2026-06-12,2026-06-30,100
+REM-008,CTRL-009,Complete data classification exercise,P3,In Progress,Data Governance,2026-04-01,2026-09-30,55
+REM-009,CTRL-012,Conduct vendor risk assessments,P3,Not Started,Procurement,2026-07-01,2026-11-30,0
+REM-010,PEN-TEST,Patch critical vulnerabilities from pen test,P1,In Progress,Infra Team,2026-06-01,2026-07-15,90

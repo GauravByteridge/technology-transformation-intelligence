@@ -1,0 +1,13 @@
+Control_ID,Control_Name,Domain,Test_Result,Last_Tested,Frequency,Risk_Rating,Evidence
+CTRL-001,Password Complexity,Access Management,Pass,2026-06-15,Quarterly,Medium,AD policy screenshot
+CTRL-002,Account Lockout,Access Management,Pass,2026-06-15,Quarterly,Medium,Config export
+CTRL-003,Privileged Access Review,Access Management,Fail,2026-06-20,Monthly,High,Review logs incomplete
+CTRL-004,Change Approval Workflow,Change Management,Pass,2026-06-01,Monthly,High,ServiceNow tickets
+CTRL-005,Segregation of Duties,Access Management,Pass,2026-05-30,Quarterly,Critical,Role matrix
+CTRL-006,Backup Verification,Operations,Fail,2026-06-10,Weekly,High,3 backup failures in June
+CTRL-007,Patch Management,Vulnerability Mgmt,Pass,2026-06-25,Monthly,High,WSUS report
+CTRL-008,Incident Response,Security Ops,Pass,2026-04-15,Quarterly,Critical,Tabletop exercise report
+CTRL-009,Data Classification,Data Protection,Fail,2026-05-20,Annual,High,30% assets unclassified
+CTRL-010,Encryption Standards,Data Protection,Pass,2026-06-30,Quarterly,Critical,TLS scan results
+CTRL-011,Log Monitoring,Security Ops,Pass,2026-06-28,Continuous,High,SIEM dashboard
+CTRL-012,Vendor Risk Assessment,Third Party,Fail,2026-03-15,Annual,Medium,5 vendors not assessed

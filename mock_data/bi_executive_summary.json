@@ -1,0 +1,54 @@
+{
+  "report_period": "H1 2026",
+  "business_unit": "Digital Banking",
+  "highlights": [
+    "Active users grew 45% YoY to 3,200 daily average",
+    "Transaction volume up 62% driven by mobile adoption",
+    "Revenue per user increased 12% through cross-selling",
+    "System uptime maintained at 99.95% SLA achievement"
+  ],
+  "kpi_summary": {
+    "customer_satisfaction": {
+      "current": 4.2,
+      "target": 4.5,
+      "previous": 3.9
+    },
+    "net_promoter_score": {
+      "current": 42,
+      "target": 50,
+      "previous": 35
+    },
+    "digital_adoption_rate": {
+      "current": 0.73,
+      "target": 0.8,
+      "previous": 0.58
+    },
+    "cost_per_transaction": {
+      "current": 0.45,
+      "target": 0.4,
+      "previous": 0.62
+    },
+    "time_to_market_days": {
+      "current": 28,
+      "target": 21,
+      "previous": 45
+    }
+  },
+  "top_issues": [
+    {
+      "issue": "Mobile app crash rate spike in March",
+      "impact": "Medium",
+      "resolved": true
+    },
+    {
+      "issue": "Payment gateway latency during peak hours",
+      "impact": "High",
+      "resolved": false
+    },
+    {
+      "issue": "Customer onboarding drop-off at KYC step",
+      "impact": "High",
+      "resolved": false
+    }
+  ]
+}

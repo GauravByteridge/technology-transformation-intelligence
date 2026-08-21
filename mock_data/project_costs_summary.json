@@ -1,0 +1,66 @@
+{
+  "project": "Digital Transformation Initiative",
+  "fiscal_year": "FY2026",
+  "total_budget": 2500000,
+  "spent_to_date": 1847500,
+  "remaining": 652500,
+  "burn_rate_per_month": 307916,
+  "categories": [
+    {
+      "name": "Infrastructure",
+      "budget": 600000,
+      "spent": 487000,
+      "status": "on_track"
+    },
+    {
+      "name": "Development",
+      "budget": 900000,
+      "spent": 723000,
+      "status": "on_track"
+    },
+    {
+      "name": "Testing & QA",
+      "budget": 350000,
+      "spent": 298000,
+      "status": "at_risk"
+    },
+    {
+      "name": "Operations",
+      "budget": 400000,
+      "spent": 215000,
+      "status": "on_track"
+    },
+    {
+      "name": "Training & Change Mgmt",
+      "budget": 250000,
+      "spent": 124500,
+      "status": "behind"
+    }
+  ],
+  "milestones": [
+    {
+      "name": "Phase 1 Complete",
+      "date": "2026-03-15",
+      "cost": 450000,
+      "status": "completed"
+    },
+    {
+      "name": "Phase 2 Complete",
+      "date": "2026-06-30",
+      "cost": 780000,
+      "status": "in_progress"
+    },
+    {
+      "name": "UAT Sign-off",
+      "date": "2026-09-15",
+      "cost": 350000,
+      "status": "planned"
+    },
+    {
+      "name": "Go-Live",
+      "date": "2026-11-01",
+      "cost": 270000,
+      "status": "planned"
+    }
+  ]
+}
