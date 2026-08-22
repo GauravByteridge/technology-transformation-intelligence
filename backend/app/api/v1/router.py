@@ -1,0 +1,26 @@
+"""
+API v1 router aggregating all domain route modules.
+
+New domain routes are added here as sub-routers.
+"""
+
+from fastapi import APIRouter
+
+from app.api.v1.ai_queries import router as ai_queries_router
+from app.api.v1.config import router as config_router
+from app.api.v1.data_sources import router as data_sources_router
+from app.api.v1.documents import router as documents_router
+from app.api.v1.health import router as health_router
+from app.api.v1.projects import router as projects_router
+
+api_router = APIRouter()
+
+# Health check — required for load balancers and orchestrators
+api_router.include_router(health_router)
+
+# Domain routers
+api_router.include_router(projects_router, prefix="/projects", tags=["projects"])
+api_router.include_router(data_sources_router, prefix="/data-sources", tags=["data-sources"])
+api_router.include_router(ai_queries_router, prefix="/ai", tags=["ai"])
+api_router.include_router(documents_router, prefix="/documents", tags=["documents"])
+api_router.include_router(config_router, prefix="/config", tags=["config"])
