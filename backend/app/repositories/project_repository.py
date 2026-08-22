@@ -63,3 +63,40 @@ class ProjectRepository(BaseRepository[Project]):
             The persisted Project with server-generated fields populated.
         """
         return await self._create(project)
+
+    async def update_project(
+        self, project_id: UUID, updates: dict
+    ) -> Project | None:
+        """
+        Apply partial updates to an existing project.
+
+        Args:
+            project_id: UUID of the project to update.
+            updates: Dictionary of field names to new values.
+
+        Returns:
+            Updated Project instance, or None if not found.
+        """
+        project = await self._get_by_id(project_id)
+        if project is None:
+            return None
+
+        for field, value in updates.items():
+            if hasattr(project, field):
+                setattr(project, field, value)
+
+        await self._session.flush()
+        await self._session.refresh(project)
+        return project
+
+    async def delete_project(self, project_id: UUID) -> bool:
+        """
+        Delete a project by its primary key.
+
+        Args:
+            project_id: UUID of the project to delete.
+
+        Returns:
+            True if the project was deleted, False if not found.
+        """
+        return await self._delete_by_id(project_id)

@@ -32,6 +32,7 @@ class Settings(BaseSettings):
 
     app_db_url: str
     secret_key: str
+    fernet_key: str = ""
 
     # =========================================================================
     # OPTIONAL — Defaults Provided

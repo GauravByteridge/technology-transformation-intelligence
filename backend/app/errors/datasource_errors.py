@@ -77,3 +77,21 @@ class UnsupportedDataSourceError(AppError):
         )
         self.requested_type = requested_type
         self.supported_types = supported_types
+
+
+class DuplicateSourceConnectionError(AppError):
+    """Raised when a project-to-data-source connection already exists."""
+
+    def __init__(self, project_id: str, data_source_id: str) -> None:
+        super().__init__(
+            error_code="DUPLICATE_SOURCE_CONNECTION",
+            message=(
+                f"Source connection already exists between project '{project_id}' "
+                f"and data source '{data_source_id}'"
+            ),
+            domain="datasource",
+            category=ErrorCategory.CONFLICT,
+            detail=None,
+        )
+        self.project_id = project_id
+        self.data_source_id = data_source_id

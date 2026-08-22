@@ -17,6 +17,8 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 
+from cryptography.fernet import Fernet
+
 from app.api.v1.router import api_router
 from app.config.logging import configure_logging, get_logger
 from app.config.settings import validate_live_mode_settings
@@ -59,6 +61,23 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
         validate_live_mode_settings(settings)
     except ValueError as exc:
         logger.error("startup_validation_failed", error=str(exc))
+        raise SystemExit(1) from exc
+
+    # Validate FERNET_KEY — required for credential encryption at runtime
+    if not settings.fernet_key or not settings.fernet_key.strip():
+        logger.error(
+            "startup_validation_failed",
+            error="FERNET_KEY is required. Generate one with: python -c \"from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())\"",
+        )
+        raise SystemExit(1)
+
+    try:
+        Fernet(settings.fernet_key.encode())
+    except (ValueError, Exception) as exc:
+        logger.error(
+            "startup_validation_failed",
+            error=f"FERNET_KEY is invalid: {exc}. Generate a valid key with: python -c \"from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())\"",
+        )
         raise SystemExit(1) from exc
 
     # Initialize App_DB session factory for repository layer
