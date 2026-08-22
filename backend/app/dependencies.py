@@ -230,6 +230,80 @@ async def get_project_service(
     return ProjectService(repository=repository)
 
 
+async def get_data_source_service(
+    session: AsyncSession = Depends(get_app_db_session),
+    settings: Settings = Depends(get_settings),
+) -> "DataSourceService":
+    """Provide DataSourceService with encryptor and all repositories injected."""
+    from app.repositories.data_source_repository import DataSourceRepository
+    from app.repositories.project_repository import ProjectRepository
+    from app.repositories.source_connection_repository import SourceConnectionRepository
+    from app.security.credential_encryptor import CredentialEncryptor
+    from app.services.data_source_service import DataSourceService
+
+    repository = DataSourceRepository(session)
+    project_repository = ProjectRepository(session)
+    source_conn_repository = SourceConnectionRepository(session)
+    encryptor = CredentialEncryptor(settings.fernet_key)
+    return DataSourceService(
+        data_source_repository=repository,
+        project_repository=project_repository,
+        source_connection_repository=source_conn_repository,
+        credential_encryptor=encryptor,
+    )
+
+
+async def get_conversation_service(
+    session: AsyncSession = Depends(get_app_db_session),
+) -> "ConversationService":
+    """Provide ConversationService with repositories injected."""
+    from app.repositories.conversation_repository import ConversationRepository
+    from app.repositories.project_repository import ProjectRepository
+    from app.services.conversation_service import ConversationService
+
+    conversation_repository = ConversationRepository(session)
+    project_repository = ProjectRepository(session)
+    return ConversationService(
+        conversation_repository=conversation_repository,
+        project_repository=project_repository,
+    )
+
+
+async def get_query_history_service(
+    session: AsyncSession = Depends(get_app_db_session),
+) -> "QueryHistoryService":
+    """Provide QueryHistoryService with repositories injected."""
+    from app.repositories.project_repository import ProjectRepository
+    from app.repositories.query_history_repository import QueryHistoryRepository
+    from app.services.query_history_service import QueryHistoryService
+
+    query_history_repository = QueryHistoryRepository(session)
+    project_repository = ProjectRepository(session)
+    return QueryHistoryService(
+        query_history_repository=query_history_repository,
+        project_repository=project_repository,
+    )
+
+
+async def get_file_service(
+    session: AsyncSession = Depends(get_app_db_session),
+) -> "FileService":
+    """Provide FileService with repositories injected."""
+    from app.repositories.data_source_repository import DataSourceRepository
+    from app.repositories.file_repository import FileRepository
+    from app.repositories.project_repository import ProjectRepository
+    from app.services.file_service import FileService
+
+    file_repository = FileRepository(session)
+    project_repository = ProjectRepository(session)
+    data_source_repository = DataSourceRepository(session)
+    return FileService(
+        file_repository=file_repository,
+        project_repository=project_repository,
+        data_source_repository=data_source_repository,
+    )
+
+
 # =============================================================================
 # Connector Layer
 # =============================================================================
@@ -601,6 +675,9 @@ def _create_finance_tool():
 
     from app.ai.tools.finance_tools import create_query_project_finance
     from app.repositories.data_source_repository import DataSourceRepository
+    from app.repositories.project_repository import ProjectRepository
+    from app.repositories.source_connection_repository import SourceConnectionRepository
+    from app.security.credential_encryptor import CredentialEncryptor
     from app.services.data_source_service import DataSourceService
 
     async def query_project_finance(project_id: UUID) -> dict:
@@ -608,8 +685,17 @@ def _create_finance_tool():
             raise RuntimeError("App_DB not initialized")
 
         async with _app_db_session_factory() as session:
-            repository = DataSourceRepository(session)
-            service = DataSourceService(repository=repository)
+            settings = get_settings()
+            data_source_repo = DataSourceRepository(session)
+            project_repo = ProjectRepository(session)
+            source_conn_repo = SourceConnectionRepository(session)
+            encryptor = CredentialEncryptor(settings.fernet_key)
+            service = DataSourceService(
+                data_source_repository=data_source_repo,
+                project_repository=project_repo,
+                source_connection_repository=source_conn_repo,
+                credential_encryptor=encryptor,
+            )
             tool_fn = create_query_project_finance(service)
             return await tool_fn(project_id)
 

@@ -18,6 +18,17 @@ class ProjectCreate(BaseModel):
     description: str | None = Field(default=None, max_length=2000, description="Project description")
 
 
+class ProjectUpdate(BaseModel):
+    """Partial update schema for projects.
+
+    All fields are optional — only provided fields are applied.
+    """
+
+    name: str | None = Field(default=None, min_length=1, max_length=255, description="Project name")
+    description: str | None = Field(default=None, max_length=2000, description="Project description")
+    status: str | None = Field(default=None, max_length=50, description="Project status")
+
+
 class ProjectResponse(BaseModel):
     """Response schema for a single project."""
 

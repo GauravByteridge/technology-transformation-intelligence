@@ -282,6 +282,39 @@ class DataSourceService:
 
     # --- Private Helpers ---
 
+    async def list_finance_sources_for_project(
+        self, project_id: UUID
+    ) -> list[dict]:
+        """
+        List data sources connected to a project for finance queries.
+
+        Used by AI tools to discover available finance data sources.
+
+        Args:
+            project_id: UUID of the project to query.
+
+        Returns:
+            List of dicts describing connected data sources.
+        """
+        data_sources = await self._data_source_repo.list_by_project(project_id)
+
+        logger.debug(
+            "finance_sources_retrieved",
+            project_id=str(project_id),
+            source_count=len(data_sources),
+        )
+
+        return [
+            {
+                "id": str(source.id),
+                "name": source.name,
+                "source_type": source.source_type,
+                "display_label": source.display_label,
+                "connection_status": source.connection_status,
+            }
+            for source in data_sources
+        ]
+
     def _to_response(self, data_source: DataSource) -> dict:
         """Convert a DataSource model to a response dict with masked config."""
         return {
