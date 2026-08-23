@@ -7,9 +7,11 @@ dedicated processor that implements the FileProcessor protocol.
 """
 
 from app.processors.content_classifier import ContentClassifier
+from app.processors.csv_processor import CSVProcessor
 from app.processors.docx_processor import DOCXProcessor
 from app.processors.excel_processor import ExcelProcessor
 from app.processors.file_type_detector import FileTypeDetector
+from app.processors.json_processor import JSONProcessor
 from app.processors.pdf_processor import PDFProcessor
 from app.processors.protocol import (
     ClassificationResult,
@@ -42,8 +44,10 @@ __all__ = [
     # Classifier
     "ContentClassifier",
     # Processors
+    "CSVProcessor",
     "DOCXProcessor",
     "ExcelProcessor",
+    "JSONProcessor",
     "PDFProcessor",
     "TextProcessor",
     # Registry

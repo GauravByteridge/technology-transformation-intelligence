@@ -1047,11 +1047,12 @@ def get_content_classifier() -> "ContentClassifier":
 def get_file_processor_registry() -> "FileProcessorRegistry":
     """Create a FileProcessorRegistry with all format processors registered.
 
-    Registers: Excel, PDF, DOCX, Text processors.
-    CSV and JSON are registered if their processor modules exist.
+    Registers: Excel, CSV, JSON, PDF, DOCX, Text processors.
     """
+    from app.processors.csv_processor import CSVProcessor
     from app.processors.docx_processor import DOCXProcessor
     from app.processors.excel_processor import ExcelProcessor
+    from app.processors.json_processor import JSONProcessor
     from app.processors.pdf_processor import PDFProcessor
     from app.processors.registry import FileProcessorRegistry
     from app.processors.text_processor import TextProcessor
@@ -1062,6 +1063,10 @@ def get_file_processor_registry() -> "FileProcessorRegistry":
     excel_processor = ExcelProcessor()
     registry.register("xlsx", excel_processor)
     registry.register("xls", excel_processor)
+
+    # Tabular data formats
+    registry.register("csv", CSVProcessor())
+    registry.register("json", JSONProcessor())
 
     # Document formats
     registry.register("pdf", PDFProcessor())

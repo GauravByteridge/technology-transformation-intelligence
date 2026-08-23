@@ -363,6 +363,86 @@ class DatasetService:
         regions = await self._dataset_repo.get_regions_by_file(file_id)
         return [self._to_region_dict(r) for r in regions]
 
+    async def get_dataset_metadata(self, dataset_id: UUID) -> dict:
+        """Return AI-consumable metadata for a dataset.
+
+        Provides a comprehensive description of the dataset including name,
+        description, domain, column definitions with types, project scope,
+        source file info, sheet name, and query capability indicators.
+        This format is designed for Phase 5 Strands agent consumption.
+
+        Args:
+            dataset_id: UUID of the dataset.
+
+        Returns:
+            Dict with AI-consumable dataset metadata.
+
+        Raises:
+            ValueError: If dataset not found.
+        """
+        dataset = await self._dataset_repo.get_dataset_with_relations(dataset_id)
+        if dataset is None:
+            raise ValueError(f"Dataset not found: {dataset_id}")
+
+        # Build column metadata
+        columns_meta = []
+        if dataset.columns:
+            for col in sorted(dataset.columns, key=lambda c: c.column_index):
+                col_meta = {
+                    "name": col.name,
+                    "data_type": col.data_type,
+                    "nullable": col.nullable,
+                    "column_index": col.column_index,
+                    "confidence": col.confidence,
+                }
+                if col.sample_values:
+                    col_meta["sample_values"] = col.sample_values
+                columns_meta.append(col_meta)
+
+        # Build source file info
+        source_file_info = {"file_id": str(dataset.file_id)}
+        try:
+            file_record = await self._file_repo.get_file(dataset.file_id)
+            if file_record:
+                source_file_info["file_name"] = file_record.file_name
+                source_file_info["file_type"] = file_record.file_type
+        except Exception:
+            # Non-critical — proceed with minimal file info
+            pass
+
+        # Build relationships summary
+        relationships: list[dict] = []
+        # NOTE: Relationships are loaded separately via RelationshipService.
+        # Included here as empty list; Phase 5 agents can query relationships separately.
+
+        metadata = {
+            "dataset_id": str(dataset.id),
+            "name": dataset.name,
+            "description": dataset.description,
+            "domain": dataset.domain,
+            "source_type": dataset.source_type,
+            "sheet_name": dataset.sheet_name,
+            "classification": dataset.classification,
+            "record_count": dataset.record_count,
+            "status": dataset.status,
+            "confidence": dataset.confidence,
+            "project_id": str(dataset.project_id) if dataset.project_id else None,
+            "source_file": source_file_info,
+            "columns": columns_meta,
+            "relationships": relationships,
+            "query_capability": {
+                "supports_filter": True,
+                "supports_sort": True,
+                "supports_aggregation": True,
+                "supports_pagination": True,
+                "filterable_columns": [col.name for col in (dataset.columns or [])],
+                "sortable_columns": [col.name for col in (dataset.columns or [])],
+                "aggregation_functions": ["COUNT", "SUM", "AVG"],
+            },
+        }
+
+        return metadata
+
     async def assign_project(self, dataset_id: UUID, project_id: UUID) -> dict:
         """
         Associate a dataset with a project.
