@@ -32,6 +32,11 @@ from app.errors.document_errors import (
 )
 from app.errors.file_errors import FileNotFoundError
 from app.errors.handlers import register_exception_handlers
+from app.errors.ingestion_errors import (
+    ContentClassificationError,
+    FileProcessingError,
+    UnsupportedFileTypeError,
+)
 from app.errors.project_errors import ProjectNotFoundError, ProjectValidationError
 from app.errors.query_errors import QueryHistoryNotFoundError, SavedQueryNotFoundError
 
@@ -71,6 +76,10 @@ __all__ = [
     "AIQueryError",
     # Config
     "ConfigurationError",
+    # Ingestion
+    "UnsupportedFileTypeError",
+    "FileProcessingError",
+    "ContentClassificationError",
     # Handlers
     "register_exception_handlers",
 ]

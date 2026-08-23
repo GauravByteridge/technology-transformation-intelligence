@@ -30,6 +30,13 @@ from app.models.resource import (
     ResourceForecast,
 )
 from app.models.it_control import ItControl, ControlAssessment
+from app.models.dataset import (
+    Dataset,
+    DataRegion,
+    DatasetColumn,
+    DatasetRecord,
+    DatasetRelationship,
+)
 
 from app.models.finance import (
     ProjectBudget,
@@ -90,6 +97,12 @@ __all__ = [
     # IT Control models
     "ItControl",
     "ControlAssessment",
+    # Dataset models
+    "Dataset",
+    "DataRegion",
+    "DatasetColumn",
+    "DatasetRecord",
+    "DatasetRelationship",
     # Progress models
     "ProjectProgressSnapshot",
     # Health KPI models

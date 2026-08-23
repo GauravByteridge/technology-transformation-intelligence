@@ -23,8 +23,8 @@ class UploadedFile(AppBase):
     id: Mapped[UUID] = mapped_column(
         sa.UUID, primary_key=True, default=uuid4
     )
-    project_id: Mapped[UUID] = mapped_column(
-        sa.UUID, sa.ForeignKey("projects.id"), nullable=False
+    project_id: Mapped[UUID | None] = mapped_column(
+        sa.UUID, sa.ForeignKey("projects.id"), nullable=True
     )
     data_source_id: Mapped[UUID | None] = mapped_column(
         sa.UUID, sa.ForeignKey("data_sources.id"), nullable=True
