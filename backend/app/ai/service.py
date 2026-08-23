@@ -5,7 +5,12 @@ The AIService is the top-level orchestrator for AI query execution.
 It coordinates the flow: load prompt → invoke agent with tools → build response.
 
 Invocation Flow:
-    API → AIService → Agent → Tools → Domain Services → Data Sources
+    API → AIService → StrandsAgentWrapper → Strands Agent → Tools → IngestionInterface
+
+Phase 5 Update:
+- The service now supports both the legacy AIAgent (Phase 0) and the new
+  StrandsAgentWrapper (Phase 5). When a StrandsAgentWrapper is provided,
+  it takes precedence for query execution.
 
 Security Invariants:
 - AIService does NOT receive or pass database credentials to the agent.
@@ -13,9 +18,11 @@ Security Invariants:
 - All data access flows through registered tools → domain services.
 """
 
+from __future__ import annotations
+
 import logging
 import time
-from typing import Any
+from typing import TYPE_CHECKING, Any
 from uuid import UUID
 
 from app.ai.agent import AIAgent, AgentResponse
@@ -25,6 +32,9 @@ from app.ai.response import strip_markup
 from app.ai.tools.registry import ToolRegistry
 from app.ai.trace import QueryTrace, ToolInvocationTrace, sanitize_log_value
 from app.schemas.ai import AIResponse
+
+if TYPE_CHECKING:
+    from app.ai.strands_agent import StrandsAgentWrapper
 
 logger = logging.getLogger(__name__)
 
@@ -41,6 +51,10 @@ class AIService:
 
     The service is injected with its dependencies (provider, tool_registry,
     prompt_manager) and never instantiates them internally.
+
+    Phase 5: When a StrandsAgentWrapper is provided, the service delegates to
+    the Strands Agent for LLM-driven tool selection and reasoning. The legacy
+    AIAgent remains as a fallback.
     """
 
     def __init__(
@@ -48,6 +62,7 @@ class AIService:
         provider: TextGenerationProvider,
         tool_registry: ToolRegistry,
         prompt_manager: PromptManager | None = None,
+        strands_agent: "StrandsAgentWrapper | None" = None,
     ) -> None:
         """Initialize the AI service.
 
@@ -57,10 +72,13 @@ class AIService:
             prompt_manager: Prompt template manager for loading versioned prompts.
                 Defaults to None; when provided, system prompts are loaded from
                 the prompts directory with version tracking.
+            strands_agent: Optional Strands Agent wrapper for Phase 5 intelligent
+                tool selection. When provided, takes precedence over the legacy agent.
         """
         self._provider = provider
         self._tool_registry = tool_registry
         self._prompt_manager = prompt_manager
+        self._strands_agent = strands_agent
         self._agent = AIAgent(provider=provider, tool_registry=tool_registry)
         self._last_trace: QueryTrace | None = None
 
@@ -101,11 +119,20 @@ class AIService:
         )
 
         try:
-            agent_response = await self._agent.invoke(
-                question=question,
-                project_id=project_id,
-                query_id=query_id,
-            )
+            # Phase 5: Use Strands Agent when available for LLM-driven tool selection
+            if self._strands_agent is not None:
+                agent_response = await self._strands_agent.invoke(
+                    question=question,
+                    project_id=project_id,
+                    query_id=query_id,
+                )
+            else:
+                # Legacy Phase 0 agent — invokes all tools
+                agent_response = await self._agent.invoke(
+                    question=question,
+                    project_id=project_id,
+                    query_id=query_id,
+                )
 
             ai_response = self._build_response(
                 agent_response=agent_response,

@@ -761,6 +761,28 @@ def get_embedding_provider() -> "EmbeddingProvider":
 
 
 # =============================================================================
+# Ingestion Interface (Phase 5 — bridges ingestion layer to AI tools)
+# =============================================================================
+
+
+def _create_ingestion_interface() -> "IngestionInterface":
+    """Create an IngestionInterface implementation for the Strands agent tools.
+
+    Bridges the Phase 4 ingestion services (DatasetService, DocumentSearchService)
+    into the unified IngestionInterface protocol consumed by AI tools.
+
+    The implementation uses per-call session management to ensure proper
+    connection lifecycle and isolation between agent invocations.
+
+    Returns:
+        An IngestionInterface implementation.
+    """
+    from app.services.ingestion_facade import IngestionFacade
+
+    return IngestionFacade(session_factory=_app_db_session_factory)
+
+
+# =============================================================================
 # AI Service Layer
 # =============================================================================
 
@@ -887,7 +909,8 @@ def initialize_ai_service(settings: Settings) -> "AIService":
     Assembles the AI service with its dependencies:
     - Text generation provider (already resolved)
     - Tool registry (already initialized)
-    - Prompt manager (None for Phase 0)
+    - Prompt manager for versioned system prompts
+    - Strands Agent wrapper (Phase 5) for LLM-driven tool selection
 
     Must be called AFTER initialize_providers() and initialize_tool_registry().
 
@@ -899,15 +922,34 @@ def initialize_ai_service(settings: Settings) -> "AIService":
     """
     global _ai_service  # noqa: PLW0603
 
+    from app.ai.prompt_manager import PromptManager
     from app.ai.service import AIService
+    from app.ai.strands_agent import StrandsAgentWrapper
+    from app.ai.tools.ingestion_tools import get_ingestion_tools, initialize_ingestion_tools
 
     provider = get_text_generation_provider()
     tool_registry = get_tool_registry()
+    prompt_manager = PromptManager()
+
+    # Initialize ingestion tools with the IngestionInterface implementation
+    ingestion = _create_ingestion_interface()
+    initialize_ingestion_tools(ingestion)
+
+    # Load the Strands system prompt
+    system_prompt = prompt_manager.load_prompt("strands_system_prompt", version="v1")
+
+    # Create the Strands Agent wrapper with configured model and tools
+    strands_agent = StrandsAgentWrapper(
+        settings=settings,
+        tools=get_ingestion_tools(),
+        system_prompt=system_prompt,
+    )
 
     _ai_service = AIService(
         provider=provider,
         tool_registry=tool_registry,
-        prompt_manager=None,  # Phase 1: PromptManager integration
+        prompt_manager=prompt_manager,
+        strands_agent=strands_agent,
     )
 
     from app.config.logging import get_logger
@@ -917,6 +959,7 @@ def initialize_ai_service(settings: Settings) -> "AIService":
         "ai_service_initialized",
         registered_tools=tool_registry.list_tools(),
         provider=type(provider).__name__,
+        strands_agent_enabled=True,
     )
 
     return _ai_service
