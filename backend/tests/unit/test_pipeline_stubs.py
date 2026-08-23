@@ -134,9 +134,10 @@ class TestFixedSizeChunker:
         for i, chunk in enumerate(result):
             assert chunk.chunk_index == i
 
-    def test_page_number_and_section_are_none(self, chunker: FixedSizeChunker) -> None:
+    def test_page_number_defaults_to_one_and_section_is_none(self, chunker: FixedSizeChunker) -> None:
+        """Text without page breaks or headings: page_number=1, section=None."""
         result = chunker.chunk("some text", chunk_size=100, overlap=0)
-        assert result[0].page_number is None
+        assert result[0].page_number == 1
         assert result[0].section is None
 
 

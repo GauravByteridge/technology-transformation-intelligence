@@ -1,20 +1,31 @@
 """
-Deterministic embedding generator for the document ingestion pipeline.
+Embedding generators for the document ingestion pipeline.
 
-Uses SHA-256 hashing to produce repeatable vectors of exactly
-EMBEDDING_DIMENSION length. This stub does NOT call any external
-service — it is purely local computation for Phase 0 smoke testing.
-
-Full embedding generation delegating to a real model is deferred to Phase 1.
+Provides two implementations:
+- DeterministicEmbeddingGenerator: Hash-based stub for testing/demo (no external calls).
+- ProductionEmbeddingGenerator: Real embeddings via configured EmbeddingProvider.
 """
 
+from __future__ import annotations
+
+import asyncio
 import hashlib
+import logging
 import struct
 
 from app.ai.providers.embedding_protocol import EmbeddingProvider
+from app.errors.document_errors import EmbeddingGenerationError
+
+logger = logging.getLogger(__name__)
 
 # Default dimension matching the project configuration
 DEFAULT_EMBEDDING_DIMENSION = 1536
+
+# Maximum number of texts per batch call to the provider
+_MAX_BATCH_SIZE = 100
+
+# Timeout for embedding provider calls (seconds)
+_PROVIDER_TIMEOUT_SECONDS = 30
 
 
 class DeterministicEmbeddingGenerator:
@@ -90,3 +101,102 @@ class DeterministicEmbeddingGenerator:
             digest = hashlib.sha256(digest).digest()
 
         return vector
+
+
+class ProductionEmbeddingGenerator:
+    """Real embedding generator that delegates to the configured EmbeddingProvider.
+
+    Satisfies the EmbeddingGenerator protocol. Calls the provider's embed_batch()
+    method with batching (max 100 texts per call), dimension validation, and
+    timeout handling.
+    """
+
+    def __init__(
+        self,
+        embedding_provider: EmbeddingProvider,
+        embedding_dimension: int = DEFAULT_EMBEDDING_DIMENSION,
+    ) -> None:
+        """Initialize with a real embedding provider.
+
+        Args:
+            embedding_provider: The provider implementing embed_batch().
+            embedding_dimension: Expected dimension of output vectors.
+                Used for validation after provider returns.
+        """
+        self._provider = embedding_provider
+        self._dimension = embedding_dimension
+
+    @property
+    def dimension(self) -> int:
+        """The expected dimension of embedding vectors."""
+        return self._dimension
+
+    async def generate(self, texts: list[str]) -> list[list[float]]:
+        """Generate embeddings by delegating to the configured provider.
+
+        Batches texts in groups of up to 100, applies a 30-second timeout,
+        and validates output dimensions.
+
+        Args:
+            texts: List of text segments to embed.
+
+        Returns:
+            List of embedding vectors, one per input text.
+
+        Raises:
+            EmbeddingGenerationError: If the provider fails, times out,
+                or returns vectors with incorrect dimensions.
+        """
+        if not texts:
+            return []
+
+        all_embeddings: list[list[float]] = []
+
+        # Process in batches of _MAX_BATCH_SIZE
+        for batch_start in range(0, len(texts), _MAX_BATCH_SIZE):
+            batch = texts[batch_start : batch_start + _MAX_BATCH_SIZE]
+
+            try:
+                batch_embeddings = await asyncio.wait_for(
+                    self._provider.embed_batch(batch),
+                    timeout=_PROVIDER_TIMEOUT_SECONDS,
+                )
+            except asyncio.TimeoutError:
+                raise EmbeddingGenerationError(
+                    file_name="<batch>",
+                    message=(
+                        f"Embedding provider timed out after {_PROVIDER_TIMEOUT_SECONDS}s "
+                        f"processing batch of {len(batch)} texts"
+                    ),
+                    detail=f"Batch starting at index {batch_start}",
+                )
+            except EmbeddingGenerationError:
+                raise
+            except Exception as exc:
+                provider_name = type(self._provider).__name__
+                raise EmbeddingGenerationError(
+                    file_name="<batch>",
+                    message=(
+                        f"Embedding provider '{provider_name}' failed: {exc}"
+                    ),
+                    detail=str(exc),
+                ) from exc
+
+            # Validate output dimensions
+            for idx, embedding in enumerate(batch_embeddings):
+                if len(embedding) != self._dimension:
+                    raise EmbeddingGenerationError(
+                        file_name="<batch>",
+                        message=(
+                            f"Embedding dimension mismatch: expected {self._dimension}, "
+                            f"got {len(embedding)} at index {batch_start + idx}"
+                        ),
+                        detail=(
+                            f"Provider returned vector of length {len(embedding)} "
+                            f"but EMBEDDING_DIMENSION is configured as {self._dimension}"
+                        ),
+                    )
+
+            all_embeddings.extend(batch_embeddings)
+
+        return all_embeddings

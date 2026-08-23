@@ -990,3 +990,232 @@ def _get_embedding_provider_config(settings: Settings, provider_name: str | None
         }
     return {}
 
+
+
+# =============================================================================
+# File Service Provider (Phase 1)
+# =============================================================================
+
+
+async def get_file_repository(
+    session: AsyncSession = Depends(get_app_db_session),
+) -> "FileRepository":
+    """Provide a FileRepository instance with database session."""
+    from app.repositories.file_repository import FileRepository
+
+    return FileRepository(session)
+
+
+async def get_file_service(
+    session: AsyncSession = Depends(get_app_db_session),
+) -> "FileService":
+    """Provide a FileService instance with all required repositories."""
+    from app.repositories.data_source_repository import DataSourceRepository
+    from app.repositories.file_repository import FileRepository
+    from app.repositories.project_repository import ProjectRepository
+    from app.services.file_service import FileService
+
+    file_repo = FileRepository(session)
+    project_repo = ProjectRepository(session)
+    data_source_repo = DataSourceRepository(session)
+    return FileService(
+        file_repository=file_repo,
+        project_repository=project_repo,
+        data_source_repository=data_source_repo,
+    )
+
+
+# =============================================================================
+# Phase 4: Content-Aware Ingestion Providers
+# =============================================================================
+
+
+def get_file_type_detector() -> "FileTypeDetector":
+    """Provide a FileTypeDetector instance."""
+    from app.processors.file_type_detector import FileTypeDetector
+
+    return FileTypeDetector()
+
+
+def get_content_classifier() -> "ContentClassifier":
+    """Provide a ContentClassifier with default confidence threshold."""
+    from app.processors.content_classifier import ContentClassifier
+
+    return ContentClassifier(confidence_threshold=0.75)
+
+
+def get_file_processor_registry() -> "FileProcessorRegistry":
+    """Create a FileProcessorRegistry with all format processors registered.
+
+    Registers: Excel, PDF, DOCX, Text processors.
+    CSV and JSON are registered if their processor modules exist.
+    """
+    from app.processors.docx_processor import DOCXProcessor
+    from app.processors.excel_processor import ExcelProcessor
+    from app.processors.pdf_processor import PDFProcessor
+    from app.processors.registry import FileProcessorRegistry
+    from app.processors.text_processor import TextProcessor
+
+    registry = FileProcessorRegistry()
+
+    # Excel formats
+    excel_processor = ExcelProcessor()
+    registry.register("xlsx", excel_processor)
+    registry.register("xls", excel_processor)
+
+    # Document formats
+    registry.register("pdf", PDFProcessor())
+    registry.register("docx", DOCXProcessor())
+    registry.register("txt", TextProcessor())
+
+    return registry
+
+
+async def get_dataset_repository(
+    session: AsyncSession = Depends(get_app_db_session),
+) -> "DatasetRepository":
+    """Provide a DatasetRepository instance."""
+    from app.repositories.dataset_repository import DatasetRepository
+
+    return DatasetRepository(session)
+
+
+async def get_dataset_service(
+    session: AsyncSession = Depends(get_app_db_session),
+) -> "DatasetService":
+    """Provide a DatasetService instance with dataset and file repositories."""
+    from app.repositories.dataset_repository import DatasetRepository
+    from app.repositories.file_repository import FileRepository
+    from app.services.dataset_service import DatasetService
+
+    dataset_repo = DatasetRepository(session)
+    file_repo = FileRepository(session)
+    return DatasetService(
+        dataset_repository=dataset_repo,
+        file_repository=file_repo,
+    )
+
+
+async def get_document_repository(
+    session: AsyncSession = Depends(get_app_db_session),
+) -> "DocumentRepository":
+    """Provide a DocumentRepository instance.
+
+    NOTE: In a full deployment, this would use RAG_DB session.
+    For POC, uses App_DB session (both DBs share the same engine in dev).
+    """
+    from app.repositories.document_repository import DocumentRepository
+
+    return DocumentRepository(session)
+
+
+async def get_document_search_service(
+    session: AsyncSession = Depends(get_app_db_session),
+) -> "DocumentSearchService":
+    """Provide a DocumentSearchService with document repository and embedding generator.
+
+    Uses the configured embedding provider for query embedding generation.
+    Falls back to DeterministicEmbeddingGenerator if provider not initialized.
+    """
+    from app.documents.embedder import DeterministicEmbeddingGenerator
+    from app.repositories.document_repository import DocumentRepository
+    from app.services.document_search_service import DocumentSearchService
+
+    doc_repo = DocumentRepository(session)
+
+    # Use production embedding generator if provider is available
+    try:
+        embedding_provider = get_embedding_provider()
+        from app.documents.embedder import ProductionEmbeddingGenerator
+
+        embedding_gen = ProductionEmbeddingGenerator(embedding_provider)
+    except RuntimeError:
+        # Fallback to deterministic embedder for dev/demo
+        embedding_gen = DeterministicEmbeddingGenerator()
+
+    return DocumentSearchService(
+        document_repository=doc_repo,
+        embedding_generator=embedding_gen,
+    )
+
+
+async def get_ingestion_orchestrator(
+    session: AsyncSession = Depends(get_app_db_session),
+) -> "IngestionOrchestrator":
+    """Provide a fully configured IngestionOrchestrator with all dependencies.
+
+    Assembles both legacy pipeline components (validator, extractor, chunker,
+    embedder) and content-aware components (file type detector, processor
+    registry, content classifier, dataset service).
+    """
+    from app.documents.chunker import FixedSizeChunker
+    from app.documents.embedder import DeterministicEmbeddingGenerator
+    from app.documents.extractors import TxtContentExtractor
+    from app.documents.orchestrator import IngestionOrchestrator
+    from app.documents.validator import SimpleFileValidator
+    from app.repositories.dataset_repository import DatasetRepository
+    from app.repositories.document_repository import DocumentRepository
+    from app.repositories.file_repository import FileRepository
+    from app.services.dataset_service import DatasetService
+
+    # Legacy pipeline components
+    file_validator = SimpleFileValidator(
+        allowed_types={"txt", "pdf", "docx", "xlsx", "xls", "csv", "json"}
+    )
+    content_extractor = TxtContentExtractor()
+    # Metadata extractor — simple stub
+    metadata_extractor = _SimpleMetadataExtractor()
+    text_chunker = FixedSizeChunker()
+
+    # Embedding generator — use production if available
+    try:
+        embedding_provider = get_embedding_provider()
+        from app.documents.embedder import ProductionEmbeddingGenerator
+
+        embedding_gen = ProductionEmbeddingGenerator(embedding_provider)
+    except RuntimeError:
+        embedding_gen = DeterministicEmbeddingGenerator()
+
+    # Repositories
+    doc_repo = DocumentRepository(session)
+    dataset_repo = DatasetRepository(session)
+    file_repo = FileRepository(session)
+
+    # Content-aware components
+    file_type_detector = get_file_type_detector()
+    processor_registry = get_file_processor_registry()
+    content_classifier = get_content_classifier()
+    dataset_service = DatasetService(
+        dataset_repository=dataset_repo,
+        file_repository=file_repo,
+    )
+
+    return IngestionOrchestrator(
+        file_validator=file_validator,
+        content_extractor=content_extractor,
+        metadata_extractor=metadata_extractor,
+        text_chunker=text_chunker,
+        embedding_generator=embedding_gen,
+        document_repository=doc_repo,
+        file_type_detector=file_type_detector,
+        processor_registry=processor_registry,
+        content_classifier=content_classifier,
+        dataset_service=dataset_service,
+    )
+
+
+class _SimpleMetadataExtractor:
+    """Simple metadata extractor stub for the ingestion pipeline.
+
+    Returns basic metadata from file path. Satisfies the MetadataExtractor protocol.
+    """
+
+    async def extract_metadata(self, file_path: str, content: str) -> dict[str, str]:
+        """Extract basic metadata from file path and content length."""
+        from pathlib import Path
+
+        path = Path(file_path)
+        return {
+            "file_name": path.name,
+            "content_length": str(len(content)),
+        }

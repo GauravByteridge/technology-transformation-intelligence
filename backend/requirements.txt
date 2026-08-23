@@ -41,3 +41,6 @@ python-docx==1.1.2
 
 # --- HTTP (async) ---
 httpx==0.28.1
+
+# --- File Upload (multipart form handling) ---
+python-multipart==0.0.20

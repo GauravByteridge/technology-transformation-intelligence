@@ -9,11 +9,13 @@ from fastapi import APIRouter
 from app.api.v1.ai_queries import router as ai_queries_router
 from app.api.v1.config import router as config_router
 from app.api.v1.data_sources import router as data_sources_router
+from app.api.v1.datasets import router as datasets_router
 from app.api.v1.documents import router as documents_router
 from app.api.v1.health import router as health_router
 from app.api.v1.portfolio import router as portfolio_router
 from app.api.v1.project_domain import router as project_domain_router
 from app.api.v1.projects import router as projects_router
+from app.api.v1.upload import router as upload_router
 
 api_router = APIRouter()
 
@@ -28,3 +30,5 @@ api_router.include_router(data_sources_router, prefix="/data-sources", tags=["da
 api_router.include_router(ai_queries_router, prefix="/ai", tags=["ai"])
 api_router.include_router(documents_router, prefix="/documents", tags=["documents"])
 api_router.include_router(config_router, prefix="/config", tags=["config"])
+api_router.include_router(upload_router, prefix="/files", tags=["files"])
+api_router.include_router(datasets_router, prefix="/datasets", tags=["datasets"])
