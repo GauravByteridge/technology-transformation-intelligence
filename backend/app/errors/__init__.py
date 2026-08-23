@@ -17,7 +17,9 @@ from app.errors.datasource_errors import (
     DataSourceNotFoundError,
     DuplicateSourceConnectionError,
     QueryExecutionError,
+    QueryValidationError,
     SchemaDiscoveryError,
+    TimeoutOperationError,
     UnsupportedDataSourceError,
 )
 from app.errors.document_errors import (
@@ -45,6 +47,8 @@ __all__ = [
     "DataSourceConnectionError",
     "SchemaDiscoveryError",
     "QueryExecutionError",
+    "QueryValidationError",
+    "TimeoutOperationError",
     "UnsupportedDataSourceError",
     "DuplicateSourceConnectionError",
     # Conversation

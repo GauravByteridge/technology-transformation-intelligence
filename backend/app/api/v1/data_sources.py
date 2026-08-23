@@ -13,15 +13,24 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, Request, status
 
 from app.connectors.registry import ConnectorRegistry
-from app.dependencies import get_app_db_session, get_connector_registry, get_data_source_service
+from app.dependencies import get_app_db_session, get_connector_registry, get_connector_service, get_data_source_service
 from app.errors.datasource_errors import DataSourceNotFoundError
 from app.repositories.data_source_repository import DataSourceRepository
+from app.schemas.connector import (
+    MetadataResponse,
+    QueryExecutionRequest,
+    QueryExecutionResponse,
+    SchemaDiscoveryResponse,
+    TableSchemaResponse,
+    SchemaFieldResponse,
+)
 from app.schemas.data_source import (
     DataSourceCreate,
     DataSourceResponse,
     DataSourceUpdate,
     TestConnectionResponse,
 )
+from app.services.connector_service import ConnectorService
 from app.services.data_source_service import DataSourceService
 
 logger = logging.getLogger(__name__)
@@ -178,5 +187,99 @@ async def test_data_source_connection(
         source_type=data_source.source_type,
         source_name=data_source.name,
         message=message,
+        request_id=request_id,
+    )
+
+
+@router.get(
+    "/{data_source_id}/metadata",
+    response_model=MetadataResponse,
+    summary="Discover metadata for a data source",
+    responses={
+        404: {"description": "Data source not found"},
+        502: {"description": "External source error"},
+        504: {"description": "Operation timeout"},
+    },
+)
+async def discover_metadata(
+    data_source_id: UUID,
+    request: Request,
+    connector_service: ConnectorService = Depends(get_connector_service),
+) -> MetadataResponse:
+    """Discover metadata (version, properties) from an external data source."""
+    request_id = getattr(request.state, "request_id", "unknown")
+    result = await connector_service.discover_metadata(data_source_id)
+    return MetadataResponse(
+        source_type=result.source_type,
+        name=result.name,
+        version=result.version,
+        properties=result.properties,
+        request_id=request_id,
+    )
+
+
+@router.get(
+    "/{data_source_id}/schema",
+    response_model=SchemaDiscoveryResponse,
+    summary="Discover schema for a data source",
+    responses={
+        404: {"description": "Data source not found"},
+        502: {"description": "External source error"},
+        504: {"description": "Operation timeout"},
+    },
+)
+async def discover_schema(
+    data_source_id: UUID,
+    request: Request,
+    connector_service: ConnectorService = Depends(get_connector_service),
+) -> SchemaDiscoveryResponse:
+    """Discover tables/collections and their fields from an external data source."""
+    request_id = getattr(request.state, "request_id", "unknown")
+    result = await connector_service.discover_schema(data_source_id)
+    return SchemaDiscoveryResponse(
+        tables=[
+            TableSchemaResponse(
+                name=t.name,
+                fields=[
+                    SchemaFieldResponse(
+                        name=f.name,
+                        field_type=f.field_type,
+                        nullable=f.nullable,
+                    )
+                    for f in t.fields
+                ],
+            )
+            for t in result.tables
+        ],
+        request_id=request_id,
+    )
+
+
+@router.post(
+    "/{data_source_id}/query",
+    response_model=QueryExecutionResponse,
+    summary="Execute a read-only query",
+    responses={
+        400: {"description": "Invalid query"},
+        404: {"description": "Data source not found"},
+        502: {"description": "External source error"},
+        504: {"description": "Operation timeout"},
+    },
+)
+async def execute_query(
+    data_source_id: UUID,
+    payload: QueryExecutionRequest,
+    request: Request,
+    connector_service: ConnectorService = Depends(get_connector_service),
+) -> QueryExecutionResponse:
+    """Execute a read-only query against an external data source."""
+    request_id = getattr(request.state, "request_id", "unknown")
+    result, truncated = await connector_service.execute_query(data_source_id, payload.query)
+    return QueryExecutionResponse(
+        columns=result.columns,
+        rows=result.rows,
+        row_count=result.row_count,
+        source_type=result.source_type,
+        truncated=truncated,
         request_id=request_id,
     )

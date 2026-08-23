@@ -22,6 +22,7 @@ from app.connectors.protocol import (
     TableSchema,
 )
 from app.connectors.registry import ConnectorRegistry
+from app.connectors.sanitizer import sanitize_message
 
 __all__ = [
     "ConnectorRegistry",
@@ -34,4 +35,5 @@ __all__ = [
     "SourceMetadata",
     "SourceQuery",
     "TableSchema",
+    "sanitize_message",
 ]

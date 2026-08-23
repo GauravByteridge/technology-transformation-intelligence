@@ -95,3 +95,36 @@ class DuplicateSourceConnectionError(AppError):
         )
         self.project_id = project_id
         self.data_source_id = data_source_id
+
+
+class QueryValidationError(AppError):
+    """Raised when a query fails client-side validation before execution.
+
+    Covers: empty SQL, prohibited statements, multi-statement SQL,
+    invalid MongoDB keys, wrong query type for source.
+    """
+
+    def __init__(self, source_type: str, message: str, detail: str | None = None) -> None:
+        super().__init__(
+            error_code="QUERY_VALIDATION_ERROR",
+            message=message,
+            domain="datasource",
+            category=ErrorCategory.CLIENT_ERROR,
+            detail=detail,
+        )
+        self.source_type = source_type
+
+
+class TimeoutOperationError(AppError):
+    """Raised when the API-level timeout budget (30s) is exceeded."""
+
+    def __init__(self, operation: str, timeout_seconds: float, detail: str | None = None) -> None:
+        super().__init__(
+            error_code="OPERATION_TIMEOUT",
+            message=f"Operation '{operation}' timed out after {timeout_seconds}s",
+            domain="datasource",
+            category=ErrorCategory.TIMEOUT,
+            detail=detail,
+        )
+        self.operation = operation
+        self.timeout_seconds = timeout_seconds

@@ -19,6 +19,8 @@ class ErrorCategory(StrEnum):
     CONFLICT = "conflict"
     CONNECTION = "connection"
     EXTERNAL = "external"
+    CLIENT_ERROR = "client_error"
+    TIMEOUT = "timeout"
     UNHANDLED = "unhandled"
 
 
@@ -31,6 +33,8 @@ ERROR_CATEGORY_STATUS_MAP: dict[ErrorCategory, int] = {
     ErrorCategory.CONFLICT: 409,
     ErrorCategory.CONNECTION: 502,
     ErrorCategory.EXTERNAL: 502,
+    ErrorCategory.CLIENT_ERROR: 400,
+    ErrorCategory.TIMEOUT: 504,
     ErrorCategory.UNHANDLED: 500,
 }
 

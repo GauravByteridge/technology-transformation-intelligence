@@ -42,15 +42,31 @@ class ConnectorRegistry:
             extra={"source_type": source_type, "connector_class": connector_class.__name__},
         )
 
-    def resolve(self, source_type: str, connection_config: dict[str, Any]) -> DataSourceConnector:
+    def resolve(self, source_type: str, connection_config: dict[str, Any], **kwargs: Any) -> DataSourceConnector:
         """Instantiate and return a connector for the requested source type.
+
+        Design Decision — Separation of Credentials and Operational Config:
+            connection_config contains ONLY decrypted connection credentials
+            (host, port, database, user, password) obtained from decrypt_config().
+            It is passed as the first positional argument to the connector constructor.
+
+            Operational configuration (row_limit, connection_timeout, sample_size,
+            max_nesting_depth) is passed via **kwargs as separate keyword arguments.
+            These are NEVER stored in the connection_config dict and NEVER mixed
+            with credentials. This keeps the two concerns in distinct namespaces,
+            preventing accidental leakage of credentials through operational config
+            paths and vice versa.
 
         Args:
             source_type: The data source type to resolve (e.g. 'postgresql').
-            connection_config: Configuration dict passed to the connector constructor.
+            connection_config: Decrypted connection credentials dict passed as the
+                first positional arg to the connector constructor.
+            **kwargs: Operational configuration (e.g. row_limit, connection_timeout,
+                sample_size, max_nesting_depth) passed as keyword arguments to the
+                connector constructor. Defaults to empty when not provided.
 
         Returns:
-            A new connector instance configured with the provided config.
+            A new connector instance configured with credentials and operational params.
 
         Raises:
             UnsupportedDataSourceError: If source_type is not registered.
@@ -61,7 +77,7 @@ class ConnectorRegistry:
                 requested_type=source_type,
                 supported_types=self.list_supported_types(),
             )
-        return connector_class(connection_config)  # type: ignore[call-arg]
+        return connector_class(connection_config, **kwargs)  # type: ignore[call-arg]
 
     def list_supported_types(self) -> list[str]:
         """Return all registered source type identifiers."""

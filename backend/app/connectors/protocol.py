@@ -88,12 +88,14 @@ class QueryResult:
         rows: List of row dicts mapping column names to values.
         row_count: Number of rows returned.
         source_type: Connector type that produced these results.
+        has_more_rows: Whether the result was truncated by the row cap.
     """
 
     columns: list[str] = field(default_factory=list)
     rows: list[dict[str, Any]] = field(default_factory=list)
     row_count: int = 0
     source_type: str = ""
+    has_more_rows: bool = False
 
 
 # ---------------------------------------------------------------------------

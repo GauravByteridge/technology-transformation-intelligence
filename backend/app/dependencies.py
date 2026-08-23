@@ -230,77 +230,249 @@ async def get_project_service(
     return ProjectService(repository=repository)
 
 
+# =============================================================================
+# Domain Repository Providers (Phase 3)
+# =============================================================================
+
+
+async def get_finance_repository(
+    session: AsyncSession = Depends(get_app_db_session),
+) -> "FinanceRepository":
+    """Provide a FinanceRepository instance."""
+    from app.repositories.finance_repository import FinanceRepository
+
+    return FinanceRepository(session)
+
+
+async def get_jira_repository(
+    session: AsyncSession = Depends(get_app_db_session),
+) -> "JiraRepository":
+    """Provide a JiraRepository instance."""
+    from app.repositories.jira_repository import JiraRepository
+
+    return JiraRepository(session)
+
+
+async def get_resource_repository(
+    session: AsyncSession = Depends(get_app_db_session),
+) -> "ResourceRepository":
+    """Provide a ResourceRepository instance."""
+    from app.repositories.resource_repository import ResourceRepository
+
+    return ResourceRepository(session)
+
+
+async def get_sdlc_repository(
+    session: AsyncSession = Depends(get_app_db_session),
+) -> "SdlcRepository":
+    """Provide an SdlcRepository instance."""
+    from app.repositories.sdlc_repository import SdlcRepository
+
+    return SdlcRepository(session)
+
+
+async def get_audit_finding_repository(
+    session: AsyncSession = Depends(get_app_db_session),
+) -> "AuditFindingRepository":
+    """Provide an AuditFindingRepository instance."""
+    from app.repositories.audit_finding_repository import AuditFindingRepository
+
+    return AuditFindingRepository(session)
+
+
+async def get_control_repository(
+    session: AsyncSession = Depends(get_app_db_session),
+) -> "ControlRepository":
+    """Provide a ControlRepository instance."""
+    from app.repositories.control_repository import ControlRepository
+
+    return ControlRepository(session)
+
+
+async def get_remediation_repository(
+    session: AsyncSession = Depends(get_app_db_session),
+) -> "RemediationRepository":
+    """Provide a RemediationRepository instance."""
+    from app.repositories.remediation_repository import RemediationRepository
+
+    return RemediationRepository(session)
+
+
+async def get_risk_repository(
+    session: AsyncSession = Depends(get_app_db_session),
+) -> "RiskRepository":
+    """Provide a RiskRepository instance."""
+    from app.repositories.risk_repository import RiskRepository
+
+    return RiskRepository(session)
+
+
+async def get_progress_repository(
+    session: AsyncSession = Depends(get_app_db_session),
+) -> "ProgressRepository":
+    """Provide a ProgressRepository instance."""
+    from app.repositories.progress_repository import ProgressRepository
+
+    return ProgressRepository(session)
+
+
+async def get_health_kpi_repository(
+    session: AsyncSession = Depends(get_app_db_session),
+) -> "HealthKpiRepository":
+    """Provide a HealthKpiRepository instance."""
+    from app.repositories.health_kpi_repository import HealthKpiRepository
+
+    return HealthKpiRepository(session)
+
+
+# =============================================================================
+# Domain Service Providers (Phase 3)
+# =============================================================================
+
+
+async def get_finance_service(
+    repository: "FinanceRepository" = Depends(get_finance_repository),
+) -> "FinanceService":
+    """Provide a FinanceService instance with repository injected."""
+    from app.services.finance_service import FinanceService
+
+    return FinanceService(repository=repository)
+
+
+async def get_jira_service(
+    repository: "JiraRepository" = Depends(get_jira_repository),
+) -> "JiraService":
+    """Provide a JiraService instance with repository injected."""
+    from app.services.jira_service import JiraService
+
+    return JiraService(repository=repository)
+
+
+async def get_resource_service(
+    repository: "ResourceRepository" = Depends(get_resource_repository),
+) -> "ResourceService":
+    """Provide a ResourceService instance with repository injected."""
+    from app.services.resource_service import ResourceService
+
+    return ResourceService(repository=repository)
+
+
+async def get_sdlc_service(
+    repository: "SdlcRepository" = Depends(get_sdlc_repository),
+) -> "SdlcService":
+    """Provide an SdlcService instance with repository injected."""
+    from app.services.sdlc_service import SdlcService
+
+    return SdlcService(repository=repository)
+
+
+async def get_audit_finding_service(
+    repository: "AuditFindingRepository" = Depends(get_audit_finding_repository),
+) -> "AuditFindingService":
+    """Provide an AuditFindingService instance with repository injected."""
+    from app.services.audit_finding_service import AuditFindingService
+
+    return AuditFindingService(repository=repository)
+
+
+async def get_control_service(
+    repository: "ControlRepository" = Depends(get_control_repository),
+) -> "ControlService":
+    """Provide a ControlService instance with repository injected."""
+    from app.services.control_service import ControlService
+
+    return ControlService(repository=repository)
+
+
+async def get_remediation_service(
+    repository: "RemediationRepository" = Depends(get_remediation_repository),
+) -> "RemediationService":
+    """Provide a RemediationService instance with repository injected."""
+    from app.services.remediation_service import RemediationService
+
+    return RemediationService(repository=repository)
+
+
+async def get_risk_service(
+    repository: "RiskRepository" = Depends(get_risk_repository),
+) -> "RiskService":
+    """Provide a RiskService instance with repository injected."""
+    from app.services.risk_service import RiskService
+
+    return RiskService(repository=repository)
+
+
+async def get_progress_service(
+    repository: "ProgressRepository" = Depends(get_progress_repository),
+) -> "ProgressService":
+    """Provide a ProgressService instance with repository injected."""
+    from app.services.progress_service import ProgressService
+
+    return ProgressService(repository=repository)
+
+
+async def get_project_health_service(
+    finance_repository: "FinanceRepository" = Depends(get_finance_repository),
+    jira_repository: "JiraRepository" = Depends(get_jira_repository),
+    resource_repository: "ResourceRepository" = Depends(get_resource_repository),
+    audit_finding_repository: "AuditFindingRepository" = Depends(get_audit_finding_repository),
+    control_repository: "ControlRepository" = Depends(get_control_repository),
+    remediation_repository: "RemediationRepository" = Depends(get_remediation_repository),
+    risk_repository: "RiskRepository" = Depends(get_risk_repository),
+    progress_repository: "ProgressRepository" = Depends(get_progress_repository),
+    health_kpi_repository: "HealthKpiRepository" = Depends(get_health_kpi_repository),
+) -> "ProjectHealthService":
+    """Provide a ProjectHealthService instance with all domain repositories injected."""
+    from app.services.project_health_service import ProjectHealthService
+
+    return ProjectHealthService(
+        finance_repository=finance_repository,
+        jira_repository=jira_repository,
+        resource_repository=resource_repository,
+        audit_finding_repository=audit_finding_repository,
+        control_repository=control_repository,
+        remediation_repository=remediation_repository,
+        risk_repository=risk_repository,
+        progress_repository=progress_repository,
+        health_kpi_repository=health_kpi_repository,
+    )
+
+
+
+
+
+# =============================================================================
+# Data Source Service Provider (Phase 2)
+# =============================================================================
+
+
 async def get_data_source_service(
     session: AsyncSession = Depends(get_app_db_session),
-    settings: Settings = Depends(get_settings),
 ) -> "DataSourceService":
-    """Provide DataSourceService with encryptor and all repositories injected."""
+    """Provide a DataSourceService instance with repository injected."""
     from app.repositories.data_source_repository import DataSourceRepository
-    from app.repositories.project_repository import ProjectRepository
-    from app.repositories.source_connection_repository import SourceConnectionRepository
-    from app.security.credential_encryptor import CredentialEncryptor
     from app.services.data_source_service import DataSourceService
 
     repository = DataSourceRepository(session)
-    project_repository = ProjectRepository(session)
-    source_conn_repository = SourceConnectionRepository(session)
-    encryptor = CredentialEncryptor(settings.fernet_key)
-    return DataSourceService(
-        data_source_repository=repository,
-        project_repository=project_repository,
-        source_connection_repository=source_conn_repository,
-        credential_encryptor=encryptor,
-    )
+    return DataSourceService(repository=repository)
 
 
-async def get_conversation_service(
+async def get_connector_service(
     session: AsyncSession = Depends(get_app_db_session),
-) -> "ConversationService":
-    """Provide ConversationService with repositories injected."""
-    from app.repositories.conversation_repository import ConversationRepository
-    from app.repositories.project_repository import ProjectRepository
-    from app.services.conversation_service import ConversationService
-
-    conversation_repository = ConversationRepository(session)
-    project_repository = ProjectRepository(session)
-    return ConversationService(
-        conversation_repository=conversation_repository,
-        project_repository=project_repository,
-    )
-
-
-async def get_query_history_service(
-    session: AsyncSession = Depends(get_app_db_session),
-) -> "QueryHistoryService":
-    """Provide QueryHistoryService with repositories injected."""
-    from app.repositories.project_repository import ProjectRepository
-    from app.repositories.query_history_repository import QueryHistoryRepository
-    from app.services.query_history_service import QueryHistoryService
-
-    query_history_repository = QueryHistoryRepository(session)
-    project_repository = ProjectRepository(session)
-    return QueryHistoryService(
-        query_history_repository=query_history_repository,
-        project_repository=project_repository,
-    )
-
-
-async def get_file_service(
-    session: AsyncSession = Depends(get_app_db_session),
-) -> "FileService":
-    """Provide FileService with repositories injected."""
+    registry: "ConnectorRegistry" = Depends(lambda: get_connector_registry()),
+) -> "ConnectorService":
+    """Provide a ConnectorService instance with dependencies injected."""
     from app.repositories.data_source_repository import DataSourceRepository
-    from app.repositories.file_repository import FileRepository
-    from app.repositories.project_repository import ProjectRepository
-    from app.services.file_service import FileService
+    from app.security.credential_encryptor import CredentialEncryptor
+    from app.services.connector_service import ConnectorService
 
-    file_repository = FileRepository(session)
-    project_repository = ProjectRepository(session)
-    data_source_repository = DataSourceRepository(session)
-    return FileService(
-        file_repository=file_repository,
-        project_repository=project_repository,
-        data_source_repository=data_source_repository,
+    repository = DataSourceRepository(session)
+    settings = get_settings()
+    encryptor = CredentialEncryptor(fernet_key=settings.fernet_key)
+    return ConnectorService(
+        data_source_repository=repository,
+        credential_encryptor=encryptor,
+        connector_registry=registry,
     )
 
 
@@ -675,9 +847,6 @@ def _create_finance_tool():
 
     from app.ai.tools.finance_tools import create_query_project_finance
     from app.repositories.data_source_repository import DataSourceRepository
-    from app.repositories.project_repository import ProjectRepository
-    from app.repositories.source_connection_repository import SourceConnectionRepository
-    from app.security.credential_encryptor import CredentialEncryptor
     from app.services.data_source_service import DataSourceService
 
     async def query_project_finance(project_id: UUID) -> dict:
@@ -685,17 +854,8 @@ def _create_finance_tool():
             raise RuntimeError("App_DB not initialized")
 
         async with _app_db_session_factory() as session:
-            settings = get_settings()
-            data_source_repo = DataSourceRepository(session)
-            project_repo = ProjectRepository(session)
-            source_conn_repo = SourceConnectionRepository(session)
-            encryptor = CredentialEncryptor(settings.fernet_key)
-            service = DataSourceService(
-                data_source_repository=data_source_repo,
-                project_repository=project_repo,
-                source_connection_repository=source_conn_repo,
-                credential_encryptor=encryptor,
-            )
+            repository = DataSourceRepository(session)
+            service = DataSourceService(repository=repository)
             tool_fn = create_query_project_finance(service)
             return await tool_fn(project_id)
 
