@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { AppShell } from './components/layout/AppShell';
 import ExecutiveDashboard from './pages/ExecutiveDashboard';
+import AnalyticsDashboard from './pages/AnalyticsDashboard';
 import ProjectPortfolio from './pages/ProjectPortfolio';
 import Project360 from './pages/Project360';
 import AIAssistant from './pages/AIAssistant';
@@ -20,6 +21,7 @@ function App() {
       <Routes>
         <Route element={<AppShell />}>
           <Route path="/" element={<ExecutiveDashboard />} />
+          <Route path="/dashboard" element={<AnalyticsDashboard />} />
           <Route path="/portfolio" element={<ProjectPortfolio />} />
           <Route path="/projects/:projectId" element={<Project360 />} />
           <Route path="/projects/:projectId/brief" element={<ExecutiveBrief />} />

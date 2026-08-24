@@ -12,6 +12,7 @@ import {
   X,
   History,
   FileText,
+  BarChart3,
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -23,6 +24,7 @@ interface SidebarProps {
 
 const navItems = [
   { to: '/', label: 'Overview', icon: LayoutDashboard },
+  { to: '/dashboard', label: 'Dashboard', icon: BarChart3 },
   { to: '/portfolio', label: 'Projects', icon: FolderKanban },
   { to: '/sources', label: 'Data Sources', icon: Database },
   { to: '/catalog', label: 'Data Catalog', icon: BookOpen },
