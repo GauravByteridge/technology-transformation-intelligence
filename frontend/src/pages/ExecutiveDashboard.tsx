@@ -10,7 +10,7 @@ import {
   Bot,
   Activity,
 } from 'lucide-react';
-import { usePortfolioSummary, useDataSources } from '@/hooks';
+import { usePortfolioSummary, useDataSources, useProjects } from '@/hooks';
 import { LoadingState } from '@/components/common';
 import type { PortfolioSummaryResponse } from '@/types';
 
@@ -78,6 +78,7 @@ export default function ExecutiveDashboard() {
   const navigate = useNavigate();
   const { data, isLoading } = usePortfolioSummary();
   const { data: sources } = useDataSources();
+  const { data: projectList } = useProjects();
 
   if (isLoading) {
     return <LoadingState variant="full-page" message="Loading overview..." />;
@@ -157,14 +158,20 @@ export default function ExecutiveDashboard() {
         </h2>
         {data && data.projects.length > 0 ? (
           <div className="space-y-3">
-            {data.projects.map((project) => (
-              <ProjectHealthRow
-                key={project.project_id}
-                name={project.project_id}
-                progress={project.progress_percentage}
-                status={project.overall_status}
-              />
-            ))}
+            {data.projects.map((project) => {
+              const projectInfo = projectList?.items.find((p) => p.id === project.project_id);
+              const displayName = projectInfo
+                ? (projectInfo.project_code ? `${projectInfo.project_code} — ${projectInfo.name}` : projectInfo.name)
+                : project.project_id;
+              return (
+                <ProjectHealthRow
+                  key={project.project_id}
+                  name={displayName}
+                  progress={project.progress_percentage}
+                  status={project.overall_status}
+                />
+              );
+            })}
           </div>
         ) : (
           <p className="text-sm text-gray-500">No project data available.</p>
