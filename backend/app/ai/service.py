@@ -424,7 +424,7 @@ class AIService:
             if len(rows) >= 3 and len(columns) >= 2:
                 x_col, y_cols, is_time_series = self._detect_chart_columns(rows, columns)
                 if x_col and y_cols:
-                    # Force line chart if X column name suggests time/date
+                    # Force line chart if X column name or values suggest time/date
                     if not is_time_series:
                         x_lower = x_col.lower()
                         if any(kw in x_lower for kw in ['date', 'time', 'month', 'year', 'period', 'quarter']):
@@ -433,6 +433,9 @@ class AIService:
                             sample_x = [r.get(x_col, "") for r in rows[:3] if isinstance(r, dict)]
                             if any(self._looks_like_date(str(v)) for v in sample_x):
                                 is_time_series = True
+                    # For line charts, limit to 2 Y-series max (planned vs actual)
+                    if is_time_series and len(y_cols) > 2:
+                        y_cols = y_cols[:2]
                     chart_type = "line" if is_time_series else "bar"
                     chart_data = []
                     for row in rows[:20]:
@@ -578,6 +581,10 @@ class AIService:
             or any(self._looks_like_date(str(v)) for v in x_values[:3])
         )
         chart_type = "line" if is_time else "bar"
+
+        # Limit line charts to 2 Y-series
+        if is_time and len(y_indices) > 2:
+            y_indices = y_indices[:2]
 
         return {
             "chart_type": chart_type,
