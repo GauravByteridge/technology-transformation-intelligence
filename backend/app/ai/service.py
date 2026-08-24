@@ -382,16 +382,92 @@ class AIService:
             except Exception as e:
                 logger.warning("tool_result_processing_skipped", extra={"error": str(e), "tool": result.tool_name})
 
+        # Detect if we have tabular data suitable for visualization
+        visualization_spec = self._detect_visualization(agent_response, sources)
+        response_type = "chart" if visualization_spec else "text"
+
         return AIResponse(
             answer=strip_markup(agent_response.answer),
-            response_type="text",
+            response_type=response_type,
             sources=sources,
             evidence=evidence,
             query_id=query_id,
             conversation_id=conversation_id,
             is_partial=agent_response.is_partial,
             failed_sources=failed_sources,
+            visualization_spec=visualization_spec,
         )
+
+    def _detect_visualization(self, agent_response: AgentResponse, sources: list[dict]) -> dict | None:
+        """Detect if the response contains data suitable for chart visualization.
+
+        Looks for tool results with multiple rows of structured data that could
+        be meaningfully displayed as a bar/line/pie chart.
+
+        Returns a visualization_spec dict if chart-worthy data is found, None otherwise.
+        """
+        for result in agent_response.tool_results:
+            if not result.success or not isinstance(result.data, dict):
+                continue
+
+            # Connected source queries with multiple rows
+            rows = result.data.get("rows", [])
+            columns = result.data.get("columns", [])
+
+            if len(rows) >= 2 and len(columns) >= 2:
+                # Find numeric columns for Y axis and text columns for X axis
+                x_col = None
+                y_col = None
+
+                for col in columns:
+                    if x_col and y_col:
+                        break
+                    # Check first row values to determine types
+                    sample_val = rows[0].get(col) if isinstance(rows[0], dict) else None
+                    if sample_val is None:
+                        continue
+                    if isinstance(sample_val, (int, float)):
+                        if not y_col:
+                            y_col = col
+                    elif isinstance(sample_val, str):
+                        if not x_col:
+                            x_col = col
+
+                if x_col and y_col:
+                    # Build chart spec
+                    return {
+                        "chart_type": "bar",
+                        "data": rows[:20],  # Cap at 20 data points
+                        "xKey": x_col,
+                        "yKey": y_col,
+                        "columns": columns,
+                        "rows": rows[:20],
+                    }
+
+            # Dataset queries with records
+            records = result.data.get("records", [])
+            if isinstance(records, list) and len(records) >= 2:
+                if records and isinstance(records[0], dict):
+                    keys = list(records[0].keys())
+                    x_col = None
+                    y_col = None
+                    for k in keys:
+                        val = records[0].get(k)
+                        if isinstance(val, str) and not x_col:
+                            x_col = k
+                        elif isinstance(val, (int, float)) and not y_col:
+                            y_col = k
+                    if x_col and y_col:
+                        return {
+                            "chart_type": "bar",
+                            "data": records[:20],
+                            "xKey": x_col,
+                            "yKey": y_col,
+                            "columns": keys,
+                            "rows": records[:20],
+                        }
+
+        return None
 
     def _extract_typed_evidence(self, result: ToolResult) -> list[dict[str, Any]]:
         """Extract typed evidence items from a successful tool result.
