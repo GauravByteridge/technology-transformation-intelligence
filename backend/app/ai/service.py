@@ -424,6 +424,11 @@ class AIService:
             if len(rows) >= 3 and len(columns) >= 2:
                 x_col, y_cols, is_time_series = self._detect_chart_columns(rows, columns)
                 if x_col and y_cols:
+                    # Double-check: if x values look like dates, force line chart
+                    if not is_time_series:
+                        sample_x = [r.get(x_col, "") for r in rows[:3] if isinstance(r, dict)]
+                        if any(self._looks_like_date(str(v)) for v in sample_x):
+                            is_time_series = True
                     chart_type = "line" if is_time_series else "bar"
                     chart_data = []
                     for row in rows[:20]:
