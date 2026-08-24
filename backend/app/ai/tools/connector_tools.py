@@ -492,29 +492,53 @@ def query_connected_source(
                         duration_ms=_elapsed_ms(start_time),
                     )
 
-            # Get a fresh repository for this invocation
-            data_source_repository = await repo_factory()
+            # Get a fresh repository for this invocation (thread-local engine)
+            import sys
+            if sys.platform == "win32":
+                asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
-            # Look up the data source
-            data_source = await data_source_repository.get_data_source(parsed_source_id)
-            if data_source is None:
-                return _error_response(
-                    error_type="source_not_found",
-                    message=f"Data source '{source_id}' not found.",
-                    duration_ms=_elapsed_ms(start_time),
+            from sqlalchemy.ext.asyncio import async_sessionmaker as _asm, create_async_engine as _cae
+            from app.dependencies import get_settings
+            from app.repositories.data_source_repository import DataSourceRepository as _DSRepo
+            from app.repositories.credential_repository import CredentialRepository as _CredRepo
+
+            _settings = get_settings()
+            _engine = _cae(_settings.app_db_url, pool_pre_ping=True)
+            _factory = _asm(_engine, expire_on_commit=False)
+
+            async with _factory() as _session:
+                data_source_repository = _DSRepo(_session)
+                credential_repo = _CredRepo(_session)
+
+                # Look up the data source
+                data_source = await data_source_repository.get_data_source(parsed_source_id)
+                if data_source is None:
+                    await _engine.dispose()
+                    return _error_response(
+                        error_type="source_not_found",
+                        message=f"Data source '{source_id}' not found.",
+                        duration_ms=_elapsed_ms(start_time),
+                    )
+
+                # Get credentials from vault and merge with connection config
+                merged_config = dict(data_source.connection_config or {})
+                credentials = await credential_repo.get_by_data_source(parsed_source_id)
+                for cred in credentials:
+                    vault_ref = cred.secret_reference
+                    if vault_ref.startswith("vault://fernet/"):
+                        encrypted_value = vault_ref[len("vault://fernet/"):]
+                        decrypted = encryptor.decrypt_config({cred.credential_type: encrypted_value})
+                        merged_config.update(decrypted)
+
+                connector = registry.resolve(
+                    source_type=data_source.source_type,
+                    connection_config=merged_config,
                 )
 
-            # Decrypt credentials and resolve connector
-            decrypted_config = encryptor.decrypt_config(
-                data_source.connection_config or {}
-            )
-            connector = registry.resolve(
-                source_type=data_source.source_type,
-                connection_config=decrypted_config,
-            )
+                # Execute the query
+                result: QueryResult = await connector.execute_read(query)
 
-            # Execute the query
-            result: QueryResult = await connector.execute_read(query)
+            await _engine.dispose()
 
             # Apply row limit
             has_more_rows = result.has_more_rows or result.row_count > _row_limit
