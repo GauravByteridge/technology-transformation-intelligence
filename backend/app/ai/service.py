@@ -448,6 +448,7 @@ class AIService:
                         "data": chart_data,
                         "xKey": x_col,
                         "yKey": y_cols[0],
+                        "yKeys": y_cols,
                         "columns": columns,
                         "rows": rows[:20],
                     }
@@ -470,6 +471,7 @@ class AIService:
                         "data": chart_data,
                         "xKey": x_col,
                         "yKey": y_cols[0],
+                        "yKeys": y_cols,
                         "columns": keys,
                         "rows": records[:20],
                     }
@@ -582,6 +584,7 @@ class AIService:
             "data": chart_data,
             "xKey": headers[x_idx],
             "yKey": headers[y_indices[0]],
+            "yKeys": [headers[yi] for yi in y_indices],
             "columns": headers,
             "rows": [dict(zip(headers, row)) for row in data_rows],
         }

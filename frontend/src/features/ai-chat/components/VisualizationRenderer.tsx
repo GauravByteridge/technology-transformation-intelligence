@@ -33,6 +33,7 @@ interface ChartSpec {
   data: Record<string, unknown>[];
   xKey: string;
   yKey: string;
+  yKeys?: string[];
 }
 
 // Colors for pie chart segments
@@ -127,8 +128,11 @@ function ChartVisualization({ spec }: { spec: Record<string, unknown> | null }) 
   );
 }
 
+const CHART_COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4'];
+
 function renderChart(chartSpec: ChartSpec): React.ReactElement {
-  const { chart_type, data, xKey, yKey } = chartSpec;
+  const { chart_type, data, xKey, yKey, yKeys } = chartSpec;
+  const allYKeys = yKeys && yKeys.length > 0 ? yKeys : [yKey];
 
   switch (chart_type) {
     case 'bar':
@@ -136,22 +140,26 @@ function renderChart(chartSpec: ChartSpec): React.ReactElement {
         <BarChart data={data} margin={{ top: 10, right: 20, left: 10, bottom: 5 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
           <XAxis dataKey={xKey} tick={{ fill: '#9ca3af', fontSize: 11 }} />
-          <YAxis tick={{ fill: '#9ca3af', fontSize: 11 }} tickFormatter={(v) => v >= 1000000 ? `${(v/1000000).toFixed(1)}M` : v >= 1000 ? `${(v/1000).toFixed(0)}K` : v} />
+          <YAxis tick={{ fill: '#9ca3af', fontSize: 11 }} tickFormatter={(v) => v >= 1000000 ? `${(v/1000000).toFixed(1)}M` : v >= 1000 ? `${(v/1000).toFixed(0)}K` : String(v)} />
           <Tooltip contentStyle={{ backgroundColor: '#1f2937', border: '1px solid #374151', borderRadius: '8px' }} labelStyle={{ color: '#fff' }} />
           <Legend wrapperStyle={{ fontSize: 11, color: '#9ca3af' }} />
-          <Bar dataKey={yKey} fill="#3b82f6" radius={[3, 3, 0, 0]} maxBarSize={40} />
+          {allYKeys.map((key, i) => (
+            <Bar key={key} dataKey={key} fill={CHART_COLORS[i % CHART_COLORS.length]} radius={[3, 3, 0, 0]} maxBarSize={40} />
+          ))}
         </BarChart>
       );
 
     case 'line':
       return (
-        <LineChart data={data}>
+        <LineChart data={data} margin={{ top: 10, right: 20, left: 10, bottom: 5 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
           <XAxis dataKey={xKey} tick={{ fill: '#9ca3af', fontSize: 11 }} />
           <YAxis tick={{ fill: '#9ca3af', fontSize: 11 }} />
           <Tooltip contentStyle={{ backgroundColor: '#1f2937', border: '1px solid #374151', borderRadius: '8px' }} labelStyle={{ color: '#fff' }} />
           <Legend wrapperStyle={{ fontSize: 11 }} />
-          <Line type="monotone" dataKey={yKey} stroke="#3b82f6" strokeWidth={2} dot={{ r: 3 }} />
+          {allYKeys.map((key, i) => (
+            <Line key={key} type="monotone" dataKey={key} stroke={CHART_COLORS[i % CHART_COLORS.length]} strokeWidth={2} dot={{ r: 3 }} />
+          ))}
         </LineChart>
       );
 
@@ -218,6 +226,7 @@ function parseChartSpec(spec: Record<string, unknown>): ChartSpec | null {
     data: data as Record<string, unknown>[],
     xKey,
     yKey,
+    yKeys: Array.isArray(spec.yKeys) ? spec.yKeys as string[] : [yKey],
   };
 }
 
