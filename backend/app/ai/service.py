@@ -403,8 +403,6 @@ class AIService:
 
         Looks for tool results with multiple rows of structured data that could
         be meaningfully displayed as a bar/line/pie chart.
-
-        Returns a visualization_spec dict if chart-worthy data is found, None otherwise.
         """
         for result in agent_response.tool_results:
             if not result.success or not isinstance(result.data, dict):
@@ -415,59 +413,99 @@ class AIService:
             columns = result.data.get("columns", [])
 
             if len(rows) >= 2 and len(columns) >= 2:
-                # Find numeric columns for Y axis and text columns for X axis
-                x_col = None
-                y_col = None
+                x_col, y_cols = self._detect_chart_columns(rows, columns)
+                if x_col and y_cols:
+                    # Convert string numbers to floats for charting
+                    chart_data = []
+                    for row in rows[:20]:
+                        if isinstance(row, dict):
+                            entry = {x_col: row.get(x_col, "")}
+                            for yc in y_cols:
+                                val = row.get(yc, 0)
+                                entry[yc] = self._to_number(val)
+                            chart_data.append(entry)
 
-                for col in columns:
-                    if x_col and y_col:
-                        break
-                    # Check first row values to determine types
-                    sample_val = rows[0].get(col) if isinstance(rows[0], dict) else None
-                    if sample_val is None:
-                        continue
-                    if isinstance(sample_val, (int, float)):
-                        if not y_col:
-                            y_col = col
-                    elif isinstance(sample_val, str):
-                        if not x_col:
-                            x_col = col
-
-                if x_col and y_col:
-                    # Build chart spec
                     return {
                         "chart_type": "bar",
-                        "data": rows[:20],  # Cap at 20 data points
+                        "data": chart_data,
                         "xKey": x_col,
-                        "yKey": y_col,
+                        "yKey": y_cols[0],
                         "columns": columns,
                         "rows": rows[:20],
                     }
 
             # Dataset queries with records
             records = result.data.get("records", [])
-            if isinstance(records, list) and len(records) >= 2:
-                if records and isinstance(records[0], dict):
-                    keys = list(records[0].keys())
-                    x_col = None
-                    y_col = None
-                    for k in keys:
-                        val = records[0].get(k)
-                        if isinstance(val, str) and not x_col:
-                            x_col = k
-                        elif isinstance(val, (int, float)) and not y_col:
-                            y_col = k
-                    if x_col and y_col:
-                        return {
-                            "chart_type": "bar",
-                            "data": records[:20],
-                            "xKey": x_col,
-                            "yKey": y_col,
-                            "columns": keys,
-                            "rows": records[:20],
-                        }
+            if isinstance(records, list) and len(records) >= 2 and records and isinstance(records[0], dict):
+                keys = list(records[0].keys())
+                x_col, y_cols = self._detect_chart_columns(records, keys)
+                if x_col and y_cols:
+                    chart_data = []
+                    for rec in records[:20]:
+                        entry = {x_col: rec.get(x_col, "")}
+                        for yc in y_cols:
+                            entry[yc] = self._to_number(rec.get(yc, 0))
+                        chart_data.append(entry)
+                    return {
+                        "chart_type": "bar",
+                        "data": chart_data,
+                        "xKey": x_col,
+                        "yKey": y_cols[0],
+                        "columns": keys,
+                        "rows": records[:20],
+                    }
 
         return None
+
+    def _detect_chart_columns(self, rows: list, columns: list) -> tuple[str | None, list[str]]:
+        """Detect X (label) and Y (numeric) columns from data rows."""
+        x_col = None
+        y_cols = []
+
+        for col in columns:
+            # Sample values from first few rows
+            values = []
+            for row in rows[:5]:
+                if isinstance(row, dict):
+                    values.append(row.get(col))
+
+            # Check if this column is numeric
+            numeric_count = sum(1 for v in values if self._is_numeric(v))
+            text_count = sum(1 for v in values if isinstance(v, str) and not self._is_numeric(v))
+
+            if numeric_count > text_count and numeric_count >= 2:
+                y_cols.append(col)
+            elif text_count > 0 and not x_col:
+                x_col = col
+
+        return x_col, y_cols
+
+    @staticmethod
+    def _is_numeric(val) -> bool:
+        """Check if a value is numeric (including string numbers)."""
+        if isinstance(val, (int, float)):
+            return True
+        if isinstance(val, str):
+            cleaned = val.replace(",", "").replace("$", "").replace("%", "").replace("+", "").replace("-", "").strip()
+            try:
+                float(cleaned)
+                return True
+            except (ValueError, TypeError):
+                return False
+        return False
+
+    @staticmethod
+    def _to_number(val) -> float:
+        """Convert a value to a number for charting."""
+        if isinstance(val, (int, float)):
+            return float(val)
+        if isinstance(val, str):
+            cleaned = val.replace(",", "").replace("$", "").replace("%", "").replace("+", "").strip()
+            try:
+                return float(cleaned)
+            except (ValueError, TypeError):
+                return 0.0
+        return 0.0
 
     def _extract_typed_evidence(self, result: ToolResult) -> list[dict[str, Any]]:
         """Extract typed evidence items from a successful tool result.
