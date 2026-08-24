@@ -342,34 +342,34 @@ class AIService:
         failed_sources: list[dict[str, Any]] = []
 
         for result in agent_response.tool_results:
-            if result.success:
-                # Safety: ensure data is a dict before accessing with .get()
-                data = result.data if isinstance(result.data, dict) else {"raw": result.data}
+            try:
+                if result.success:
+                    data = result.data if isinstance(result.data, dict) else {"raw": result.data}
 
-                source_entry = {
-                    "name": result.source_label,
-                    "type": data.get("source_type", "unknown"),
-                    "records_returned": data.get("record_count", 0),
-                }
+                    source_entry = {
+                        "name": result.source_label,
+                        "type": data.get("source_type", "unknown"),
+                        "records_returned": data.get("record_count", 0),
+                    }
 
-                # Enrich source record count from tool-specific fields
-                if "result_count" in data:
-                    source_entry["records_returned"] = data["result_count"]
-                elif "total_count" in data:
-                    source_entry["records_returned"] = data["total_count"]
-                elif "dataset_count" in data:
-                    source_entry["records_returned"] = data["dataset_count"]
+                    if "result_count" in data:
+                        source_entry["records_returned"] = data["result_count"]
+                    elif "total_count" in data:
+                        source_entry["records_returned"] = data["total_count"]
+                    elif "dataset_count" in data:
+                        source_entry["records_returned"] = data["dataset_count"]
 
-                sources.append(source_entry)
+                    sources.append(source_entry)
 
-                # Build typed evidence items based on the tool that produced them
-                tool_evidence = self._extract_typed_evidence(result)
-                evidence.extend(tool_evidence)
-            else:
-                failed_sources.append({
-                    "source": result.source_label or result.tool_name,
-                    "error": sanitize_log_value(result.error) if result.error else "Unknown error",
-                })
+                    tool_evidence = self._extract_typed_evidence(result)
+                    evidence.extend(tool_evidence)
+                else:
+                    failed_sources.append({
+                        "source": result.source_label or result.tool_name,
+                        "error": sanitize_log_value(result.error) if result.error else "Unknown error",
+                    })
+            except Exception as e:
+                logger.warning("tool_result_processing_skipped", extra={"error": str(e), "tool": result.tool_name})
 
         return AIResponse(
             answer=strip_markup(agent_response.answer),

@@ -471,11 +471,21 @@ class StrandsAgentWrapper:
                     text_parts.append(item)
             combined = " ".join(text_parts)
             try:
-                parsed_data = json.loads(combined)
+                parsed = json.loads(combined)
+                if isinstance(parsed, dict):
+                    parsed_data = parsed
+                elif isinstance(parsed, list):
+                    parsed_data = {"records": parsed, "source_type": "tool_result"}
+                else:
+                    parsed_data = {"content": parsed, "source_type": "tool_result"}
             except (json.JSONDecodeError, ValueError):
                 parsed_data = {"content": combined, "source_type": "tool_result"}
         else:
             parsed_data = {"content": str(content), "source_type": "tool_result"}
+
+        # Final safety: ensure parsed_data is ALWAYS a dict
+        if not isinstance(parsed_data, dict):
+            parsed_data = {"raw": parsed_data, "source_type": "tool_result"}
 
         # Detect errors: if parsed data contains an "error" key, mark as failed
         has_error = "error" in parsed_data and parsed_data["error"]
