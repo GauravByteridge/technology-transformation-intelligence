@@ -130,6 +130,28 @@ export default function AnalyticsDashboard() {
 
       {/* Charts Grid — Databricks canvas-style */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        {/* Progress Burndown — Line Chart (FIRST) */}
+        <ChartCard title="Progress Burndown">
+          <ResponsiveContainer width="100%" height={250}>
+            <LineChart data={budgetData.map((d, i) => ({
+              month: d.month,
+              planned: 100 - i * 12,
+              actual: 100 - i * 12 + (Math.random() - 0.5) * 10,
+            }))} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+              <XAxis dataKey="month" tick={{ fill: '#9ca3af', fontSize: 11 }} />
+              <YAxis tick={{ fill: '#9ca3af', fontSize: 11 }} />
+              <Tooltip
+                contentStyle={{ backgroundColor: '#1f2937', border: '1px solid #374151', borderRadius: '8px' }}
+                labelStyle={{ color: '#fff' }}
+              />
+              <Legend wrapperStyle={{ fontSize: 11 }} />
+              <Line type="monotone" dataKey="planned" stroke="#3b82f6" name="Planned" strokeDasharray="5 5" dot={false} />
+              <Line type="monotone" dataKey="actual" stroke="#10b981" name="Actual" dot={{ r: 3 }} />
+            </LineChart>
+          </ResponsiveContainer>
+        </ChartCard>
+
         {/* Budget vs Actual — Bar Chart */}
         <ChartCard title="Budget vs Actual (Monthly)">
           <ResponsiveContainer width="100%" height={250}>
@@ -226,28 +248,6 @@ export default function AnalyticsDashboard() {
               />
               <Legend wrapperStyle={{ fontSize: 11 }} />
             </PieChart>
-          </ResponsiveContainer>
-        </ChartCard>
-
-        {/* Progress Burndown — Line Chart */}
-        <ChartCard title="Progress Burndown">
-          <ResponsiveContainer width="100%" height={250}>
-            <LineChart data={budgetData.map((d, i) => ({
-              month: d.month,
-              planned: 100 - i * 12,
-              actual: 100 - i * 12 + (Math.random() - 0.5) * 10,
-            }))} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-              <XAxis dataKey="month" tick={{ fill: '#9ca3af', fontSize: 11 }} />
-              <YAxis tick={{ fill: '#9ca3af', fontSize: 11 }} />
-              <Tooltip
-                contentStyle={{ backgroundColor: '#1f2937', border: '1px solid #374151', borderRadius: '8px' }}
-                labelStyle={{ color: '#fff' }}
-              />
-              <Legend wrapperStyle={{ fontSize: 11 }} />
-              <Line type="monotone" dataKey="planned" stroke="#3b82f6" name="Planned" strokeDasharray="5 5" dot={false} />
-              <Line type="monotone" dataKey="actual" stroke="#10b981" name="Actual" dot={{ r: 3 }} />
-            </LineChart>
           </ResponsiveContainer>
         </ChartCard>
       </div>
