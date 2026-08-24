@@ -45,6 +45,10 @@ export function ChatThread({ messages }: ChatThreadProps) {
           <MessageBubble message={message} />
           {message.visualizationSpec && message.responseType === 'chart' && (
             <div className="mt-2 max-w-lg">
+              <div className="flex items-center gap-2 mb-2 text-xs text-gray-400">
+                <span className="px-2 py-0.5 bg-teal-600 text-white rounded text-xs font-medium">Chart</span>
+                <span>from connected source data</span>
+              </div>
               <VisualizationRenderer
                 responseType="chart"
                 visualizationSpec={message.visualizationSpec}
