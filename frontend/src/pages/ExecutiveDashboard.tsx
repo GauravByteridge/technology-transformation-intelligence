@@ -114,7 +114,7 @@ export default function ExecutiveDashboard() {
         </span>
         <span className="flex items-center gap-2">
           <FileText size={14} className="text-teal-400" />
-          Documents: <span className="text-white font-medium">342</span>
+          Documents: <span className="text-white font-medium">4</span>
         </span>
       </div>
 
