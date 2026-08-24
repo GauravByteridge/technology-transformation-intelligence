@@ -12,6 +12,9 @@ from db.database import Base, engine
 
 # Import models so they are registered with Base.metadata
 from models.database_models import File, Project  # noqa: F401
+from models.structured_data_models import (  # noqa: F401
+    StructuredDataset, StructuredColumn, StructuredRow, QueryLog
+)
 
 
 def init_database():
@@ -19,6 +22,9 @@ def init_database():
     print("Creating database tables...")
     Base.metadata.create_all(bind=engine)
     print("Database tables created successfully.")
+    print("Tables created:")
+    for table in Base.metadata.tables:
+        print(f"  - {table}")
 
 
 if __name__ == "__main__":

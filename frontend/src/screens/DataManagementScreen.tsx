@@ -45,8 +45,6 @@ export default function DataManagementScreen() {
     setTimeout(() => setNotification(null), 4000);
   }
 
-  // ─── Drag and Drop ─────────────────────────────────────────────────────────
-
   function handleDragOver(e: React.DragEvent<HTMLDivElement>) {
     e.preventDefault();
     e.stopPropagation();
@@ -74,8 +72,6 @@ export default function DataManagementScreen() {
     setSelectedFile(file);
   }
 
-  // ─── Upload ────────────────────────────────────────────────────────────────
-
   async function handleUpload() {
     if (!selectedFile) {
       showNotification('error', 'Please select a file to upload.');
@@ -89,15 +85,12 @@ export default function DataManagementScreen() {
       setSelectedFile(null);
       await loadFiles();
     } catch (err: unknown) {
-      const message =
-        err instanceof Error ? err.message : 'Upload failed. Please try again.';
+      const message = err instanceof Error ? err.message : 'Upload failed. Please try again.';
       showNotification('error', message);
     } finally {
       setUploading(false);
     }
   }
-
-  // ─── Download ──────────────────────────────────────────────────────────────
 
   async function handleDownload(file: ProjectFile) {
     try {
@@ -115,8 +108,6 @@ export default function DataManagementScreen() {
     }
   }
 
-  // ─── Delete ────────────────────────────────────────────────────────────────
-
   async function handleDeleteConfirm(id: number) {
     try {
       await deleteFile(id);
@@ -129,23 +120,33 @@ export default function DataManagementScreen() {
     }
   }
 
-  // ─── Render ────────────────────────────────────────────────────────────────
-
   return (
     <div style={styles.container}>
-      <h1 style={styles.heading}>Data Management</h1>
+      {/* Header */}
+      <div style={styles.header}>
+        <div style={styles.headerIcon}>
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
+          </svg>
+        </div>
+        <div>
+          <h1 style={styles.title}>Data Management</h1>
+          <p style={styles.subtitle}>Upload, manage, and organize your project files.</p>
+        </div>
+      </div>
 
       {/* Notification */}
       {notification && (
         <div
           style={{
             ...styles.notification,
-            backgroundColor: notification.type === 'success' ? '#dcfce7' : '#fee2e2',
-            color: notification.type === 'success' ? '#166534' : '#991b1b',
-            borderColor: notification.type === 'success' ? '#86efac' : '#fca5a5',
+            backgroundColor: notification.type === 'success' ? '#064e3b' : '#7f1d1d',
+            borderColor: notification.type === 'success' ? '#10b981' : '#f87171',
           }}
-          role="alert"
         >
+          <span style={styles.notificationIcon}>
+            {notification.type === 'success' ? '✓' : '✕'}
+          </span>
           {notification.message}
         </div>
       )}
@@ -157,67 +158,81 @@ export default function DataManagementScreen() {
         <div
           style={{
             ...styles.dropZone,
-            borderColor: dragOver ? '#3b82f6' : '#cbd5e1',
-            backgroundColor: dragOver ? '#eff6ff' : '#f8fafc',
+            borderColor: dragOver ? '#3b82f6' : '#334155',
+            backgroundColor: dragOver ? 'rgba(59, 130, 246, 0.1)' : '#1e293b',
           }}
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
         >
-          {selectedFile ? (
-            <p style={styles.dropText}>
-              Selected: <strong>{selectedFile.name}</strong>
-            </p>
-          ) : (
-            <p style={styles.dropText}>
-              Drag and drop a file here, or click to browse
-            </p>
-          )}
+          <div style={styles.dropContent}>
+            <span style={styles.dropIcon}>
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#64748b" strokeWidth="1.5">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                <polyline points="17 8 12 3 7 8" />
+                <line x1="12" y1="3" x2="12" y2="15" />
+              </svg>
+            </span>
+            {selectedFile ? (
+              <p style={styles.dropText}>
+                Selected: <strong style={{ color: '#f8fafc' }}>{selectedFile.name}</strong>
+              </p>
+            ) : (
+              <p style={styles.dropText}>
+                Drag and drop a file here, or click to browse
+              </p>
+            )}
+            <p style={styles.dropHint}>Supported: PDF, XLSX, XLS, CSV, JSON (max 50MB)</p>
+          </div>
           <input
             type="file"
             accept=".pdf,.xlsx,.xls,.csv,.json"
             onChange={handleFileInput}
             style={styles.fileInput}
-            aria-label="File upload"
           />
         </div>
 
         <div style={styles.uploadControls}>
-          <label htmlFor="category-select" style={styles.label}>
-            Category:
-          </label>
-          <select
-            id="category-select"
-            value={selectedCategory}
-            onChange={(e) => setSelectedCategory(e.target.value as FileCategory)}
-            style={styles.select}
-          >
-            {FILE_CATEGORIES.map((cat) => (
-              <option key={cat} value={cat}>
-                {cat}
-              </option>
-            ))}
-          </select>
+          <div style={styles.categorySelect}>
+            <label htmlFor="category-select" style={styles.label}>Category:</label>
+            <select
+              id="category-select"
+              value={selectedCategory}
+              onChange={(e) => setSelectedCategory(e.target.value as FileCategory)}
+              style={styles.select}
+            >
+              {FILE_CATEGORIES.map((cat) => (
+                <option key={cat} value={cat}>{cat}</option>
+              ))}
+            </select>
+          </div>
 
           <button
             onClick={handleUpload}
             disabled={uploading || !selectedFile}
             style={{
               ...styles.uploadButton,
-              opacity: uploading || !selectedFile ? 0.6 : 1,
+              opacity: uploading || !selectedFile ? 0.5 : 1,
             }}
           >
-            {uploading ? 'Uploading...' : 'Upload'}
+            {uploading ? 'Uploading...' : 'Upload File'}
           </button>
         </div>
       </section>
 
       {/* File List Section */}
       <section style={styles.fileSection}>
-        <h2 style={styles.sectionTitle}>Uploaded Files</h2>
+        <h2 style={styles.sectionTitle}>Uploaded Files ({files.length})</h2>
 
         {files.length === 0 ? (
-          <p style={styles.emptyMessage}>No files uploaded yet.</p>
+          <div style={styles.emptyState}>
+            <span style={styles.emptyIcon}>
+              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#64748b" strokeWidth="1.5">
+                <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
+              </svg>
+            </span>
+            <p style={styles.emptyText}>No files uploaded yet.</p>
+          </div>
         ) : (
           <div style={styles.tableWrapper}>
             <table style={styles.table}>
@@ -233,9 +248,15 @@ export default function DataManagementScreen() {
               <tbody>
                 {files.map((file) => (
                   <tr key={file.id} style={styles.tr}>
-                    <td style={styles.td}>{file.file_name}</td>
-                    <td style={styles.td}>{file.file_type.toUpperCase()}</td>
-                    <td style={styles.td}>{file.category}</td>
+                    <td style={styles.td}>
+                      <span style={styles.fileName}>{file.file_name}</span>
+                    </td>
+                    <td style={styles.td}>
+                      <span style={styles.fileType}>{file.file_type.toUpperCase()}</span>
+                    </td>
+                    <td style={styles.td}>
+                      <span style={styles.categoryTag}>{file.category}</span>
+                    </td>
                     <td style={styles.td}>
                       {new Date(file.uploaded_at).toLocaleDateString()}
                     </td>
@@ -243,31 +264,19 @@ export default function DataManagementScreen() {
                       {deleteConfirmId === file.id ? (
                         <span style={styles.confirmGroup}>
                           <span style={styles.confirmText}>Delete?</span>
-                          <button
-                            onClick={() => handleDeleteConfirm(file.id)}
-                            style={styles.confirmYes}
-                          >
+                          <button onClick={() => handleDeleteConfirm(file.id)} style={styles.confirmYes}>
                             Yes
                           </button>
-                          <button
-                            onClick={() => setDeleteConfirmId(null)}
-                            style={styles.confirmNo}
-                          >
+                          <button onClick={() => setDeleteConfirmId(null)} style={styles.confirmNo}>
                             No
                           </button>
                         </span>
                       ) : (
                         <span style={styles.actionGroup}>
-                          <button
-                            onClick={() => handleDownload(file)}
-                            style={styles.actionButton}
-                          >
+                          <button onClick={() => handleDownload(file)} style={styles.actionButton}>
                             Download
                           </button>
-                          <button
-                            onClick={() => setDeleteConfirmId(file.id)}
-                            style={styles.deleteButton}
-                          >
+                          <button onClick={() => setDeleteConfirmId(file.id)} style={styles.deleteButton}>
                             Delete
                           </button>
                         </span>
@@ -284,53 +293,94 @@ export default function DataManagementScreen() {
   );
 }
 
-// ─── Styles ────────────────────────────────────────────────────────────────────
-
 const styles: Record<string, React.CSSProperties> = {
   container: {
-    maxWidth: '1000px',
-    margin: '0 auto',
-    padding: '2rem 1.5rem',
+    padding: '2rem',
+    minHeight: '100vh',
+    backgroundColor: '#0f172a',
   },
-  heading: {
-    fontSize: '1.75rem',
-    fontWeight: 700,
-    marginBottom: '1.5rem',
-    color: '#1e293b',
+  header: {
+    display: 'flex',
+    alignItems: 'flex-start',
+    gap: '1rem',
+    marginBottom: '2rem',
+    paddingBottom: '1.5rem',
+    borderBottom: '1px solid #1e293b',
+  },
+  headerIcon: {
+    fontSize: '2rem',
+    width: '48px',
+    height: '48px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#1e3a8a',
+    borderRadius: '12px',
+  },
+  title: {
+    margin: 0,
+    fontSize: '1.5rem',
+    fontWeight: 600,
+    color: '#f8fafc',
+  },
+  subtitle: {
+    margin: '0.25rem 0 0',
+    fontSize: '0.875rem',
+    color: '#94a3b8',
   },
   notification: {
-    padding: '0.75rem 1rem',
-    borderRadius: '0.375rem',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '0.5rem',
+    padding: '0.875rem 1rem',
+    borderRadius: '8px',
     border: '1px solid',
-    marginBottom: '1rem',
+    marginBottom: '1.5rem',
     fontSize: '0.9rem',
+    color: '#f8fafc',
+  },
+  notificationIcon: {
+    fontSize: '1rem',
+    fontWeight: 'bold',
   },
   uploadSection: {
     marginBottom: '2rem',
     padding: '1.5rem',
-    borderRadius: '0.5rem',
-    backgroundColor: '#ffffff',
-    border: '1px solid #e2e8f0',
+    borderRadius: '12px',
+    backgroundColor: '#1e293b',
+    border: '1px solid #334155',
   },
   sectionTitle: {
-    fontSize: '1.2rem',
+    margin: '0 0 1rem',
+    fontSize: '1rem',
     fontWeight: 600,
-    marginBottom: '1rem',
-    color: '#334155',
+    color: '#f8fafc',
   },
   dropZone: {
     position: 'relative',
     border: '2px dashed',
-    borderRadius: '0.5rem',
-    padding: '2rem',
+    borderRadius: '12px',
+    padding: '2.5rem',
     textAlign: 'center',
     cursor: 'pointer',
-    transition: 'border-color 0.2s, background-color 0.2s',
+    transition: 'all 0.2s',
+  },
+  dropContent: {
+    pointerEvents: 'none',
+  },
+  dropIcon: {
+    display: 'block',
+    marginBottom: '0.75rem',
   },
   dropText: {
     margin: 0,
-    color: '#64748b',
+    color: '#94a3b8',
     fontSize: '0.95rem',
+  },
+  dropHint: {
+    margin: '0.5rem 0 0',
+    color: '#64748b',
+    fontSize: '0.8rem',
   },
   fileInput: {
     position: 'absolute',
@@ -343,39 +393,56 @@ const styles: Record<string, React.CSSProperties> = {
   uploadControls: {
     display: 'flex',
     alignItems: 'center',
-    gap: '1rem',
-    marginTop: '1rem',
+    justifyContent: 'space-between',
+    marginTop: '1.25rem',
+    paddingTop: '1.25rem',
+    borderTop: '1px solid #334155',
+  },
+  categorySelect: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '0.75rem',
   },
   label: {
-    fontSize: '0.9rem',
+    fontSize: '0.875rem',
     fontWeight: 500,
-    color: '#475569',
+    color: '#94a3b8',
   },
   select: {
     padding: '0.5rem 0.75rem',
-    borderRadius: '0.375rem',
-    border: '1px solid #cbd5e1',
-    fontSize: '0.9rem',
-    backgroundColor: '#ffffff',
+    borderRadius: '8px',
+    border: '1px solid #334155',
+    backgroundColor: '#0f172a',
+    color: '#f8fafc',
+    fontSize: '0.875rem',
   },
   uploadButton: {
-    marginLeft: 'auto',
-    padding: '0.5rem 1.25rem',
-    borderRadius: '0.375rem',
+    padding: '0.625rem 1.5rem',
+    borderRadius: '8px',
     border: 'none',
-    backgroundColor: '#2563eb',
+    backgroundColor: '#3b82f6',
     color: '#ffffff',
     fontWeight: 600,
-    fontSize: '0.9rem',
+    fontSize: '0.875rem',
     cursor: 'pointer',
+    transition: 'all 0.15s',
   },
   fileSection: {
     padding: '1.5rem',
-    borderRadius: '0.5rem',
-    backgroundColor: '#ffffff',
-    border: '1px solid #e2e8f0',
+    borderRadius: '12px',
+    backgroundColor: '#1e293b',
+    border: '1px solid #334155',
   },
-  emptyMessage: {
+  emptyState: {
+    textAlign: 'center',
+    padding: '3rem 1rem',
+  },
+  emptyIcon: {
+    display: 'block',
+    marginBottom: '0.75rem',
+  },
+  emptyText: {
+    margin: 0,
     color: '#64748b',
     fontStyle: 'italic',
   },
@@ -389,42 +456,63 @@ const styles: Record<string, React.CSSProperties> = {
   th: {
     textAlign: 'left',
     padding: '0.75rem 1rem',
-    borderBottom: '2px solid #e2e8f0',
-    fontSize: '0.85rem',
+    borderBottom: '1px solid #334155',
+    fontSize: '0.75rem',
     fontWeight: 600,
-    color: '#475569',
+    color: '#64748b',
     textTransform: 'uppercase',
-    letterSpacing: '0.025em',
+    letterSpacing: '0.05em',
   },
   tr: {
-    borderBottom: '1px solid #f1f5f9',
+    transition: 'background-color 0.15s',
   },
   td: {
-    padding: '0.75rem 1rem',
-    fontSize: '0.9rem',
-    color: '#334155',
+    padding: '0.875rem 1rem',
+    borderBottom: '1px solid #1e293b',
+    fontSize: '0.875rem',
+    color: '#e2e8f0',
+  },
+  fileName: {
+    fontWeight: 500,
+  },
+  fileType: {
+    padding: '0.25rem 0.5rem',
+    backgroundColor: '#0f172a',
+    borderRadius: '4px',
+    fontSize: '0.75rem',
+    fontWeight: 600,
+    color: '#94a3b8',
+  },
+  categoryTag: {
+    padding: '0.25rem 0.5rem',
+    backgroundColor: '#1e3a8a',
+    borderRadius: '4px',
+    fontSize: '0.75rem',
+    color: '#93c5fd',
   },
   actionGroup: {
     display: 'flex',
     gap: '0.5rem',
   },
   actionButton: {
-    padding: '0.35rem 0.75rem',
-    borderRadius: '0.25rem',
-    border: '1px solid #cbd5e1',
-    backgroundColor: '#ffffff',
+    padding: '0.375rem 0.75rem',
+    borderRadius: '6px',
+    border: '1px solid #334155',
+    backgroundColor: '#0f172a',
     fontSize: '0.8rem',
     cursor: 'pointer',
-    color: '#334155',
+    color: '#e2e8f0',
+    transition: 'all 0.15s',
   },
   deleteButton: {
-    padding: '0.35rem 0.75rem',
-    borderRadius: '0.25rem',
-    border: '1px solid #fca5a5',
-    backgroundColor: '#fff1f2',
+    padding: '0.375rem 0.75rem',
+    borderRadius: '6px',
+    border: '1px solid #7f1d1d',
+    backgroundColor: 'rgba(127, 29, 29, 0.3)',
     fontSize: '0.8rem',
     cursor: 'pointer',
-    color: '#991b1b',
+    color: '#fca5a5',
+    transition: 'all 0.15s',
   },
   confirmGroup: {
     display: 'flex',
@@ -433,12 +521,12 @@ const styles: Record<string, React.CSSProperties> = {
   },
   confirmText: {
     fontSize: '0.8rem',
-    color: '#991b1b',
+    color: '#fca5a5',
     fontWeight: 500,
   },
   confirmYes: {
-    padding: '0.25rem 0.5rem',
-    borderRadius: '0.25rem',
+    padding: '0.25rem 0.625rem',
+    borderRadius: '6px',
     border: 'none',
     backgroundColor: '#dc2626',
     color: '#ffffff',
@@ -446,12 +534,12 @@ const styles: Record<string, React.CSSProperties> = {
     cursor: 'pointer',
   },
   confirmNo: {
-    padding: '0.25rem 0.5rem',
-    borderRadius: '0.25rem',
-    border: '1px solid #cbd5e1',
-    backgroundColor: '#ffffff',
+    padding: '0.25rem 0.625rem',
+    borderRadius: '6px',
+    border: '1px solid #334155',
+    backgroundColor: '#0f172a',
     fontSize: '0.8rem',
     cursor: 'pointer',
-    color: '#475569',
+    color: '#e2e8f0',
   },
 };

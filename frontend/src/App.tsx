@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { getProject } from './api/client';
-import NavigationBar from './components/NavigationBar';
+import Layout from './components/Layout';
 import CreateProjectScreen from './screens/CreateProjectScreen';
 import DashboardScreen from './screens/DashboardScreen';
 import DataManagementScreen from './screens/DataManagementScreen';
@@ -33,14 +33,18 @@ export default function App() {
     setProjectExists(false);
   }, []);
 
-  // Show nothing while checking project status
+  // Show loading spinner while checking project status
   if (projectExists === null) {
-    return <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>Loading...</div>;
+    return (
+      <div style={styles.loadingContainer}>
+        <div style={styles.loadingSpinner} />
+        <span style={styles.loadingText}>Loading...</span>
+      </div>
+    );
   }
 
   return (
-    <div>
-      <NavigationBar projectExists={projectExists} />
+    <Layout projectExists={projectExists}>
       <Routes>
         <Route
           path="/"
@@ -81,6 +85,30 @@ export default function App() {
           }
         />
       </Routes>
-    </div>
+    </Layout>
   );
 }
+
+const styles: Record<string, React.CSSProperties> = {
+  loadingContainer: {
+    display: 'flex',
+    flexDirection: 'column',
+    justifyContent: 'center',
+    alignItems: 'center',
+    height: '100vh',
+    backgroundColor: '#0f172a',
+    gap: '1rem',
+  },
+  loadingSpinner: {
+    width: '40px',
+    height: '40px',
+    border: '3px solid #1e293b',
+    borderTop: '3px solid #3b82f6',
+    borderRadius: '50%',
+    animation: 'spin 1s linear infinite',
+  },
+  loadingText: {
+    color: '#94a3b8',
+    fontSize: '0.9rem',
+  },
+};

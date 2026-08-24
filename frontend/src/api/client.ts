@@ -55,19 +55,48 @@ export async function uploadFile(
   file: File,
   category: FileCategory
 ): Promise<ProjectFile> {
+  // Check file size on client side first (50 MB limit)
+  const MAX_FILE_SIZE_MB = 50;
+  const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
+  
+  if (file.size > MAX_FILE_SIZE_BYTES) {
+    throw new Error(`File size (${(file.size / 1024 / 1024).toFixed(1)} MB) exceeds maximum allowed size of ${MAX_FILE_SIZE_MB} MB.`);
+  }
+
   const formData = new FormData();
   formData.append('file', file);
 
-  const response = await apiClient.post<ProjectFile>(
-    `/files/upload?category=${encodeURIComponent(category)}`,
-    formData,
-    {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
+  try {
+    const response = await apiClient.post<ProjectFile>(
+      `/files/upload?category=${encodeURIComponent(category)}`,
+      formData,
+      {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+        timeout: 300000, // 5 minutes timeout for large file uploads
+        maxContentLength: Infinity,
+        maxBodyLength: Infinity,
+      }
+    );
+    return response.data;
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      if (error.response?.status === 413) {
+        throw new Error('File is too large. Maximum allowed size is 50 MB.');
+      }
+      if (error.response?.status === 422) {
+        throw new Error(error.response.data?.detail || 'Failed to process file. Please check the file format.');
+      }
+      if (error.response?.data?.detail) {
+        throw new Error(error.response.data.detail);
+      }
+      if (error.code === 'ECONNABORTED') {
+        throw new Error('Upload timed out. Please try again with a smaller file.');
+      }
     }
-  );
-  return response.data;
+    throw error;
+  }
 }
 
 /** GET /api/files — List all uploaded files */
