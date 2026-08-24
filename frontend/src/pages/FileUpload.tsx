@@ -7,6 +7,7 @@ import {
 } from '@/features/file-upload';
 import { Upload, FileText, ArrowLeft } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useProjects } from '@/hooks';
 import type { FileUploadResponse } from '@/types';
 
 type UploadState = 'idle' | 'uploading' | 'complete' | 'error';
@@ -92,19 +93,15 @@ export default function FileUpload() {
         ))}
       </div>
 
-      {/* Optional project ID input */}
+      {/* Project selector dropdown */}
       <div>
-        <label htmlFor="project-id-input" className="block text-sm font-medium text-gray-300 mb-1">
-          Project ID (optional)
+        <label htmlFor="project-select" className="block text-sm font-medium text-gray-300 mb-1">
+          Project (optional)
         </label>
-        <input
-          id="project-id-input"
-          type="text"
+        <ProjectDropdown
           value={projectId}
-          onChange={(e) => setProjectId(e.target.value)}
-          placeholder="Enter project UUID to associate file"
+          onChange={setProjectId}
           disabled={uploadState === 'uploading'}
-          className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-teal-500 disabled:opacity-50"
         />
       </div>
 
@@ -155,6 +152,36 @@ export default function FileUpload() {
         </div>
       )}
     </div>
+  );
+}
+
+/** Dropdown to select a project by name instead of entering UUID */
+function ProjectDropdown({
+  value,
+  onChange,
+  disabled,
+}: {
+  value: string;
+  onChange: (id: string) => void;
+  disabled: boolean;
+}) {
+  const { data: projects } = useProjects();
+
+  return (
+    <select
+      id="project-select"
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      disabled={disabled}
+      className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-sm text-white focus:outline-none focus:ring-1 focus:ring-teal-500 disabled:opacity-50"
+    >
+      <option value="">— No project (general upload) —</option>
+      {projects?.items?.map((p) => (
+        <option key={p.id} value={p.id}>
+          {p.name}
+        </option>
+      ))}
+    </select>
   );
 }
 
