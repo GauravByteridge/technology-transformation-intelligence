@@ -7,8 +7,7 @@ import {
   Legend,
   ResponsiveContainer,
 } from 'recharts';
-import { useProjectHealthDistribution } from '../../hooks/useDashboard';
-import { ChartErrorBoundary } from './ChartErrorBoundary';
+import { LoadingState, ErrorState, EmptyState } from '@/components/common';
 import { ChartDetailPanel, type ChartDetailData } from './ChartDetailPanel';
 
 const COLORS: Record<string, string> = {
@@ -18,22 +17,58 @@ const COLORS: Record<string, string> = {
   'Completed': '#3b82f6',
 };
 
-function ProjectHealthChartInner() {
-  const { data, isLoading, isError } = useProjectHealthDistribution();
+export interface HealthDistributionData {
+  on_track: number;
+  at_risk: number;
+  delayed: number;
+  completed: number;
+}
+
+export interface ProjectHealthChartProps {
+  /** Derived health distribution counts from portfolio summary */
+  data: HealthDistributionData | undefined;
+  isLoading: boolean;
+  isError: boolean;
+  onRetry: () => void;
+}
+
+/**
+ * ProjectHealthChart — renders a donut chart showing the distribution of
+ * project health statuses. Accepts pre-derived data props rather than
+ * fetching its own data.
+ */
+export function ProjectHealthChart({ data, isLoading, isError, onRetry }: ProjectHealthChartProps) {
   const [detail, setDetail] = useState<ChartDetailData | null>(null);
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-pulse bg-gray-200 rounded-full w-48 h-48" />
+      <div>
+        <h3 className="text-sm font-semibold text-gray-700 mb-2">
+          Project Health Distribution
+        </h3>
+        <LoadingState variant="skeleton" message="Loading health distribution" />
       </div>
     );
   }
 
-  if (isError || !data) {
+  if (isError) {
     return (
-      <div className="flex items-center justify-center h-64 bg-gray-50 border border-gray-200 rounded-lg">
-        <p className="text-gray-500 text-sm">Chart unavailable</p>
+      <div>
+        <h3 className="text-sm font-semibold text-gray-700 mb-2">
+          Project Health Distribution
+        </h3>
+        <ErrorState message="Failed to load health distribution" onRetry={onRetry} />
+      </div>
+    );
+  }
+
+  if (!data || (data.on_track === 0 && data.at_risk === 0 && data.delayed === 0 && data.completed === 0)) {
+    return (
+      <div>
+        <h3 className="text-sm font-semibold text-gray-700 mb-2">
+          Project Health Distribution
+        </h3>
+        <EmptyState message="No project health data available" />
       </div>
     );
   }
@@ -73,26 +108,13 @@ function ProjectHealthChartInner() {
             style={{ cursor: 'pointer' }}
           >
             {chartData.map((entry) => (
-              <Cell
-                key={entry.name}
-                fill={COLORS[entry.name]}
-              />
+              <Cell key={entry.name} fill={COLORS[entry.name]} />
             ))}
           </Pie>
-          <Tooltip
-            formatter={(value, name) => [value, name]}
-          />
+          <Tooltip formatter={(value, name) => [value, name]} />
           <Legend />
         </PieChart>
       </ResponsiveContainer>
     </div>
-  );
-}
-
-export function ProjectHealthChart() {
-  return (
-    <ChartErrorBoundary>
-      <ProjectHealthChartInner />
-    </ChartErrorBoundary>
   );
 }

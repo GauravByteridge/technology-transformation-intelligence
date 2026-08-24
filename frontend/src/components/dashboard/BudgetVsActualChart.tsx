@@ -9,39 +9,64 @@ import {
   Legend,
   ResponsiveContainer,
 } from 'recharts';
-import { useBudgetChart } from '../../hooks/useDashboard';
-import { ChartErrorBoundary } from './ChartErrorBoundary';
+import { LoadingState, ErrorState, EmptyState } from '@/components/common';
 import { ChartDetailPanel, type ChartDetailData } from './ChartDetailPanel';
 
-function BudgetVsActualChartInner() {
-  const { data, isLoading, isError } = useBudgetChart();
+export interface BudgetVsActualItem {
+  name: string;
+  budget: number;
+  actual: number;
+}
+
+export interface BudgetVsActualChartProps {
+  /** Derived budget vs actual data from portfolio summary projects */
+  data: BudgetVsActualItem[] | undefined;
+  isLoading: boolean;
+  isError: boolean;
+  onRetry: () => void;
+}
+
+/**
+ * BudgetVsActualChart — renders a grouped bar chart comparing planned budget
+ * to actual cost per project. Accepts pre-derived data props.
+ */
+export function BudgetVsActualChart({ data, isLoading, isError, onRetry }: BudgetVsActualChartProps) {
   const [detail, setDetail] = useState<ChartDetailData | null>(null);
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-pulse bg-gray-200 rounded w-full h-48" />
+      <div>
+        <h3 className="text-sm font-semibold text-gray-700 mb-2">Budget vs Actual</h3>
+        <LoadingState variant="skeleton" message="Loading budget data" />
       </div>
     );
   }
 
-  if (isError || !data) {
+  if (isError) {
     return (
-      <div className="flex items-center justify-center h-64 bg-gray-50 border border-gray-200 rounded-lg">
-        <p className="text-gray-500 text-sm">Chart unavailable</p>
+      <div>
+        <h3 className="text-sm font-semibold text-gray-700 mb-2">Budget vs Actual</h3>
+        <ErrorState message="Failed to load budget data" onRetry={onRetry} />
+      </div>
+    );
+  }
+
+  if (!data || data.length === 0) {
+    return (
+      <div>
+        <h3 className="text-sm font-semibold text-gray-700 mb-2">Budget vs Actual</h3>
+        <EmptyState message="No budget data available" />
       </div>
     );
   }
 
   const chartData = data.map((item) => ({
-    name: item.project_name,
-    planned: item.planned_budget,
-    actual: item.actual_cost,
-    projectId: item.project_id,
+    name: item.name,
+    planned: item.budget,
+    actual: item.actual,
   }));
 
-  const handleBarClick = (data: unknown, dataKey: string) => {
-    const entry = data as Record<string, unknown>;
+  const handleBarClick = (entry: Record<string, unknown>, dataKey: string) => {
     const label = entry.name as string;
     const value = entry[dataKey] as number;
     setDetail({
@@ -53,9 +78,7 @@ function BudgetVsActualChartInner() {
 
   return (
     <div className="relative">
-      <h3 className="text-sm font-semibold text-gray-700 mb-2">
-        Budget vs Actual
-      </h3>
+      <h3 className="text-sm font-semibold text-gray-700 mb-2">Budget vs Actual</h3>
       <ChartDetailPanel data={detail} onClose={() => setDetail(null)} />
       <ResponsiveContainer width="100%" height={280}>
         <BarChart data={chartData}>
@@ -83,25 +106,17 @@ function BudgetVsActualChartInner() {
           <Bar
             dataKey="planned"
             fill="#3b82f6"
-            onClick={(data) => handleBarClick(data, 'planned')}
+            onClick={(data) => handleBarClick(data as unknown as Record<string, unknown>, 'planned')}
             style={{ cursor: 'pointer' }}
           />
           <Bar
             dataKey="actual"
             fill="#f59e0b"
-            onClick={(data) => handleBarClick(data, 'actual')}
+            onClick={(data) => handleBarClick(data as unknown as Record<string, unknown>, 'actual')}
             style={{ cursor: 'pointer' }}
           />
         </BarChart>
       </ResponsiveContainer>
     </div>
-  );
-}
-
-export function BudgetVsActualChart() {
-  return (
-    <ChartErrorBoundary>
-      <BudgetVsActualChartInner />
-    </ChartErrorBoundary>
   );
 }

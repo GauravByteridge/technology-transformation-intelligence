@@ -1,25 +1,24 @@
-export {
-  useDashboardKPIs,
-  useProjectHealthDistribution,
-  useBudgetChart,
-  useBurndownChart,
-  useAuditChart,
-  useResourceForecastChart,
-} from './useDashboard';
+export { usePortfolioSummary } from './useDashboard';
 
 export {
   useProjects,
   useProjectDetail,
-  useProjectFinancials,
-  useProjectJIRA,
+  useProjectHealth,
+  useProjectFinance,
+  useProjectJira,
+  useProjectResources,
   useProjectAudit,
   useProjectControls,
-  useProjectResources,
+  useProjectRemediation,
+  useProjectSdlc,
+  useProjectProgress,
   useProjectDocuments,
 } from './useProjects';
 
-export { useAIAsk } from './useAI';
+export { useAIQuery, useAIAsk } from './useAI';
 
 export { useGenerateBrief, useExportBriefPDF } from './useBriefs';
 
 export { useDataSources } from './useDataSources';
+
+export { useDocumentSearch } from './useDocuments';

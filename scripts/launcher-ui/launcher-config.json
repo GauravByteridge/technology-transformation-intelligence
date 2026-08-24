@@ -1,0 +1,80 @@
+{
+  "services": {
+    "backend": {
+      "name": "Backend (FastAPI)",
+      "tech": "Python 3.11+ / FastAPI / Uvicorn / SQLAlchemy",
+      "directory": "../../backend",
+      "port": 8000,
+      "runCommand": "uvicorn app.main:app --reload --host 0.0.0.0 --port 8000",
+      "debugPort": null,
+      "watchPatterns": ["**/*.py"]
+    },
+    "frontend": {
+      "name": "Frontend (React/Vite)",
+      "tech": "TypeScript / React 19 / Vite / TanStack Query",
+      "directory": "../../frontend",
+      "port": 5173,
+      "runCommand": "npm run dev -- --host",
+      "debugPort": null,
+      "watchPatterns": ["src/**/*"]
+    }
+  },
+  "databases": {
+    "app_db": {
+      "name": "App DB (PostgreSQL)",
+      "host": "localhost",
+      "port": 5432,
+      "database": "app_db",
+      "username": "postgres",
+      "password": "postgres"
+    },
+    "rag_db": {
+      "name": "RAG DB (PostgreSQL + pgvector)",
+      "host": "localhost",
+      "port": 5432,
+      "database": "rag_db",
+      "username": "postgres",
+      "password": "postgres"
+    }
+  },
+  "seeds": {
+    "app_db": {
+      "name": "Seed App DB",
+      "description": "Run Alembic migrations + seed demo data for projects, finance, JIRA, etc.",
+      "commands": [
+        "alembic upgrade head",
+        "python -m app.seed.run"
+      ],
+      "cwd": "../../backend"
+    },
+    "rag_db": {
+      "name": "Seed RAG DB",
+      "description": "Run RAG Alembic migrations + enable pgvector extension",
+      "commands": [
+        "alembic -c alembic_rag.ini upgrade head"
+      ],
+      "cwd": "../../backend"
+    }
+  },
+  "environment": {
+    "APP_DB_URL": "postgresql+asyncpg://postgres:postgres@localhost:5432/app_db",
+    "RAG_DB_URL": "postgresql+asyncpg://postgres:postgres@localhost:5432/rag_db",
+    "DEMO_MODE": "true",
+    "LOG_LEVEL": "info",
+    "CORS_ORIGINS": "http://localhost:5173",
+    "FERNET_KEY": "nCDAYBmW-Gj8HRIs-dKZHETxkJSpKGYfrXLuiPwtHwU=",
+    "SECRET_KEY": "dev-secret-key-for-local-development",
+    "VITE_API_BASE_URL": "http://localhost:8000"
+  },
+  "logging": {
+    "maxBufferLines": 500,
+    "writeToFile": false,
+    "noisePatterns": [
+      "INFO:.*healthcheck",
+      "GET /favicon.ico",
+      "HMR",
+      "hmr update"
+    ]
+  },
+  "launcherPort": 9001
+}

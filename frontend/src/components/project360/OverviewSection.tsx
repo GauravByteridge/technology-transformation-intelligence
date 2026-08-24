@@ -1,10 +1,12 @@
-import type { ProjectDetail } from '../../types';
-import { EmptyState } from '../common/EmptyState';
+import { useProjectHealth } from '../../hooks';
+import { LoadingState } from '../common/LoadingState';
+import { ErrorState } from '../common/ErrorState';
 
 interface OverviewSectionProps {
-  project: ProjectDetail;
+  projectId: string;
 }
 
+/** Status badge for overall/schedule status display */
 function StatusBadge({ status }: { status: string }) {
   const colors: Record<string, string> = {
     on_track: 'bg-green-100 text-green-800',
@@ -20,13 +22,16 @@ function StatusBadge({ status }: { status: string }) {
   };
 
   return (
-    <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${colors[status] ?? 'bg-gray-100 text-gray-800'}`}>
+    <span
+      className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${colors[status] ?? 'bg-gray-100 text-gray-800'}`}
+    >
       {labels[status] ?? status}
     </span>
   );
 }
 
-function MetricCard({ label, value, subtext }: { label: string; value: string; subtext?: string }) {
+/** Individual KPI metric card */
+function KpiCard({ label, value, subtext }: { label: string; value: string; subtext?: string }) {
   return (
     <div className="rounded-lg border border-gray-200 bg-white p-4">
       <p className="text-xs font-medium text-gray-500">{label}</p>
@@ -36,53 +41,89 @@ function MetricCard({ label, value, subtext }: { label: string; value: string; s
   );
 }
 
-export function OverviewSection({ project }: OverviewSectionProps) {
-  if (!project) {
-    return <EmptyState dataType="project overview" />;
+/**
+ * Overview tab content for Project 360.
+ * Fetches health KPIs via useProjectHealth and renders a grid of metric cards.
+ */
+export function OverviewSection({ projectId }: OverviewSectionProps) {
+  const { data: health, isLoading, isError, refetch } = useProjectHealth(projectId);
+
+  if (isLoading) {
+    return <LoadingState variant="skeleton" message="Loading health metrics..." />;
   }
 
-  const variancePrefix = project.budget_variance >= 0 ? '+' : '';
+  if (isError || !health) {
+    return (
+      <ErrorState
+        message="Failed to load project health metrics."
+        onRetry={() => refetch()}
+      />
+    );
+  }
+
+  const variancePrefix = health.budget_variance >= 0 ? '+' : '';
+  const varianceSubtext = health.budget_variance >= 0 ? 'Under budget' : 'Over budget';
 
   return (
     <div className="space-y-6">
-      {/* Health & Schedule Row */}
-      <div className="flex items-center gap-4">
-        <div>
-          <span className="text-sm text-gray-500">Health Status:</span>{' '}
-          <StatusBadge status={project.status} />
+      {/* Status Row */}
+      <div className="flex items-center gap-6">
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-gray-500">Overall Status:</span>
+          <StatusBadge status={health.overall_status} />
         </div>
-        <div>
-          <span className="text-sm text-gray-500">Schedule:</span>{' '}
-          <span className="text-sm font-medium text-gray-900">{project.schedule_status}</span>
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-gray-500">Schedule:</span>
+          <StatusBadge status={health.schedule_status} />
         </div>
       </div>
 
-      {/* Metrics Grid */}
+      {/* KPI Grid */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <MetricCard
-          label="Total Budget"
-          value={`$${project.total_budget.toLocaleString()}`}
+        <KpiCard
+          label="Budget Total"
+          value={`$${health.budget_total.toLocaleString()}`}
         />
-        <MetricCard
-          label="Actual Spend"
-          value={`$${project.actual_cost.toLocaleString()}`}
+        <KpiCard
+          label="Budget Spent"
+          value={`$${health.budget_spent.toLocaleString()}`}
         />
-        <MetricCard
+        <KpiCard
           label="Budget Variance"
-          value={`${variancePrefix}$${Math.abs(project.budget_variance).toLocaleString()}`}
-          subtext={project.budget_variance >= 0 ? 'Under budget' : 'Over budget'}
+          value={`${variancePrefix}$${Math.abs(health.budget_variance).toLocaleString()}`}
+          subtext={varianceSubtext}
         />
-        <MetricCard
+        <KpiCard
+          label="Variance %"
+          value={`${health.budget_variance_percentage.toFixed(1)}%`}
+        />
+        <KpiCard
           label="Progress"
-          value={`${project.progress}%`}
+          value={`${health.progress_percentage}%`}
         />
-        <MetricCard
+        <KpiCard
           label="Resource Utilization"
-          value={`${project.resource_utilization}%`}
+          value={`${health.resource_utilization_percentage}%`}
         />
-        <MetricCard
+        <KpiCard
           label="Open Issues"
-          value={String(project.open_issues)}
+          value={String(health.open_issues_count)}
+        />
+        <KpiCard
+          label="Open Risks"
+          value={String(health.open_risks_count)}
+        />
+        <KpiCard
+          label="Open Audit Findings"
+          value={String(health.open_audit_findings_count)}
+        />
+        <KpiCard
+          label="Open Remediation Items"
+          value={String(health.open_remediation_items_count)}
+        />
+        <KpiCard
+          label="IT Control Compliance"
+          value={`${health.it_control_compliance_percentage}%`}
         />
       </div>
     </div>

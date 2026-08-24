@@ -1,75 +1,110 @@
 import { useQuery } from '@tanstack/react-query';
-import { apiClient } from '../api/client';
+import { apiClient } from '@/api/client';
 import type {
-  ProjectSummary,
-  ProjectDetail,
-  ProjectFilters,
-  Financial,
-  JIRAIssue,
-  Resource,
-  AuditFinding,
-  ITControl,
-  ProjectDocument,
-} from '../types';
+  ProjectListResponse,
+  ProjectResponse,
+  ProjectHealthResponse,
+  ProjectFinanceResponse,
+  ProjectJiraResponse,
+  ProjectResourceResponse,
+  ProjectAuditResponse,
+  ProjectControlsResponse,
+  ProjectRemediationResponse,
+  ProjectSdlcResponse,
+  ProjectProgressResponse,
+  DocumentResponse,
+} from '@/types';
 
-export function useProjects(filters?: ProjectFilters) {
-  return useQuery<ProjectSummary[]>({
-    queryKey: ['projects', filters],
-    queryFn: () => apiClient.getProjects(filters),
+export function useProjects() {
+  return useQuery<ProjectListResponse>({
+    queryKey: ['projects'],
+    queryFn: () => apiClient.getProjects(),
   });
 }
 
-export function useProjectDetail(projectId: string) {
-  return useQuery<ProjectDetail>({
-    queryKey: ['projects', projectId],
-    queryFn: () => apiClient.getProjectById(projectId),
-    enabled: !!projectId,
+export function useProjectDetail(id: string) {
+  return useQuery<ProjectResponse>({
+    queryKey: ['projects', id],
+    queryFn: () => apiClient.getProjectById(id),
+    enabled: !!id,
   });
 }
 
-export function useProjectFinancials(projectId: string) {
-  return useQuery<Financial[]>({
-    queryKey: ['projects', projectId, 'financials'],
-    queryFn: () => apiClient.getProjectFinancials(projectId),
-    enabled: !!projectId,
+export function useProjectHealth(id: string) {
+  return useQuery<ProjectHealthResponse>({
+    queryKey: ['projects', id, 'health'],
+    queryFn: () => apiClient.getProjectHealth(id),
+    enabled: !!id,
   });
 }
 
-export function useProjectJIRA(projectId: string) {
-  return useQuery<JIRAIssue[]>({
-    queryKey: ['projects', projectId, 'jira'],
-    queryFn: () => apiClient.getProjectJIRA(projectId),
-    enabled: !!projectId,
+export function useProjectFinance(id: string) {
+  return useQuery<ProjectFinanceResponse>({
+    queryKey: ['projects', id, 'finance'],
+    queryFn: () => apiClient.getProjectFinance(id),
+    enabled: !!id,
   });
 }
 
-export function useProjectAudit(projectId: string) {
-  return useQuery<AuditFinding[]>({
-    queryKey: ['projects', projectId, 'audit'],
-    queryFn: () => apiClient.getProjectAudit(projectId),
-    enabled: !!projectId,
+export function useProjectJira(id: string) {
+  return useQuery<ProjectJiraResponse>({
+    queryKey: ['projects', id, 'jira'],
+    queryFn: () => apiClient.getProjectJira(id),
+    enabled: !!id,
   });
 }
 
-export function useProjectControls(projectId: string) {
-  return useQuery<ITControl[]>({
-    queryKey: ['projects', projectId, 'controls'],
-    queryFn: () => apiClient.getProjectControls(projectId),
-    enabled: !!projectId,
+export function useProjectResources(id: string) {
+  return useQuery<ProjectResourceResponse>({
+    queryKey: ['projects', id, 'resources'],
+    queryFn: () => apiClient.getProjectResources(id),
+    enabled: !!id,
   });
 }
 
-export function useProjectResources(projectId: string) {
-  return useQuery<Resource[]>({
-    queryKey: ['projects', projectId, 'resources'],
-    queryFn: () => apiClient.getProjectResources(projectId),
-    enabled: !!projectId,
+export function useProjectAudit(id: string) {
+  return useQuery<ProjectAuditResponse>({
+    queryKey: ['projects', id, 'audit'],
+    queryFn: () => apiClient.getProjectAudit(id),
+    enabled: !!id,
+  });
+}
+
+export function useProjectControls(id: string) {
+  return useQuery<ProjectControlsResponse>({
+    queryKey: ['projects', id, 'controls'],
+    queryFn: () => apiClient.getProjectControls(id),
+    enabled: !!id,
+  });
+}
+
+export function useProjectRemediation(id: string) {
+  return useQuery<ProjectRemediationResponse>({
+    queryKey: ['projects', id, 'remediation'],
+    queryFn: () => apiClient.getProjectRemediation(id),
+    enabled: !!id,
+  });
+}
+
+export function useProjectSdlc(id: string) {
+  return useQuery<ProjectSdlcResponse>({
+    queryKey: ['projects', id, 'sdlc'],
+    queryFn: () => apiClient.getProjectSdlc(id),
+    enabled: !!id,
+  });
+}
+
+export function useProjectProgress(id: string) {
+  return useQuery<ProjectProgressResponse>({
+    queryKey: ['projects', id, 'progress'],
+    queryFn: () => apiClient.getProjectProgress(id),
+    enabled: !!id,
   });
 }
 
 export function useProjectDocuments(projectId: string) {
-  return useQuery<ProjectDocument[]>({
-    queryKey: ['projects', projectId, 'documents'],
+  return useQuery<DocumentResponse[]>({
+    queryKey: ['documents', projectId],
     queryFn: () => apiClient.getProjectDocuments(projectId),
     enabled: !!projectId,
   });

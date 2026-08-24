@@ -48,6 +48,9 @@ class Project(AppBase):
     source_connections: Mapped[list["SourceConnection"]] = relationship(
         "SourceConnection", back_populates="project", lazy="selectin"
     )
+    source_mappings: Mapped[list["ProjectSourceMapping"]] = relationship(
+        "ProjectSourceMapping", back_populates="project", lazy="selectin"
+    )
 
     def __repr__(self) -> str:
         return f"<Project id={self.id} name={self.name}>"

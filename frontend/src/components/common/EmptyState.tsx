@@ -2,35 +2,45 @@ import type { ReactNode } from 'react';
 import { Inbox } from 'lucide-react';
 
 interface EmptyStateProps {
-  /** The type of data that is expected but not available (e.g., "projects", "documents") */
-  dataType: string;
-  /** Optional additional message below the main heading */
+  /** Message to display when no data is available */
   message?: string;
+  /** Optional custom icon to replace the default inbox icon */
+  icon?: ReactNode;
+  /**
+   * @deprecated Use message prop directly. Kept for backward compatibility.
+   * When provided without message, generates "No {dataType} found".
+   */
+  dataType?: string;
   /** Optional children for custom call-to-action buttons or links */
   children?: ReactNode;
 }
 
 /**
- * EmptyState — displays a no-data message identifying the expected data type.
- * All API-driven components should use this when a successful response contains zero items.
+ * EmptyState — displays a centered no-data message with muted styling.
+ * Used when a successful API response contains zero items.
  */
-export function EmptyState({ dataType, message, children }: EmptyStateProps) {
+export function EmptyState({
+  message,
+  icon,
+  dataType,
+  children,
+}: EmptyStateProps) {
+  // Resolve display message: explicit message takes priority, then dataType fallback
+  const displayMessage = message ?? (dataType ? `No ${dataType} found` : 'No data available');
+
   return (
     <div
       className="flex flex-col items-center justify-center gap-3 rounded-lg border border-gray-200 bg-gray-50 px-6 py-8"
       role="status"
       aria-live="polite"
     >
-      <Inbox className="h-10 w-10 text-gray-400" aria-hidden="true" />
-      <p className="text-sm font-medium text-gray-600">
-        No {dataType} found
-      </p>
-      {message && (
-        <p className="text-xs text-gray-500">{message}</p>
+      {icon ? (
+        <span aria-hidden="true">{icon}</span>
+      ) : (
+        <Inbox className="h-10 w-10 text-gray-400" aria-hidden="true" />
       )}
-      {children && (
-        <div className="mt-2">{children}</div>
-      )}
+      <p className="text-sm text-gray-500 text-center">{displayMessage}</p>
+      {children && <div className="mt-2">{children}</div>}
     </div>
   );
 }

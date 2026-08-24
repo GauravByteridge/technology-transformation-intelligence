@@ -9,35 +9,59 @@ import {
   Legend,
   ResponsiveContainer,
 } from 'recharts';
-import { useAuditChart } from '../../hooks/useDashboard';
-import { ChartErrorBoundary } from './ChartErrorBoundary';
+import { LoadingState, ErrorState, EmptyState } from '@/components/common';
 import { ChartDetailPanel, type ChartDetailData } from './ChartDetailPanel';
 
-function AuditRemediationChartInner() {
-  const { data, isLoading, isError } = useAuditChart();
+export interface AuditRemediationData {
+  openAuditFindings: number;
+  openRemediationItems: number;
+}
+
+export interface AuditRemediationChartProps {
+  /** Derived audit/remediation aggregated counts from portfolio summary */
+  data: AuditRemediationData | undefined;
+  isLoading: boolean;
+  isError: boolean;
+  onRetry: () => void;
+}
+
+/**
+ * AuditRemediationChart — renders a bar chart showing open audit findings
+ * and open remediation items. Accepts pre-derived data props.
+ */
+export function AuditRemediationChart({ data, isLoading, isError, onRetry }: AuditRemediationChartProps) {
   const [detail, setDetail] = useState<ChartDetailData | null>(null);
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-pulse bg-gray-200 rounded w-full h-48" />
+      <div>
+        <h3 className="text-sm font-semibold text-gray-700 mb-2">Audit & Remediation</h3>
+        <LoadingState variant="skeleton" message="Loading audit data" />
       </div>
     );
   }
 
-  if (isError || !data) {
+  if (isError) {
     return (
-      <div className="flex items-center justify-center h-64 bg-gray-50 border border-gray-200 rounded-lg">
-        <p className="text-gray-500 text-sm">Chart unavailable</p>
+      <div>
+        <h3 className="text-sm font-semibold text-gray-700 mb-2">Audit & Remediation</h3>
+        <ErrorState message="Failed to load audit data" onRetry={onRetry} />
+      </div>
+    );
+  }
+
+  if (!data || (data.openAuditFindings === 0 && data.openRemediationItems === 0)) {
+    return (
+      <div>
+        <h3 className="text-sm font-semibold text-gray-700 mb-2">Audit & Remediation</h3>
+        <EmptyState message="No audit data available" />
       </div>
     );
   }
 
   const chartData = [
-    { name: 'Open Findings', value: data.open_findings, color: '#f59e0b' },
-    { name: 'Critical Findings', value: data.critical_findings, color: '#ef4444' },
-    { name: 'Remediated', value: data.remediated_items, color: '#22c55e' },
-    { name: 'Overdue', value: data.overdue_items, color: '#8b5cf6' },
+    { name: 'Open Audit Findings', value: data.openAuditFindings },
+    { name: 'Open Remediation Items', value: data.openRemediationItems },
   ];
 
   const handleClick = (entry: { name: string; value: number }) => {
@@ -50,9 +74,7 @@ function AuditRemediationChartInner() {
 
   return (
     <div className="relative">
-      <h3 className="text-sm font-semibold text-gray-700 mb-2">
-        Audit & Remediation
-      </h3>
+      <h3 className="text-sm font-semibold text-gray-700 mb-2">Audit & Remediation</h3>
       <ChartDetailPanel data={detail} onClose={() => setDetail(null)} />
       <ResponsiveContainer width="100%" height={280}>
         <BarChart data={chartData}>
@@ -60,15 +82,12 @@ function AuditRemediationChartInner() {
           <XAxis
             dataKey="name"
             tick={{ fontSize: 11 }}
-            label={{ value: 'Metric', position: 'insideBottom', offset: -5 }}
           />
           <YAxis
             tick={{ fontSize: 12 }}
             label={{ value: 'Count', angle: -90, position: 'insideLeft' }}
           />
-          <Tooltip
-            formatter={(value, name) => [value, name]}
-          />
+          <Tooltip formatter={(value, name) => [value, name]} />
           <Legend />
           <Bar
             dataKey="value"
@@ -76,18 +95,9 @@ function AuditRemediationChartInner() {
             onClick={(data) => handleClick(data as { name: string; value: number })}
             style={{ cursor: 'pointer' }}
             fill="#3b82f6"
-          >
-          </Bar>
+          />
         </BarChart>
       </ResponsiveContainer>
     </div>
-  );
-}
-
-export function AuditRemediationChart() {
-  return (
-    <ChartErrorBoundary>
-      <AuditRemediationChartInner />
-    </ChartErrorBoundary>
   );
 }

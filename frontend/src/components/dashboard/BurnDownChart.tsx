@@ -9,35 +9,59 @@ import {
   Legend,
   ResponsiveContainer,
 } from 'recharts';
-import { useBurndownChart } from '../../hooks/useDashboard';
-import { ChartErrorBoundary } from './ChartErrorBoundary';
+import { LoadingState, ErrorState, EmptyState } from '@/components/common';
 import { ChartDetailPanel, type ChartDetailData } from './ChartDetailPanel';
 
-function BurnDownChartInner() {
-  const { data, isLoading, isError } = useBurndownChart();
+export interface BurnDownDataPoint {
+  date: string;
+  planned: number;
+  actual: number;
+}
+
+export interface BurnDownChartProps {
+  /** Derived progress data — planned vs actual over time */
+  data: BurnDownDataPoint[] | undefined;
+  isLoading: boolean;
+  isError: boolean;
+  onRetry: () => void;
+}
+
+/**
+ * BurnDownChart — renders a line chart showing planned vs actual progress
+ * over time. Accepts pre-derived data props. Since the portfolio summary
+ * provides only per-project progress percentages (not time-series),
+ * this chart may show empty state when burn-down data isn't available
+ * at portfolio level.
+ */
+export function BurnDownChart({ data, isLoading, isError, onRetry }: BurnDownChartProps) {
   const [detail, setDetail] = useState<ChartDetailData | null>(null);
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-pulse bg-gray-200 rounded w-full h-48" />
+      <div>
+        <h3 className="text-sm font-semibold text-gray-700 mb-2">Project Burn Down</h3>
+        <LoadingState variant="skeleton" message="Loading progress data" />
       </div>
     );
   }
 
-  if (isError || !data || data.length < 2) {
+  if (isError) {
     return (
-      <div className="flex items-center justify-center h-64 bg-gray-50 border border-gray-200 rounded-lg">
-        <p className="text-gray-500 text-sm">Chart unavailable</p>
+      <div>
+        <h3 className="text-sm font-semibold text-gray-700 mb-2">Project Burn Down</h3>
+        <ErrorState message="Failed to load progress data" onRetry={onRetry} />
       </div>
     );
   }
 
-  const chartData = data.map((point) => ({
-    date: point.date,
-    planned: point.planned_progress,
-    actual: point.actual_progress,
-  }));
+  if (!data || data.length < 2) {
+    return (
+      <div>
+        <h3 className="text-sm font-semibold text-gray-700 mb-2">Project Burn Down</h3>
+        <EmptyState message="No burn-down data available" />
+      </div>
+    );
+  }
 
   const handleClick = (point: Record<string, unknown>, dataKey: string) => {
     setDetail({
@@ -49,12 +73,10 @@ function BurnDownChartInner() {
 
   return (
     <div className="relative">
-      <h3 className="text-sm font-semibold text-gray-700 mb-2">
-        Project Burn Down
-      </h3>
+      <h3 className="text-sm font-semibold text-gray-700 mb-2">Project Burn Down</h3>
       <ChartDetailPanel data={detail} onClose={() => setDetail(null)} />
       <ResponsiveContainer width="100%" height={280}>
-        <LineChart data={chartData}>
+        <LineChart data={data}>
           <CartesianGrid strokeDasharray="3 3" />
           <XAxis
             dataKey="date"
@@ -63,6 +85,7 @@ function BurnDownChartInner() {
           />
           <YAxis
             tick={{ fontSize: 12 }}
+            domain={[0, 100]}
             label={{ value: 'Progress (%)', angle: -90, position: 'insideLeft' }}
           />
           <Tooltip
@@ -107,13 +130,5 @@ function BurnDownChartInner() {
         </LineChart>
       </ResponsiveContainer>
     </div>
-  );
-}
-
-export function BurnDownChart() {
-  return (
-    <ChartErrorBoundary>
-      <BurnDownChartInner />
-    </ChartErrorBoundary>
   );
 }

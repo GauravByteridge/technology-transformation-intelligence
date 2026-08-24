@@ -9,113 +9,107 @@ import {
   Legend,
   ResponsiveContainer,
 } from 'recharts';
-import { useResourceForecastChart } from '../../hooks/useDashboard';
-import { ChartErrorBoundary } from './ChartErrorBoundary';
+import { LoadingState, ErrorState, EmptyState } from '@/components/common';
 import { ChartDetailPanel, type ChartDetailData } from './ChartDetailPanel';
 
-function ResourceForecastChartInner() {
-  const { data, isLoading, isError } = useResourceForecastChart();
+export interface ResourceUtilizationItem {
+  project_id: string;
+  utilization: number;
+}
+
+export interface ResourceForecastChartProps {
+  /** Derived resource utilization data from portfolio summary projects */
+  data: ResourceUtilizationItem[] | undefined;
+  isLoading: boolean;
+  isError: boolean;
+  onRetry: () => void;
+}
+
+/**
+ * ResourceForecastChart — renders per-project resource utilization as an area chart.
+ * Accepts pre-derived data props from the portfolio summary.
+ */
+export function ResourceForecastChart({ data, isLoading, isError, onRetry }: ResourceForecastChartProps) {
   const [detail, setDetail] = useState<ChartDetailData | null>(null);
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-pulse bg-gray-200 rounded w-full h-48" />
+      <div>
+        <h3 className="text-sm font-semibold text-gray-700 mb-2">Resource Utilization</h3>
+        <LoadingState variant="skeleton" message="Loading resource data" />
       </div>
     );
   }
 
-  if (isError || !data || data.length < 2) {
+  if (isError) {
     return (
-      <div className="flex items-center justify-center h-64 bg-gray-50 border border-gray-200 rounded-lg">
-        <p className="text-gray-500 text-sm">Chart unavailable</p>
+      <div>
+        <h3 className="text-sm font-semibold text-gray-700 mb-2">Resource Utilization</h3>
+        <ErrorState message="Failed to load resource data" onRetry={onRetry} />
       </div>
     );
   }
 
-  const chartData = data.map((point) => ({
-    month: point.month,
-    demand: point.demand,
-    capacity: point.capacity,
+  if (!data || data.length === 0) {
+    return (
+      <div>
+        <h3 className="text-sm font-semibold text-gray-700 mb-2">Resource Utilization</h3>
+        <EmptyState message="No resource data available" />
+      </div>
+    );
+  }
+
+  const chartData = data.map((item) => ({
+    project: item.project_id,
+    utilization: item.utilization,
   }));
 
-  const handleClick = (point: Record<string, unknown>, dataKey: string) => {
+  const handleClick = (point: Record<string, unknown>) => {
     setDetail({
-      label: point.month as string,
-      value: point[dataKey] as number,
-      category: dataKey === 'demand' ? 'Resource Demand' : 'Available Capacity',
+      label: point.project as string,
+      value: `${point.utilization}%`,
+      category: 'Resource Utilization',
     });
   };
 
   return (
     <div className="relative">
-      <h3 className="text-sm font-semibold text-gray-700 mb-2">
-        Resource Forecast
-      </h3>
+      <h3 className="text-sm font-semibold text-gray-700 mb-2">Resource Utilization</h3>
       <ChartDetailPanel data={detail} onClose={() => setDetail(null)} />
       <ResponsiveContainer width="100%" height={280}>
         <AreaChart data={chartData}>
           <CartesianGrid strokeDasharray="3 3" />
           <XAxis
-            dataKey="month"
-            tick={{ fontSize: 12 }}
-            label={{ value: 'Month', position: 'insideBottom', offset: -5 }}
+            dataKey="project"
+            tick={{ fontSize: 11 }}
+            label={{ value: 'Project', position: 'insideBottom', offset: -5 }}
           />
           <YAxis
             tick={{ fontSize: 12 }}
-            label={{ value: 'Headcount', angle: -90, position: 'insideLeft' }}
+            domain={[0, 100]}
+            label={{ value: 'Utilization (%)', angle: -90, position: 'insideLeft' }}
           />
           <Tooltip
-            formatter={(value, name) => [
-              value,
-              name === 'demand' ? 'Demand' : 'Capacity',
-            ]}
+            formatter={(value) => [`${value}%`, 'Utilization']}
           />
-          <Legend
-            formatter={(value) =>
-              value === 'demand' ? 'Demand' : 'Capacity'
-            }
-          />
+          <Legend formatter={() => 'Utilization'} />
           <Area
             type="monotone"
-            dataKey="demand"
-            stroke="#ef4444"
-            fill="#fecaca"
+            dataKey="utilization"
+            stroke="#6366f1"
+            fill="#c7d2fe"
             strokeWidth={2}
             activeDot={{
               r: 6,
               cursor: 'pointer',
               onClick: (_, event: unknown) => {
                 const e = event as { payload?: Record<string, unknown> };
-                if (e.payload) handleClick(e.payload, 'demand');
-              },
-            }}
-          />
-          <Area
-            type="monotone"
-            dataKey="capacity"
-            stroke="#22c55e"
-            fill="#bbf7d0"
-            strokeWidth={2}
-            activeDot={{
-              r: 6,
-              cursor: 'pointer',
-              onClick: (_, event: unknown) => {
-                const e = event as { payload?: Record<string, unknown> };
-                if (e.payload) handleClick(e.payload, 'capacity');
+                if (e.payload) handleClick(e.payload);
               },
             }}
           />
         </AreaChart>
       </ResponsiveContainer>
     </div>
-  );
-}
-
-export function ResourceForecastChart() {
-  return (
-    <ChartErrorBoundary>
-      <ResourceForecastChartInner />
-    </ChartErrorBoundary>
   );
 }

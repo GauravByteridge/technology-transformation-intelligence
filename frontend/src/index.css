@@ -68,3 +68,15 @@
     font-family: "Inter", ui-sans-serif, system-ui, sans-serif;
   }
 }
+
+/*
+ * Custom keyframes for indeterminate progress bar animation.
+ */
+@keyframes indeterminate {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(300%);
+  }
+}

@@ -4,4 +4,7 @@ export { JIRASection } from './JIRASection';
 export { AuditSection } from './AuditSection';
 export { ControlsSection } from './ControlsSection';
 export { ResourcesSection } from './ResourcesSection';
+export { RemediationSection } from './RemediationSection';
+export { SdlcSection } from './SdlcSection';
+export { DocumentsSection } from './DocumentsSection';
 export { ProjectAITab } from './ProjectAITab';

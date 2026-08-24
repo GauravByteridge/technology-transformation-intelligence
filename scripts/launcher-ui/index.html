@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TTI Platform Launcher</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0f172a; color: #e2e8f0; min-height: 100vh; }
+.header { background: #1e293b; padding: 16px 24px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #334155; }
+.header h1 { font-size: 18px; color: #38bdf8; }
+.header-actions { display: flex; gap: 8px; }
+.container { padding: 24px; max-width: 1200px; margin: 0 auto; }
+.section-title { font-size: 14px; font-weight: 600; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 12px; }
+
+.services-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); gap: 16px; margin-bottom: 24px; }
+.card { background: #1e293b; border: 1px solid #334155; border-radius: 8px; padding: 20px; transition: border-color 0.2s; }
+.card:hover { border-color: #38bdf8; }
+.card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+.card-title { font-size: 16px; font-weight: 600; }
+.card-tech { font-size: 12px; color: #64748b; margin-bottom: 10px; }
+.card-meta { display: flex; gap: 16px; font-size: 13px; color: #94a3b8; margin-bottom: 12px; }
+.card-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+
+.badge { display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; text-transform: uppercase; }
+.badge-stopped { background: #1e293b; color: #64748b; border: 1px solid #475569; }
+.badge-starting { background: #422006; color: #fb923c; border: 1px solid #92400e; }
+.badge-running { background: #052e16; color: #4ade80; border: 1px solid #166534; }
+
+.btn { padding: 7px 14px; border: none; border-radius: 6px; font-size: 12px; font-weight: 500; cursor: pointer; transition: all 0.15s; }
+.btn:hover { filter: brightness(1.1); transform: translateY(-1px); }
+.btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+.btn-start { background: #16a34a; color: #fff; }
+.btn-stop { background: #dc2626; color: #fff; }
+.btn-restart { background: #ea580c; color: #fff; }
+.btn-action { background: #2563eb; color: #fff; }
+.btn-secondary { background: #334155; color: #cbd5e1; }
+.btn-danger { background: #7f1d1d; color: #fca5a5; }
+.btn-link { background: #1e293b; border: 1px solid #475569; color: #38bdf8; text-decoration: none; display: inline-block; }
+
+/* DB Panel */
+.db-panel { background: #1e293b; border: 1px solid #334155; border-radius: 8px; padding: 20px; margin-bottom: 24px; }
+.db-panel h3 { margin-bottom: 12px; color: #38bdf8; font-size: 14px; }
+.db-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 12px; }
+.db-card { background: #0f172a; border: 1px solid #334155; border-radius: 6px; padding: 14px; }
+.db-card-title { font-size: 13px; font-weight: 600; margin-bottom: 6px; }
+.db-card-info { font-size: 12px; color: #64748b; margin-bottom: 8px; }
+
+/* Logs */
+.log-panel { background: #020617; border: 1px solid #334155; border-radius: 8px; padding: 16px; margin-top: 16px; display: none; }
+.log-panel.active { display: block; }
+.log-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+.log-header h3 { font-size: 14px; color: #38bdf8; }
+.log-search { background: #1e293b; border: 1px solid #475569; color: #e2e8f0; padding: 5px 10px; border-radius: 4px; font-size: 12px; width: 200px; }
+.log-content { font-family: 'JetBrains Mono', 'Fira Code', Consolas, monospace; font-size: 12px; line-height: 1.7; max-height: 400px; overflow-y: auto; }
+.log-line { padding: 1px 0; }
+.log-line .time { color: #475569; margin-right: 8px; }
+.log-line.stderr { color: #f87171; }
+.log-line.system { color: #fbbf24; font-style: italic; }
+
+/* Config panel */
+.config-panel { background: #1e293b; border: 1px solid #334155; border-radius: 8px; padding: 20px; margin-bottom: 24px; display: none; }
+.config-panel.active { display: block; }
+.config-panel h3 { margin-bottom: 12px; color: #38bdf8; font-size: 14px; }
+.config-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.config-field label { font-size: 11px; color: #64748b; display: block; margin-bottom: 3px; }
+.config-field input { background: #0f172a; border: 1px solid #475569; color: #e2e8f0; padding: 6px 10px; border-radius: 4px; font-size: 12px; width: 100%; }
+
+/* Toast */
+.toast { position: fixed; bottom: 20px; right: 20px; padding: 12px 20px; border-radius: 6px; font-size: 13px; z-index: 1000; display: none; max-width: 400px; animation: slideIn 0.3s ease; }
+.toast.success { background: #166534; color: #bbf7d0; border: 1px solid #22c55e; }
+.toast.error { background: #7f1d1d; color: #fecaca; border: 1px solid #dc2626; }
+.toast.show { display: block; }
+@keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>⚡ TTI Platform Launcher</h1>
+  <div class="header-actions">
+    <button class="btn btn-start" onclick="startAll()">▶ Start All</button>
+    <button class="btn btn-danger" onclick="stopAll()">⏹ Kill All</button>
+    <button class="btn btn-secondary" onclick="toggleConfig()">⚙ Config</button>
+  </div>
+</div>
+
+<div class="container">
+  <!-- Config Panel -->
+  <div class="config-panel" id="configPanel">
+    <h3>⚙ Environment Configuration</h3>
+    <div class="config-grid" id="configGrid"></div>
+    <div style="margin-top: 12px; display: flex; gap: 8px;">
+      <button class="btn btn-action" onclick="saveConfigUI()">Save</button>
+      <button class="btn btn-secondary" onclick="toggleConfig()">Close</button>
+    </div>
+  </div>
+
+  <!-- Database Panel -->
+  <div class="db-panel">
+    <h3>🗄 Databases & Seeding</h3>
+    <div class="db-grid" id="dbGrid"></div>
+  </div>
+
+  <!-- Utilities -->
+  <div style="margin-bottom: 24px; display: flex; gap: 8px; flex-wrap: wrap;">
+    <button class="btn btn-action" onclick="installDeps('frontend')">📦 npm install (FE)</button>
+    <button class="btn btn-action" onclick="installDeps('backend')">📦 pip install (BE)</button>
+    <button class="btn btn-secondary" onclick="freePort(8000)">🔓 Free :8000</button>
+    <button class="btn btn-secondary" onclick="freePort(5173)">🔓 Free :5173</button>
+  </div>
+
+  <!-- Services -->
+  <div class="section-title">Services</div>
+  <div class="services-grid" id="servicesGrid"></div>
+
+  <!-- Logs -->
+  <div class="log-panel" id="logPanel">
+    <div class="log-header">
+      <h3 id="logTitle">Logs</h3>
+      <input type="text" class="log-search" id="logSearch" placeholder="Search logs..." oninput="refreshLogs()">
+    </div>
+    <div class="log-content" id="logContent"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const API = '';
+let selectedService = null;
+
+async function api(path, method = 'GET', body = null) {
+  const opts = { method, headers: { 'Content-Type': 'application/json' } };
+  if (body) opts.body = JSON.stringify(body);
+  const res = await fetch(API + path, opts);
+  return res.json();
+}
+
+function toast(msg, type = 'success') {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = `toast ${type} show`;
+  setTimeout(() => el.classList.remove('show'), type === 'error' ? 8000 : 3000);
+}
+
+// ─── Services ────────────────────────────────────────────────────────────────
+
+async function startService(key) { const r = await api(`/api/services/${key}/start`, 'POST'); r.error ? toast(r.error, 'error') : toast(`${key} started`); refreshStatus(); }
+async function stopService(key) { const r = await api(`/api/services/${key}/stop`, 'POST'); r.error ? toast(r.error, 'error') : toast(`${key} stopped`); refreshStatus(); }
+async function restartService(key) { const r = await api(`/api/services/${key}/restart`, 'POST'); r.error ? toast(r.error, 'error') : toast(`${key} restarted`); refreshStatus(); }
+async function startAll() { await api('/api/start-all', 'POST'); toast('All services starting'); refreshStatus(); }
+async function stopAll() { await api('/api/stop-all', 'POST'); toast('All services stopped'); refreshStatus(); }
+
+async function refreshStatus() {
+  const statuses = await api('/api/status');
+  const grid = document.getElementById('servicesGrid');
+  grid.innerHTML = '';
+  for (const [key, svc] of Object.entries(statuses)) {
+    const isRunning = svc.status !== 'stopped';
+    grid.innerHTML += `
+      <div class="card" onclick="selectService('${key}', '${svc.name}')">
+        <div class="card-header">
+          <span class="card-title">${svc.name}</span>
+          <span class="badge badge-${svc.status}">${svc.status}</span>
+        </div>
+        <div class="card-tech">${svc.tech}</div>
+        <div class="card-meta">
+          <span>Port: ${svc.port} ${svc.portUp ? '✅' : '⬜'}</span>
+          ${svc.pid ? `<span>PID: ${svc.pid}</span>` : ''}
+        </div>
+        <div class="card-actions">
+          <button class="btn btn-start" onclick="event.stopPropagation(); startService('${key}')" ${isRunning ? 'disabled' : ''}>▶ Start</button>
+          <button class="btn btn-stop" onclick="event.stopPropagation(); stopService('${key}')" ${!isRunning ? 'disabled' : ''}>⏹ Stop</button>
+          <button class="btn btn-restart" onclick="event.stopPropagation(); restartService('${key}')" ${!isRunning ? 'disabled' : ''}>🔄 Restart</button>
+          <a class="btn btn-link" href="http://localhost:${svc.port}" target="_blank" onclick="event.stopPropagation()">🔗 Open</a>
+        </div>
+      </div>`;
+  }
+}
+
+// ─── Logs ────────────────────────────────────────────────────────────────────
+
+function selectService(key, name) {
+  selectedService = key;
+  document.getElementById('logPanel').classList.add('active');
+  document.getElementById('logTitle').textContent = `Logs — ${name}`;
+  refreshLogs();
+}
+
+async function refreshLogs() {
+  if (!selectedService) return;
+  const search = document.getElementById('logSearch').value || '';
+  const params = search ? `?search=${encodeURIComponent(search)}` : '';
+  const data = await api(`/api/services/${selectedService}/logs${params}`);
+  const content = document.getElementById('logContent');
+  if (!data.logs || data.logs.length === 0) { content.innerHTML = '<span style="color:#475569">No logs yet.</span>'; return; }
+  content.innerHTML = data.logs.map(l => {
+    const time = l.time.split('T')[1]?.split('.')[0] || '';
+    const cls = l.stream === 'stderr' ? 'stderr' : l.stream === 'system' ? 'system' : '';
+    return `<div class="log-line ${cls}"><span class="time">${time}</span>${escapeHtml(l.text)}</div>`;
+  }).join('');
+  content.scrollTop = content.scrollHeight;
+}
+
+function escapeHtml(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+// ─── Database ────────────────────────────────────────────────────────────────
+
+function renderDBPanel() {
+  const grid = document.getElementById('dbGrid');
+  grid.innerHTML = `
+    <div class="db-card">
+      <div class="db-card-title">App DB</div>
+      <div class="db-card-info">PostgreSQL — app_db (localhost:5432)</div>
+      <button class="btn btn-action" onclick="seedDB('app_db')">🌱 Run Migrations + Seed</button>
+    </div>
+    <div class="db-card">
+      <div class="db-card-title">RAG DB</div>
+      <div class="db-card-info">PostgreSQL + pgvector — rag_db (localhost:5432)</div>
+      <button class="btn btn-action" onclick="seedDB('rag_db')">🌱 Run RAG Migrations</button>
+    </div>`;
+}
+
+async function seedDB(key) {
+  toast(`Running ${key} seed...`);
+  const r = await api(`/api/db/${key}/seed`, 'POST');
+  r.error ? toast(`Seed failed: ${r.error}`, 'error') : toast(`${key} seeded successfully`);
+}
+
+// ─── Utilities ───────────────────────────────────────────────────────────────
+
+async function installDeps(target) {
+  toast(`Installing ${target} dependencies...`);
+  const r = await api('/api/install', 'POST', { target });
+  r.error ? toast(`Install failed: ${r.error}`, 'error') : toast(r.message);
+}
+
+async function freePort(port) {
+  const r = await api(`/api/ports/${port}/free`, 'POST');
+  r.error ? toast(r.error, 'error') : toast(`Port ${port} freed`);
+  setTimeout(refreshStatus, 1000);
+}
+
+// ─── Config ──────────────────────────────────────────────────────────────────
+
+async function toggleConfig() {
+  const panel = document.getElementById('configPanel');
+  const isActive = panel.classList.toggle('active');
+  if (isActive) {
+    const cfg = await api('/api/config');
+    const grid = document.getElementById('configGrid');
+    grid.innerHTML = '';
+    for (const [key, value] of Object.entries(cfg.environment)) {
+      grid.innerHTML += `<div class="config-field"><label>${key}</label><input type="${key.includes('KEY') || key.includes('SECRET') ? 'password' : 'text'}" data-key="${key}" value="${value}"></div>`;
+    }
+  }
+}
+
+async function saveConfigUI() {
+  const inputs = document.querySelectorAll('#configGrid input');
+  const environment = {};
+  inputs.forEach(i => { environment[i.dataset.key] = i.value; });
+  await api('/api/config', 'PUT', { environment });
+  toast('Configuration saved');
+  toggleConfig();
+}
+
+// ─── Init ────────────────────────────────────────────────────────────────────
+
+renderDBPanel();
+refreshStatus();
+setInterval(() => { refreshStatus(); if (selectedService) refreshLogs(); }, 4000);
+</script>
+</body>
+</html>

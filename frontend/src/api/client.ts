@@ -1,30 +1,39 @@
-import { apiClient as baseClient, createApiClient } from '@/services/api-client';
+import { apiClient as baseClient } from '@/services/api-client';
 import type { ApiClient } from '@/services/api-client';
 import type {
-  DashboardKPIs,
-  ProjectHealthDistribution,
-  BudgetChartItem,
-  BurndownPoint,
-  AuditChart,
-  ResourceForecastPoint,
-  ProjectSummary,
-  ProjectDetail,
-  ProjectFilters,
-  Financial,
-  JIRAIssue,
-  Resource,
-  AuditFinding,
-  ITControl,
-  ProjectDocument,
+  PortfolioSummaryResponse,
+  ProjectListResponse,
+  ProjectResponse,
+  ProjectHealthResponse,
+  ProjectFinanceResponse,
+  ProjectJiraResponse,
+  ProjectResourceResponse,
+  ProjectAuditResponse,
+  ProjectControlsResponse,
+  ProjectRemediationResponse,
+  ProjectSdlcResponse,
+  ProjectProgressResponse,
+  ProjectRisksResponse,
+  DataSourceResponse,
+  DocumentResponse,
+  DocumentSearchRequest,
+  DocumentSearchResponse,
+  AIQueryRequest,
   AIResponse,
-  AIQuestionRequest,
-  ExecutiveBrief,
-  DataSourceStatus,
+  FileUploadResponse,
+  DatasetResponse,
+  DatasetPreviewResponse,
+  DatasetDetailResponse,
+  DatasetQueryRequest,
+  DatasetQueryResponse,
+  DatasetConfirmRequest,
 } from '../types';
 
 /**
  * Domain-specific API client that delegates HTTP communication
  * to the centralized typed ApiClient in services/api-client.ts.
+ *
+ * All paths use the versioned /api/v1/ prefix matching the backend router.
  */
 class APIClient {
   private client: ApiClient;
@@ -33,149 +42,168 @@ class APIClient {
     this.client = client;
   }
 
-  // ─── Dashboard ──────────────────────────────────────────────
+  // ─── Portfolio / Dashboard ──────────────────────────────────
 
-  async getDashboardKPIs(): Promise<DashboardKPIs> {
-    const response = await this.client.get<DashboardKPIs>('/api/dashboard/kpis');
-    return response.data;
-  }
-
-  async getProjectHealthDistribution(): Promise<ProjectHealthDistribution> {
-    const response = await this.client.get<ProjectHealthDistribution>(
-      '/api/dashboard/charts/health'
-    );
-    return response.data;
-  }
-
-  async getBudgetChart(): Promise<BudgetChartItem[]> {
-    const response = await this.client.get<BudgetChartItem[]>(
-      '/api/dashboard/charts/budget'
-    );
-    return response.data;
-  }
-
-  async getBurndownChart(): Promise<BurndownPoint[]> {
-    const response = await this.client.get<BurndownPoint[]>(
-      '/api/dashboard/charts/burndown'
-    );
-    return response.data;
-  }
-
-  async getAuditChart(): Promise<AuditChart> {
-    const response = await this.client.get<AuditChart>(
-      '/api/dashboard/charts/audit'
-    );
-    return response.data;
-  }
-
-  async getResourceForecastChart(): Promise<ResourceForecastPoint[]> {
-    const response = await this.client.get<ResourceForecastPoint[]>(
-      '/api/dashboard/charts/resources'
-    );
+  async getDashboardSummary(): Promise<PortfolioSummaryResponse> {
+    const response = await this.client.get<PortfolioSummaryResponse>('/api/v1/portfolio/summary');
     return response.data;
   }
 
   // ─── Projects ───────────────────────────────────────────────
 
-  async getProjects(filters?: ProjectFilters): Promise<ProjectSummary[]> {
-    const params: Record<string, unknown> = {};
-    if (filters?.status?.length) params.status = filters.status.join(',');
-    if (filters?.risk?.length) params.risk = filters.risk.join(',');
-    if (filters?.project_manager?.length)
-      params.project_manager = filters.project_manager.join(',');
-    if (filters?.search) params.search = filters.search;
+  async getProjects(): Promise<ProjectListResponse> {
+    const response = await this.client.get<ProjectListResponse>('/api/v1/projects');
+    return response.data;
+  }
 
-    const response = await this.client.get<ProjectSummary[]>('/api/projects', {
-      params,
+  async getProjectById(id: string): Promise<ProjectResponse> {
+    const response = await this.client.get<ProjectResponse>(`/api/v1/projects/${id}`);
+    return response.data;
+  }
+
+  // ─── Project Domain Endpoints ───────────────────────────────
+
+  async getProjectHealth(id: string): Promise<ProjectHealthResponse> {
+    const response = await this.client.get<ProjectHealthResponse>(`/api/v1/projects/${id}/health`);
+    return response.data;
+  }
+
+  async getProjectFinance(id: string): Promise<ProjectFinanceResponse> {
+    const response = await this.client.get<ProjectFinanceResponse>(`/api/v1/projects/${id}/finance`);
+    return response.data;
+  }
+
+  async getProjectJira(id: string): Promise<ProjectJiraResponse> {
+    const response = await this.client.get<ProjectJiraResponse>(`/api/v1/projects/${id}/jira`);
+    return response.data;
+  }
+
+  async getProjectResources(id: string): Promise<ProjectResourceResponse> {
+    const response = await this.client.get<ProjectResourceResponse>(
+      `/api/v1/projects/${id}/resources`,
+    );
+    return response.data;
+  }
+
+  async getProjectAudit(id: string): Promise<ProjectAuditResponse> {
+    const response = await this.client.get<ProjectAuditResponse>(`/api/v1/projects/${id}/audit`);
+    return response.data;
+  }
+
+  async getProjectControls(id: string): Promise<ProjectControlsResponse> {
+    const response = await this.client.get<ProjectControlsResponse>(
+      `/api/v1/projects/${id}/controls`,
+    );
+    return response.data;
+  }
+
+  async getProjectRemediation(id: string): Promise<ProjectRemediationResponse> {
+    const response = await this.client.get<ProjectRemediationResponse>(
+      `/api/v1/projects/${id}/remediation`,
+    );
+    return response.data;
+  }
+
+  async getProjectSdlc(id: string): Promise<ProjectSdlcResponse> {
+    const response = await this.client.get<ProjectSdlcResponse>(`/api/v1/projects/${id}/sdlc`);
+    return response.data;
+  }
+
+  async getProjectProgress(id: string): Promise<ProjectProgressResponse> {
+    const response = await this.client.get<ProjectProgressResponse>(
+      `/api/v1/projects/${id}/progress`,
+    );
+    return response.data;
+  }
+
+  async getProjectRisks(id: string): Promise<ProjectRisksResponse> {
+    const response = await this.client.get<ProjectRisksResponse>(`/api/v1/projects/${id}/risks`);
+    return response.data;
+  }
+
+  // ─── Documents ──────────────────────────────────────────────
+
+  async getProjectDocuments(id: string): Promise<DocumentResponse[]> {
+    const response = await this.client.get<DocumentResponse[]>(
+      `/api/v1/documents?project_id=${id}`,
+    );
+    return response.data;
+  }
+
+  async searchDocuments(request: DocumentSearchRequest): Promise<DocumentSearchResponse> {
+    const response = await this.client.post<DocumentSearchResponse>(
+      '/api/v1/documents/search',
+      request,
+    );
+    return response.data;
+  }
+
+  // ─── AI ──────────────────────────────────────────────────────
+
+  async submitAIQuery(request: AIQueryRequest): Promise<AIResponse> {
+    const response = await this.client.post<AIResponse>('/api/v1/ai/query', request, {
+      timeout: 60_000,
     });
     return response.data;
   }
 
-  async getProjectById(id: string): Promise<ProjectDetail> {
-    const response = await this.client.get<ProjectDetail>(`/api/projects/${id}`);
-    return response.data;
-  }
+  // ─── File Upload ─────────────────────────────────────────────
 
-  async getProjectFinancials(id: string): Promise<Financial[]> {
-    const response = await this.client.get<Financial[]>(
-      `/api/projects/${id}/financials`
+  async uploadFile(file: File, projectId?: string): Promise<FileUploadResponse> {
+    const formData = new FormData();
+    formData.append('file', file);
+    if (projectId) {
+      formData.append('project_id', projectId);
+    }
+    const response = await this.client.post<FileUploadResponse>(
+      '/api/v1/files/upload',
+      formData,
+      { headers: { 'Content-Type': 'multipart/form-data' } },
     );
     return response.data;
   }
 
-  async getProjectJIRA(id: string): Promise<JIRAIssue[]> {
-    const response = await this.client.get<JIRAIssue[]>(
-      `/api/projects/${id}/jira`
+  async getFileDatasets(fileId: string): Promise<DatasetResponse[]> {
+    const response = await this.client.get<DatasetResponse[]>(
+      `/api/v1/files/${fileId}/datasets`,
     );
     return response.data;
   }
 
-  async getProjectAudit(id: string): Promise<AuditFinding[]> {
-    const response = await this.client.get<AuditFinding[]>(
-      `/api/projects/${id}/audit`
+  // ─── Datasets ──────────────────────────────────────────────
+
+  async getDatasets(): Promise<DatasetResponse[]> {
+    const response = await this.client.get<DatasetResponse[]>('/api/v1/datasets');
+    return response.data;
+  }
+
+  async getDatasetPreview(id: string): Promise<DatasetPreviewResponse> {
+    const response = await this.client.get<DatasetPreviewResponse>(
+      `/api/v1/datasets/${id}/preview`,
     );
     return response.data;
   }
 
-  async getProjectControls(id: string): Promise<ITControl[]> {
-    const response = await this.client.get<ITControl[]>(
-      `/api/projects/${id}/controls`
+  async confirmDataset(id: string, request?: DatasetConfirmRequest): Promise<DatasetDetailResponse> {
+    const response = await this.client.post<DatasetDetailResponse>(
+      `/api/v1/datasets/${id}/confirm`,
+      request ?? {},
     );
     return response.data;
   }
 
-  async getProjectResources(id: string): Promise<Resource[]> {
-    const response = await this.client.get<Resource[]>(
-      `/api/projects/${id}/resources`
-    );
-    return response.data;
-  }
-
-  async getProjectDocuments(id: string): Promise<ProjectDocument[]> {
-    const response = await this.client.get<ProjectDocument[]>(
-      `/api/projects/${id}/documents`
-    );
-    return response.data;
-  }
-
-  // ─── AI ─────────────────────────────────────────────────────
-
-  async askQuestion(request: AIQuestionRequest): Promise<AIResponse> {
-    const response = await this.client.post<AIResponse>('/api/ai/ask', request, {
-      timeout: 30_000,
-    });
-    return response.data;
-  }
-
-  // ─── Executive Brief ────────────────────────────────────────
-
-  async generateBrief(projectId: string): Promise<ExecutiveBrief> {
-    const response = await this.client.post<ExecutiveBrief>(
-      `/api/briefs/${projectId}/generate`,
-      {},
-      { timeout: 60_000 },
-    );
-    return response.data;
-  }
-
-  async exportBriefPDF(projectId: string): Promise<Blob> {
-    // NOTE: Blob response requires a separate axios call since the typed
-    // ApiClient returns JSON by default. Using a dedicated client with
-    // responseType configuration for binary downloads.
-    const blobClient = createApiClient();
-    const response = await blobClient.get<Blob>(
-      `/api/briefs/${projectId}/export`,
-      { timeout: 60_000 },
+  async queryDataset(id: string, request: DatasetQueryRequest): Promise<DatasetQueryResponse> {
+    const response = await this.client.post<DatasetQueryResponse>(
+      `/api/v1/datasets/${id}/query`,
+      request,
     );
     return response.data;
   }
 
   // ─── Data Sources ───────────────────────────────────────────
 
-  async getDataSources(): Promise<DataSourceStatus[]> {
-    const response = await this.client.get<DataSourceStatus[]>(
-      '/api/datasources'
-    );
+  async getDataSources(): Promise<DataSourceResponse[]> {
+    const response = await this.client.get<DataSourceResponse[]>('/api/v1/data-sources');
     return response.data;
   }
 }
