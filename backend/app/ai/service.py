@@ -389,8 +389,14 @@ class AIService:
             visualization_spec = self._detect_visualization_from_answer(agent_response.answer)
         response_type = "chart" if visualization_spec else "text"
 
+        # If visualization was generated from the answer's markdown table,
+        # strip the table from the answer to avoid duplicate display
+        answer_text = strip_markup(agent_response.answer)
+        if visualization_spec and response_type == "chart":
+            answer_text = self._strip_markdown_table(answer_text)
+
         return AIResponse(
-            answer=strip_markup(agent_response.answer),
+            answer=answer_text,
             response_type=response_type,
             sources=sources,
             evidence=evidence,
@@ -459,6 +465,25 @@ class AIService:
                     }
 
         return None
+
+    def _strip_markdown_table(self, text: str) -> str:
+        """Remove markdown table lines from text to avoid duplicate display."""
+        import re
+        lines = text.split('\n')
+        result = []
+        in_table = False
+        for line in lines:
+            stripped = line.strip()
+            if stripped.startswith('|') and stripped.endswith('|'):
+                in_table = True
+                continue  # Skip table lines
+            elif in_table and not stripped:
+                in_table = False
+                continue  # Skip blank line after table
+            else:
+                in_table = False
+                result.append(line)
+        return '\n'.join(result).strip()
 
     def _detect_visualization_from_answer(self, answer: str) -> dict | None:
         """Parse markdown tables from the AI answer and build a chart spec.
