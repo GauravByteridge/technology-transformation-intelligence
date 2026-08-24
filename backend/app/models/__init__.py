@@ -17,32 +17,14 @@ from app.models.project import Project, ProjectMember
 # App_DB models — Data Sources
 from app.models.data_source import DataSource, SourceConnection
 from app.models.data_source_credential import DataSourceCredential
-from app.models.discovery_run import DataSourceDiscoveryRun
 
 # App_DB models — Enterprise Data Catalog
-from app.models.catalog_version import CatalogVersion
 from app.models.catalog_entry import CatalogEntry
-from app.models.catalog_field import CatalogField
-from app.models.catalog_relationship import CatalogRelationship
-from app.models.catalog_project_mapping import CatalogProjectMapping
 from app.models.project_source_mapping import ProjectSourceMapping
-
-# App_DB models — Documents / RAG (control-plane metadata)
-from app.models.app_document import AppDocument
-from app.models.document_version import DocumentVersion
-from app.models.document_processing_run import DocumentProcessingRun
 
 # App_DB models — AI / Conversations
 from app.models.conversation import Conversation, Message
 from app.models.query import Query, QueryHistory, SavedQuery
-from app.models.query_source_usage import QuerySourceUsage
-
-# App_DB models — Evidence / Lineage
-from app.models.evidence import Evidence
-from app.models.lineage import LineageRun, LineageNode
-
-# App_DB models — Executive Intelligence
-from app.models.executive_brief import ExecutiveBrief, BriefSource
 
 # App_DB models — Supporting domain models
 from app.models.uploaded_file import UploadedFile
@@ -115,32 +97,15 @@ __all__ = [
     "DataSource",
     "SourceConnection",
     "DataSourceCredential",
-    "DataSourceDiscoveryRun",
     # Enterprise Data Catalog
-    "CatalogVersion",
     "CatalogEntry",
-    "CatalogField",
-    "CatalogRelationship",
-    "CatalogProjectMapping",
     "ProjectSourceMapping",
-    # Documents (App_DB control-plane)
-    "AppDocument",
-    "DocumentVersion",
-    "DocumentProcessingRun",
     # AI / Conversations
     "Conversation",
     "Message",
     "Query",
-    "QueryHistory",  # Backward-compatible alias for Query
+    "QueryHistory",
     "SavedQuery",
-    "QuerySourceUsage",
-    # Evidence / Lineage
-    "Evidence",
-    "LineageRun",
-    "LineageNode",
-    # Executive Intelligence
-    "ExecutiveBrief",
-    "BriefSource",
     # Supporting domain models
     "UploadedFile",
     "AuditLog",
@@ -176,20 +141,4 @@ __all__ = [
     "DocumentMetadata",
     "Embedding",
     "EMBEDDING_DIMENSION",
-    # Enums
-    "CatalogVersionStatus",
-    "SourceType",
-    "EntryType",
-    "LineageNodeType",
-    "ProcessingStatus",
-    "ContentClassification",
-    "ProcessingStrategy",
-    "QueryStatus",
-    "ConversationMode",
-    "MessageRole",
-    "DiscoveryRunStatus",
-    "ProjectStatus",
-    "UserRole",
-    "UserStatus",
-    "BriefStatus",
 ]

@@ -61,15 +61,6 @@ class Query(AppBase):
     conversation: Mapped["Conversation"] = relationship(
         "Conversation", back_populates="queries"
     )
-    source_usages: Mapped[list["QuerySourceUsage"]] = relationship(
-        "QuerySourceUsage", back_populates="query", lazy="selectin"
-    )
-    evidence_items: Mapped[list["Evidence"]] = relationship(
-        "Evidence", back_populates="query", lazy="selectin"
-    )
-    lineage_run: Mapped["LineageRun | None"] = relationship(
-        "LineageRun", back_populates="query", uselist=False, lazy="selectin"
-    )
 
     def __repr__(self) -> str:
         return f"<Query id={self.id} status={self.status}>"

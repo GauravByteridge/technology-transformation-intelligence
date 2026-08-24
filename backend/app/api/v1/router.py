@@ -13,10 +13,7 @@ from app.api.v1.data_sources import router as data_sources_router
 from app.api.v1.datasets import router as datasets_router
 from app.api.v1.discovery import router as discovery_router
 from app.api.v1.documents import router as documents_router
-from app.api.v1.evidence_api import router as evidence_router
-from app.api.v1.executive_briefs import router as executive_briefs_router
 from app.api.v1.health import router as health_router
-from app.api.v1.lineage import router as lineage_router
 from app.api.v1.overview import router as overview_router
 from app.api.v1.portfolio import router as portfolio_router
 from app.api.v1.project_domain import router as project_domain_router
@@ -43,6 +40,3 @@ api_router.include_router(upload_router, prefix="/files", tags=["files"])
 api_router.include_router(datasets_router, prefix="/datasets", tags=["datasets"])
 api_router.include_router(catalog_router, prefix="/catalog", tags=["catalog"])
 api_router.include_router(query_history_router, prefix="/query-history", tags=["query-history"])
-api_router.include_router(evidence_router, prefix="/evidence", tags=["evidence"])
-api_router.include_router(lineage_router, prefix="/lineage", tags=["lineage"])
-api_router.include_router(executive_briefs_router, prefix="/briefs", tags=["executive-briefs"])

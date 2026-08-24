@@ -89,6 +89,9 @@ class CatalogEntry(AppBase):
     data_source: Mapped["DataSource"] = relationship(
         "DataSource", back_populates="catalog_entries", lazy="selectin"
     )
+    project_source_mappings: Mapped[list["ProjectSourceMapping"]] = relationship(
+        "ProjectSourceMapping", back_populates="catalog_entry", lazy="noload"
+    )
 
     def __repr__(self) -> str:
         return f"<CatalogEntry id={self.id} source_id={self.source_id} object={self.object_name}>"

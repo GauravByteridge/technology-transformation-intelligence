@@ -75,12 +75,6 @@ class DataSource(AppBase):
     credentials: Mapped[list["DataSourceCredential"]] = relationship(
         "DataSourceCredential", back_populates="data_source", lazy="noload"
     )
-    discovery_runs: Mapped[list["DataSourceDiscoveryRun"]] = relationship(
-        "DataSourceDiscoveryRun", back_populates="data_source", lazy="noload"
-    )
-    catalog_versions: Mapped[list["CatalogVersion"]] = relationship(
-        "CatalogVersion", back_populates="data_source", lazy="noload"
-    )
 
     def __repr__(self) -> str:
         return f"<DataSource id={self.id} name={self.name} type={self.source_type}>"
