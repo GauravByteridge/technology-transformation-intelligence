@@ -119,8 +119,8 @@ function ChartVisualization({ spec }: { spec: Record<string, unknown> | null }) 
   }
 
   return (
-    <div className="rounded-lg border border-gray-700/50 bg-gray-800/50 p-4">
-      <ResponsiveContainer width="100%" height={300}>
+    <div className="rounded-lg border border-gray-700/50 bg-gray-800/50 p-4 max-w-lg">
+      <ResponsiveContainer width="100%" height={250}>
         {renderChart(chartSpec)}
       </ResponsiveContainer>
     </div>
@@ -133,13 +133,13 @@ function renderChart(chartSpec: ChartSpec): React.ReactElement {
   switch (chart_type) {
     case 'bar':
       return (
-        <BarChart data={data}>
+        <BarChart data={data} margin={{ top: 10, right: 20, left: 10, bottom: 5 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
           <XAxis dataKey={xKey} tick={{ fill: '#9ca3af', fontSize: 11 }} />
-          <YAxis tick={{ fill: '#9ca3af', fontSize: 11 }} />
+          <YAxis tick={{ fill: '#9ca3af', fontSize: 11 }} tickFormatter={(v) => v >= 1000000 ? `${(v/1000000).toFixed(1)}M` : v >= 1000 ? `${(v/1000).toFixed(0)}K` : v} />
           <Tooltip contentStyle={{ backgroundColor: '#1f2937', border: '1px solid #374151', borderRadius: '8px' }} labelStyle={{ color: '#fff' }} />
           <Legend wrapperStyle={{ fontSize: 11, color: '#9ca3af' }} />
-          <Bar dataKey={yKey} fill="#3b82f6" radius={[2, 2, 0, 0]} />
+          <Bar dataKey={yKey} fill="#3b82f6" radius={[3, 3, 0, 0]} maxBarSize={40} />
         </BarChart>
       );
 
