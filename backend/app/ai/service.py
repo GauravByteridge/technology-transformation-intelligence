@@ -421,7 +421,7 @@ class AIService:
             rows = result.data.get("rows", [])
             columns = result.data.get("columns", [])
 
-            if len(rows) >= 2 and len(columns) >= 2:
+            if len(rows) >= 3 and len(columns) >= 2:
                 x_col, y_cols = self._detect_chart_columns(rows, columns)
                 if x_col and y_cols:
                     # Convert string numbers to floats for charting
@@ -509,7 +509,7 @@ class AIService:
             elif in_table:
                 break  # End of table
 
-        if len(table_rows) < 3:  # Need header + at least 2 data rows
+        if len(table_rows) < 4:  # Need header + at least 3 data rows
             return None
 
         headers = table_rows[0]
@@ -563,20 +563,28 @@ class AIService:
         y_cols = []
 
         for col in columns:
-            # Sample values from first few rows
             values = []
             for row in rows[:5]:
                 if isinstance(row, dict):
                     values.append(row.get(col))
 
-            # Check if this column is numeric
+            # Skip columns with UUID-like or ObjectId-like values
+            text_values = [v for v in values if isinstance(v, str)]
+            if text_values and any(len(v) > 24 and '-' in v for v in text_values):
+                continue  # Likely UUIDs/ObjectIDs — skip
+
             numeric_count = sum(1 for v in values if self._is_numeric(v))
             text_count = sum(1 for v in values if isinstance(v, str) and not self._is_numeric(v))
 
             if numeric_count > text_count and numeric_count >= 2:
-                y_cols.append(col)
+                # Only consider columns with meaningful numeric values (not just row IDs)
+                numeric_vals = [self._to_number(v) for v in values if self._is_numeric(v)]
+                if numeric_vals and max(numeric_vals) > 10:  # Skip trivial counts like 1,2,3
+                    y_cols.append(col)
             elif text_count > 0 and not x_col:
-                x_col = col
+                # Only use short readable text as X labels
+                if text_values and all(len(v) < 30 for v in text_values):
+                    x_col = col
 
         return x_col, y_cols
 
