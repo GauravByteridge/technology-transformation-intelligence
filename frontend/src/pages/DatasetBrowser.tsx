@@ -31,8 +31,8 @@ export default function DatasetBrowser() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Dataset Browser</h1>
-        <p className="mt-1 text-sm text-gray-600">
+        <h1 className="text-2xl font-semibold text-white">Dataset Browser</h1>
+        <p className="mt-1 text-sm text-gray-400">
           Browse and query structured datasets detected from uploaded files.
         </p>
       </div>
