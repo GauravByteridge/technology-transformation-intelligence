@@ -3,7 +3,6 @@ import {
   DatasetList,
   DatasetPreview,
   DatasetConfirmButton,
-  DatasetQueryPanel,
   useDatasets,
 } from '@/features/dataset-browser';
 
@@ -56,11 +55,27 @@ export default function DatasetBrowser() {
             )}
           </div>
 
-          {/* Preview: sample rows */}
-          <DatasetPreview datasetId={selectedDatasetId} />
-
-          {/* Query Panel */}
-          <DatasetQueryPanel datasetId={selectedDatasetId} />
+          {/* Format-specific content */}
+          {selectedDataset?.source_type === 'txt' || selectedDataset?.source_type === 'pdf' || selectedDataset?.source_type === 'docx' ? (
+            <div className="bg-gray-900/50 rounded-lg p-4 space-y-3">
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-gray-400">📄 Document file — indexed for AI search</span>
+              </div>
+              <p className="text-xs text-gray-500">
+                This file has been chunked and indexed for semantic search. Ask questions about its content using the AI Query page.
+              </p>
+              <div className="flex items-center gap-4 text-xs text-gray-400">
+                <span>Type: {selectedDataset.source_type.toUpperCase()}</span>
+                <span>Classification: {selectedDataset.classification}</span>
+                <span>Chunks: {selectedDataset.record_count}</span>
+              </div>
+            </div>
+          ) : (
+            <>
+              {/* Preview: sample rows (structured data only) */}
+              <DatasetPreview datasetId={selectedDatasetId} />
+            </>
+          )}
         </div>
       )}
     </div>
