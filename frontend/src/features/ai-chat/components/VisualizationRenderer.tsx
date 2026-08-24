@@ -64,37 +64,10 @@ export function VisualizationRenderer({
 
 function PartialResponseWarning({ failedSources }: { failedSources: Record<string, unknown>[] }) {
   if (failedSources.length === 0) {
-    return (
-      <div
-        className="rounded-md border border-yellow-200 bg-yellow-50 px-4 py-3"
-        role="alert"
-        aria-live="polite"
-      >
-        <p className="text-sm font-medium text-yellow-800">
-          Some data sources were unavailable
-        </p>
-      </div>
-    );
+    return null;
   }
 
-  return (
-    <div
-      className="rounded-md border border-yellow-200 bg-yellow-50 px-4 py-3"
-      role="alert"
-      aria-live="polite"
-    >
-      <p className="text-sm font-medium text-yellow-800">
-        Some data sources were unavailable
-      </p>
-      <ul className="mt-2 list-disc pl-5 text-sm text-yellow-700">
-        {failedSources.map((source, index) => (
-          <li key={index}>
-            {getSourceLabel(source)}
-          </li>
-        ))}
-      </ul>
-    </div>
-  );
+  return null; // Handled by the parent PartialFailureWarning component (compact info icon)
 }
 
 // --- Table Visualization ---
@@ -108,28 +81,22 @@ function TableVisualization({ spec }: { spec: Record<string, unknown> | null }) 
   }
 
   return (
-    <div className="overflow-x-auto rounded-lg border border-gray-200">
-      <table className="min-w-full divide-y divide-gray-200">
-        <thead className="bg-gray-50">
+    <div className="overflow-x-auto rounded-lg border border-gray-700/50">
+      <table className="min-w-full divide-y divide-gray-700">
+        <thead className="bg-gray-900/50">
           <tr>
             {tableSpec.columns.map((col) => (
-              <th
-                key={col}
-                className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-              >
+              <th key={col} className="px-4 py-2 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
                 {col}
               </th>
             ))}
           </tr>
         </thead>
-        <tbody className="divide-y divide-gray-200 bg-white">
+        <tbody className="divide-y divide-gray-700/50">
           {tableSpec.rows.map((row, rowIndex) => (
             <tr key={rowIndex}>
               {tableSpec.columns.map((col) => (
-                <td
-                  key={`${rowIndex}-${col}`}
-                  className="px-4 py-2 text-sm text-gray-700 whitespace-nowrap"
-                >
+                <td key={`${rowIndex}-${col}`} className="px-4 py-2 text-sm text-gray-300 whitespace-nowrap">
                   {formatCellValue(row[col])}
                 </td>
               ))}
@@ -152,7 +119,7 @@ function ChartVisualization({ spec }: { spec: Record<string, unknown> | null }) 
   }
 
   return (
-    <div className="rounded-lg border border-gray-200 bg-white p-4">
+    <div className="rounded-lg border border-gray-700/50 bg-gray-800/50 p-4">
       <ResponsiveContainer width="100%" height={300}>
         {renderChart(chartSpec)}
       </ResponsiveContainer>
@@ -167,56 +134,41 @@ function renderChart(chartSpec: ChartSpec): React.ReactElement {
     case 'bar':
       return (
         <BarChart data={data}>
-          <CartesianGrid strokeDasharray="3 3" />
-          <XAxis dataKey={xKey} tick={{ fontSize: 12 }} />
-          <YAxis tick={{ fontSize: 12 }} />
-          <Tooltip />
-          <Legend />
-          <Bar dataKey={yKey} fill="#3b82f6" />
+          <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+          <XAxis dataKey={xKey} tick={{ fill: '#9ca3af', fontSize: 11 }} />
+          <YAxis tick={{ fill: '#9ca3af', fontSize: 11 }} />
+          <Tooltip contentStyle={{ backgroundColor: '#1f2937', border: '1px solid #374151', borderRadius: '8px' }} labelStyle={{ color: '#fff' }} />
+          <Legend wrapperStyle={{ fontSize: 11, color: '#9ca3af' }} />
+          <Bar dataKey={yKey} fill="#3b82f6" radius={[2, 2, 0, 0]} />
         </BarChart>
       );
 
     case 'line':
       return (
         <LineChart data={data}>
-          <CartesianGrid strokeDasharray="3 3" />
-          <XAxis dataKey={xKey} tick={{ fontSize: 12 }} />
-          <YAxis tick={{ fontSize: 12 }} />
-          <Tooltip />
-          <Legend />
-          <Line
-            type="monotone"
-            dataKey={yKey}
-            stroke="#3b82f6"
-            strokeWidth={2}
-            dot={{ r: 3 }}
-          />
+          <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+          <XAxis dataKey={xKey} tick={{ fill: '#9ca3af', fontSize: 11 }} />
+          <YAxis tick={{ fill: '#9ca3af', fontSize: 11 }} />
+          <Tooltip contentStyle={{ backgroundColor: '#1f2937', border: '1px solid #374151', borderRadius: '8px' }} labelStyle={{ color: '#fff' }} />
+          <Legend wrapperStyle={{ fontSize: 11 }} />
+          <Line type="monotone" dataKey={yKey} stroke="#3b82f6" strokeWidth={2} dot={{ r: 3 }} />
         </LineChart>
       );
 
     case 'pie':
       return (
         <PieChart>
-          <Pie
-            data={data}
-            dataKey={yKey}
-            nameKey={xKey}
-            cx="50%"
-            cy="50%"
-            outerRadius={100}
-            label
-          >
+          <Pie data={data} dataKey={yKey} nameKey={xKey} cx="50%" cy="50%" outerRadius={100} label>
             {data.map((_, index) => (
               <Cell key={`cell-${index}`} fill={PIE_COLORS[index % PIE_COLORS.length]} />
             ))}
           </Pie>
-          <Tooltip />
-          <Legend />
+          <Tooltip contentStyle={{ backgroundColor: '#1f2937', border: '1px solid #374151', borderRadius: '8px' }} />
+          <Legend wrapperStyle={{ fontSize: 11 }} />
         </PieChart>
       );
 
     default:
-      // Unrecognized chart type — fall back to nothing
       return <BarChart data={[]}><Bar dataKey="" /></BarChart>;
   }
 }

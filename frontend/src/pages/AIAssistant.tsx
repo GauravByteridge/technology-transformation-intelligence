@@ -98,6 +98,11 @@ function ViewToggle({ view, onViewChange }: { view: 'chart' | 'table'; onViewCha
 function DatasetInfoPanel({ sources, recordCount }: { sources: SourceReference[]; recordCount: number }) {
   if (sources.length === 0) return null;
 
+  const sourceNames = sources
+    .map((s: any) => s.source_name || s.name || '')
+    .filter(Boolean)
+    .join(', ') || 'Connected Sources';
+
   return (
     <div className="bg-gray-800/30 border border-gray-700/30 rounded-lg px-4 py-3">
       <div className="flex items-center gap-2 mb-2">
@@ -105,7 +110,7 @@ function DatasetInfoPanel({ sources, recordCount }: { sources: SourceReference[]
         <span className="text-xs font-medium text-gray-300">Dataset Information</span>
       </div>
       <div className="flex items-center gap-4 text-xs text-gray-400 flex-wrap">
-        <span>Sources: {sources.map(s => `${s.source_name}`).join(', ')}</span>
+        <span>Sources: {sourceNames}</span>
         <span>Records: {recordCount}</span>
         <span>Retrieved: just now</span>
       </div>
