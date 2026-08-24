@@ -31,7 +31,7 @@ export function MessageBubble({ message }: MessageBubbleProps) {
         </p>
         <time
           dateTime={message.timestamp}
-          className={`mt-1 block text-xs ${isUser ? 'text-blue-200' : isError ? 'text-red-400' : 'text-gray-400'}`}
+          className={`mt-1 block text-xs ${isUser ? 'text-teal-200' : isError ? 'text-red-400' : 'text-gray-500'}`}
         >
           {formattedTime}
         </time>
@@ -42,12 +42,12 @@ export function MessageBubble({ message }: MessageBubbleProps) {
 
 function getBubbleStyles(isUser: boolean, isError: boolean): string {
   if (isError) {
-    return 'bg-red-50 border border-red-200 text-red-800';
+    return 'bg-red-500/10 border border-red-500/30 text-red-300';
   }
   if (isUser) {
-    return 'bg-blue-600 text-white';
+    return 'bg-teal-600 text-white';
   }
-  return 'bg-gray-100 text-gray-900 border border-gray-200';
+  return 'bg-gray-800 text-gray-200 border border-gray-700';
 }
 
 function formatTimestamp(timestamp: string): string {

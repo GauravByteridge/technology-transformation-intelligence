@@ -131,9 +131,9 @@ class StrandsAgentWrapper:
             )
 
         elif settings.llm_provider == "groq":
-            from openai import OpenAI
+            from openai import AsyncOpenAI
 
-            client = OpenAI(
+            client = AsyncOpenAI(
                 api_key=settings.groq_api_key,
                 base_url="https://api.groq.com/openai/v1",
             )
@@ -182,7 +182,12 @@ class StrandsAgentWrapper:
 
         try:
             # Call the Strands Agent — it handles tool selection, chaining, and synthesis
-            result = self._agent(contextualized_prompt)
+            # Strands Agent __call__ is synchronous but works with async models internally
+            import asyncio
+            loop = asyncio.get_event_loop()
+            result = await loop.run_in_executor(
+                None, self._agent, contextualized_prompt
+            )
 
             # Transform into our AgentResponse contract
             response = self._build_agent_response(result, query_id)

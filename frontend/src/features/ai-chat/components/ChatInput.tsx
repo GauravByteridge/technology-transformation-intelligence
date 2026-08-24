@@ -37,7 +37,7 @@ export function ChatInput({ onSubmit, isLoading }: ChatInputProps) {
   return (
     <form
       onSubmit={handleSubmit}
-      className="flex items-end gap-2 border-t border-gray-200 bg-white p-4"
+      className="flex items-end gap-2 p-4"
     >
       <label htmlFor="chat-input" className="sr-only">
         Type your question
@@ -50,13 +50,13 @@ export function ChatInput({ onSubmit, isLoading }: ChatInputProps) {
         onKeyDown={handleKeyDown}
         placeholder="Ask a question…"
         disabled={isLoading}
-        className="flex-1 resize-none rounded-lg border border-gray-300 px-3 py-2 text-sm placeholder-gray-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:cursor-not-allowed disabled:opacity-50"
+        className="flex-1 resize-none rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-white placeholder-gray-500 focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500 disabled:cursor-not-allowed disabled:opacity-50"
         aria-label="Chat message input"
       />
       <button
         type="submit"
         disabled={isLoading || !value.trim()}
-        className="inline-flex items-center justify-center rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+        className="inline-flex items-center justify-center rounded-lg bg-teal-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
         aria-label={isLoading ? 'Sending message' : 'Send message'}
       >
         {isLoading ? (
