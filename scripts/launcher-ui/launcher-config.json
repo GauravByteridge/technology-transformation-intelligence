@@ -30,7 +30,7 @@
       "port": 5432,
       "database": "app_db",
       "username": "postgres",
-      "password": "master"
+      "password": "postgres"
     },
     "rag_db": {
       "name": "RAG DB (PostgreSQL + pgvector)",
@@ -38,7 +38,7 @@
       "port": 5432,
       "database": "rag_db",
       "username": "postgres",
-      "password": "master"
+      "password": "postgres"
     }
   },
   "seeds": {
