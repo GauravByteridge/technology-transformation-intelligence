@@ -23,20 +23,21 @@ export interface KPICardProps {
 }
 
 function formatValue(value: number, format: KPIFormat): string {
+  const num = Number(value) || 0;
   switch (format) {
     case 'currency':
-      if (value >= 1_000_000) {
-        return `$${(value / 1_000_000).toFixed(1)}M`;
+      if (num >= 1_000_000) {
+        return `$${(num / 1_000_000).toFixed(1)}M`;
       }
-      if (value >= 1_000) {
-        return `$${(value / 1_000).toFixed(0)}K`;
+      if (num >= 1_000) {
+        return `$${(num / 1_000).toFixed(0)}K`;
       }
-      return `$${value.toLocaleString()}`;
+      return `$${num.toLocaleString()}`;
     case 'percent':
-      return `${value.toFixed(1)}%`;
+      return `${num.toFixed(1)}%`;
     case 'number':
     default:
-      return value.toLocaleString();
+      return num.toLocaleString();
   }
 }
 

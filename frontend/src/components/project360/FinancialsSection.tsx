@@ -66,8 +66,8 @@ export function FinancialsSection({ projectId }: FinancialsSectionProps) {
           />
           <SummaryCard
             label="Variance %"
-            value={`${finance.variance_percentage >= 0 ? '+' : ''}${finance.variance_percentage.toFixed(1)}%`}
-            colorClass={finance.variance_percentage >= 0 ? 'text-green-600' : 'text-red-600'}
+            value={`${(Number(finance.variance_percentage) || 0) >= 0 ? '+' : ''}${(Number(finance.variance_percentage) || 0).toFixed(1)}%`}
+            colorClass={(Number(finance.variance_percentage) || 0) >= 0 ? 'text-green-600' : 'text-red-600'}
           />
         </div>
       </div>
@@ -210,13 +210,14 @@ function formatCurrency(amount: number): string {
 }
 
 function formatCompactCurrency(amount: number): string {
-  if (Math.abs(amount) >= 1_000_000) {
-    return `$${(amount / 1_000_000).toFixed(1)}M`;
+  const num = Number(amount) || 0;
+  if (Math.abs(num) >= 1_000_000) {
+    return `$${(num / 1_000_000).toFixed(1)}M`;
   }
-  if (Math.abs(amount) >= 1_000) {
-    return `$${(amount / 1_000).toFixed(0)}K`;
+  if (Math.abs(num) >= 1_000) {
+    return `$${(num / 1_000).toFixed(0)}K`;
   }
-  return `$${amount}`;
+  return `$${num}`;
 }
 
 function formatDate(dateString: string): string {

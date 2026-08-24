@@ -70,7 +70,7 @@ function SprintMetrics({
       </div>
       <div className="rounded-lg border border-gray-200 bg-white p-4">
         <p className="text-xs font-medium text-gray-500 uppercase">Completion</p>
-        <p className="mt-1 text-2xl font-semibold text-gray-900">{completionPercentage.toFixed(1)}%</p>
+        <p className="mt-1 text-2xl font-semibold text-gray-900">{(Number(completionPercentage) || 0).toFixed(1)}%</p>
       </div>
     </div>
   );

@@ -11,16 +11,21 @@ based on the active configuration (Demo vs Live mode, selected providers).
 """
 
 from typing import Literal
+from pathlib import Path
 
 from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+# Resolve .env relative to this file's directory (backend root)
+# settings.py is at backend/app/config/settings.py → .parent.parent.parent = backend/
+_ENV_FILE = Path(__file__).resolve().parent.parent.parent / ".env"
 
 
 class Settings(BaseSettings):
     """Application settings loaded from environment variables and .env files."""
 
     model_config = SettingsConfigDict(
-        env_file=".env",
+        env_file=str(_ENV_FILE),
         env_file_encoding="utf-8",
         case_sensitive=False,
         extra="ignore",

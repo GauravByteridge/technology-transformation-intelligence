@@ -1,220 +1,201 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useDataSources } from '@/hooks';
 import { LoadingState, ErrorState, EmptyState } from '@/components/common';
 import { triggerDiscovery } from '@/features/catalog/services/catalogService';
+import { AddSourceModal } from '@/features/data-sources';
 import type { DataSourceResponse } from '@/types';
 import type { DiscoveryResult } from '@/features/catalog/types';
-
-// ─── Discovery Status ───────────────────────────────────────────────────────
-
-type DiscoveryPhase = 'connecting' | 'discovering' | 'cataloging' | 'ready' | 'error' | 'pending';
-
-const DISCOVERY_STATUS_LABELS: Record<DiscoveryPhase, string> = {
-  connecting: 'Connecting',
-  discovering: 'Discovering',
-  cataloging: 'Cataloging',
-  ready: 'Ready',
-  error: 'Error',
-  pending: 'Pending',
-};
-
-const DISCOVERY_STATUS_STYLES: Record<DiscoveryPhase, string> = {
-  connecting: 'bg-blue-100 text-blue-800',
-  discovering: 'bg-indigo-100 text-indigo-800',
-  cataloging: 'bg-purple-100 text-purple-800',
-  ready: 'bg-green-100 text-green-800',
-  error: 'bg-red-100 text-red-800',
-  pending: 'bg-gray-100 text-gray-800',
-};
-
-/** Ordered discovery phases for the progress indicator */
-const DISCOVERY_PROGRESS_STEPS: DiscoveryPhase[] = ['connecting', 'discovering', 'cataloging', 'ready'];
-
-// ─── Connection Status ──────────────────────────────────────────────────────
-
-const STATUS_BADGE_STYLES: Record<string, string> = {
-  connected: 'bg-green-100 text-green-800',
-  syncing: 'bg-yellow-100 text-yellow-800',
-  error: 'bg-red-100 text-red-800',
-};
-
-const DEFAULT_BADGE_STYLE = 'bg-gray-100 text-gray-800';
+import {
+  Database,
+  RefreshCw,
+  Eye,
+  BookOpen,
+  CheckCircle2,
+  AlertCircle,
+  Loader2,
+  FileText,
+  Upload,
+} from 'lucide-react';
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
-/**
- * Format a timestamp as relative time (e.g. "2 hours ago") if within 24 hours,
- * or as an absolute date string for older timestamps.
- */
+function getSourceIcon(sourceType: string): string {
+  switch (sourceType.toLowerCase()) {
+    case 'postgresql':
+      return '🐘';
+    case 'mongodb':
+      return '🍃';
+    case 'document':
+    case 'files':
+      return '📄';
+    default:
+      return '🔌';
+  }
+}
+
 function formatTimestamp(isoTimestamp: string | null): string {
   if (!isoTimestamp) return '—';
-
   const date = new Date(isoTimestamp);
   const now = new Date();
   const diffMs = now.getTime() - date.getTime();
   const diffMinutes = Math.floor(diffMs / (1000 * 60));
 
   if (diffMinutes < 1) return 'just now';
-  if (diffMinutes < 60) {
-    return diffMinutes === 1 ? '1 minute ago' : `${diffMinutes} minutes ago`;
-  }
-
+  if (diffMinutes < 60) return `${diffMinutes} min ago`;
   const diffHours = Math.floor(diffMinutes / 60);
-  if (diffHours < 24) {
-    return diffHours === 1 ? '1 hour ago' : `${diffHours} hours ago`;
-  }
-
-  return date.toLocaleDateString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-    hour: 'numeric',
-    minute: '2-digit',
-    hour12: true,
-  });
-}
-
-function normalizeDiscoveryStatus(status: string): DiscoveryPhase {
-  const normalized = status.toLowerCase();
-  if (normalized in DISCOVERY_STATUS_LABELS) {
-    return normalized as DiscoveryPhase;
-  }
-  return 'pending';
+  if (diffHours < 24) return `${diffHours} hours ago`;
+  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
 
 // ─── Sub-components ─────────────────────────────────────────────────────────
 
-function ConnectionStatusBadge({ status }: { status: string }) {
-  const normalizedStatus = status.toLowerCase();
-  const badgeStyle = STATUS_BADGE_STYLES[normalizedStatus] ?? DEFAULT_BADGE_STYLE;
-
+function ConnectionBadge({ status }: { status: string }) {
+  const isConnected = status.toLowerCase() === 'connected';
   return (
-    <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium capitalize ${badgeStyle}`}>
-      {status}
+    <span
+      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${
+        isConnected
+          ? 'bg-green-500/15 text-green-400'
+          : 'bg-red-500/15 text-red-400'
+      }`}
+    >
+      {isConnected ? <CheckCircle2 size={12} /> : <AlertCircle size={12} />}
+      {isConnected ? 'CONNECTED ✓' : status.toUpperCase()}
     </span>
   );
 }
 
-function DiscoveryStatusBadge({ status }: { status: string }) {
-  const phase = normalizeDiscoveryStatus(status);
-  const style = DISCOVERY_STATUS_STYLES[phase];
-  const label = DISCOVERY_STATUS_LABELS[phase];
-
-  return (
-    <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${style}`}>
-      {label}
-    </span>
-  );
+interface SourceCardProps {
+  source: DataSourceResponse;
+  onRefreshDiscovery: (sourceId: string) => void;
+  isRefreshing: boolean;
 }
 
-/** Visual progress indicator showing the discovery pipeline steps */
-function DiscoveryProgressIndicator({ currentStatus }: { currentStatus: string }) {
-  const currentPhase = normalizeDiscoveryStatus(currentStatus);
-  const currentIndex = DISCOVERY_PROGRESS_STEPS.indexOf(currentPhase);
-
-  // Only show progress when actively discovering
-  const isActive = currentIndex >= 0 && currentPhase !== 'pending' && currentPhase !== 'error';
-
-  if (!isActive) return null;
+function SourceCard({ source, onRefreshDiscovery, isRefreshing }: SourceCardProps) {
+  const navigate = useNavigate();
+  const icon = getSourceIcon(source.source_type);
 
   return (
-    <div className="flex items-center gap-1 mt-1" role="progressbar" aria-label="Discovery progress">
-      {DISCOVERY_PROGRESS_STEPS.map((step, index) => {
-        const isCompleted = index < currentIndex;
-        const isCurrent = index === currentIndex;
-
-        return (
-          <div key={step} className="flex items-center">
-            <div
-              className={`h-2 w-2 rounded-full transition-colors ${
-                isCompleted
-                  ? 'bg-green-500'
-                  : isCurrent
-                    ? 'bg-blue-500 animate-pulse'
-                    : 'bg-gray-300'
-              }`}
-              title={DISCOVERY_STATUS_LABELS[step]}
-            />
-            {index < DISCOVERY_PROGRESS_STEPS.length - 1 && (
-              <div
-                className={`h-0.5 w-3 ${
-                  isCompleted ? 'bg-green-500' : 'bg-gray-300'
-                }`}
-              />
-            )}
+    <div className="bg-gray-800/50 border border-gray-700/50 rounded-lg p-6 hover:border-teal-500/30 transition-colors">
+      {/* Header */}
+      <div className="flex items-start justify-between mb-4">
+        <div className="flex items-center gap-3">
+          <span className="text-2xl">{icon}</span>
+          <div>
+            <h3 className="text-base font-semibold text-white">{source.name}</h3>
+            <p className="text-xs text-gray-400 capitalize">{source.source_type}</p>
           </div>
-        );
-      })}
+        </div>
+        <ConnectionBadge status={source.connection_status} />
+      </div>
+
+      {/* Metadata */}
+      {source.source_type.toLowerCase() === 'postgresql' && (
+        <div className="text-sm text-gray-400 mb-4">
+          <p>Database: {(source.connection_config as { database?: string })?.database || 'TechnologyTransformation'}</p>
+        </div>
+      )}
+
+      {/* Stats */}
+      {source.objects_discovered > 0 && (
+        <div className="flex items-center gap-6 mb-4 text-sm">
+          <span className="text-gray-300">
+            <span className="font-semibold text-white">{source.objects_discovered}</span>{' '}
+            {source.source_type === 'postgresql' ? 'Tables' : 'Collections'}
+          </span>
+          <span className="text-gray-300">
+            <span className="font-semibold text-white">{source.fields_discovered}</span> Fields
+          </span>
+        </div>
+      )}
+
+      {/* Last Discovery */}
+      <p className="text-xs text-gray-500 mb-4">
+        Last Discovery: {formatTimestamp(source.last_discovery_at)}
+      </p>
+
+      {/* Actions */}
+      <div className="flex items-center gap-2 flex-wrap">
+        <button
+          onClick={() => navigate(`/catalog`)}
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md bg-gray-700 text-gray-300 hover:bg-gray-600 transition-colors"
+        >
+          <Eye size={12} />
+          View Schema
+        </button>
+        <button
+          onClick={() => navigate('/catalog')}
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md bg-gray-700 text-gray-300 hover:bg-gray-600 transition-colors"
+        >
+          <BookOpen size={12} />
+          View Catalog
+        </button>
+        <button
+          onClick={() => onRefreshDiscovery(source.id)}
+          disabled={isRefreshing || source.connection_status.toLowerCase() !== 'connected'}
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md bg-teal-600/20 text-teal-300 hover:bg-teal-600/30 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+        >
+          {isRefreshing ? (
+            <Loader2 size={12} className="animate-spin" />
+          ) : (
+            <RefreshCw size={12} />
+          )}
+          Refresh Discovery
+        </button>
+      </div>
     </div>
   );
 }
 
-interface DiscoverButtonProps {
-  sourceId: string;
-  connectionStatus: string;
-  onDiscoveryComplete: () => void;
-}
-
-function DiscoverButton({ sourceId, connectionStatus, onDiscoveryComplete }: DiscoverButtonProps) {
-  const [lastResult, setLastResult] = useState<DiscoveryResult | null>(null);
-
-  const mutation = useMutation<DiscoveryResult, Error, string>({
-    mutationFn: (id: string) => triggerDiscovery(id),
-    onSuccess: (result) => {
-      setLastResult(result);
-      onDiscoveryComplete();
-    },
-  });
-
-  const isConnected = connectionStatus.toLowerCase() === 'connected';
+function DocumentsCard() {
+  const navigate = useNavigate();
 
   return (
-    <div className="flex flex-col items-start gap-1">
-      <button
-        type="button"
-        onClick={() => mutation.mutate(sourceId)}
-        disabled={mutation.isPending || !isConnected}
-        className={`inline-flex items-center rounded-md px-3 py-1.5 text-xs font-medium transition-colors
-          ${
-            mutation.isPending
-              ? 'bg-indigo-100 text-indigo-600 cursor-wait'
-              : !isConnected
-                ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                : 'bg-indigo-600 text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-1'
-          }`}
-        aria-label={`Discover schema for this data source`}
-      >
-        {mutation.isPending ? (
-          <>
-            <svg className="animate-spin -ml-0.5 mr-1.5 h-3 w-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" aria-hidden="true">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-            </svg>
-            Discovering…
-          </>
-        ) : (
-          'Discover Schema'
-        )}
-      </button>
+    <div className="bg-gray-800/50 border border-gray-700/50 rounded-lg p-6 hover:border-teal-500/30 transition-colors">
+      {/* Header */}
+      <div className="flex items-start justify-between mb-4">
+        <div className="flex items-center gap-3">
+          <span className="text-2xl">📄</span>
+          <div>
+            <h3 className="text-base font-semibold text-white">Enterprise Documents</h3>
+            <p className="text-xs text-gray-400">RAG-indexed documents</p>
+          </div>
+        </div>
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-green-500/15 text-green-400">
+          <CheckCircle2 size={12} />
+          READY ✓
+        </span>
+      </div>
 
-      {mutation.isError && (
-        <p className="text-xs text-red-600" role="alert">
-          Discovery failed. Please retry.
-        </p>
-      )}
+      {/* Stats */}
+      <div className="flex items-center gap-6 mb-4 text-sm">
+        <span className="text-gray-300">
+          <span className="font-semibold text-white">342</span> Documents
+        </span>
+        <span className="text-gray-300">
+          <span className="font-semibold text-white">18</span> Datasets
+        </span>
+      </div>
 
-      {lastResult && lastResult.success && (
-        <p className="text-xs text-green-700">
-          Found {lastResult.objects_discovered} objects, {lastResult.fields_discovered} fields
-        </p>
-      )}
-
-      {lastResult && !lastResult.success && lastResult.error && (
-        <p className="text-xs text-red-600" role="alert">
-          {lastResult.error}
-        </p>
-      )}
+      {/* Actions */}
+      <div className="flex items-center gap-2">
+        <button
+          onClick={() => navigate('/datasets')}
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md bg-gray-700 text-gray-300 hover:bg-gray-600 transition-colors"
+        >
+          <FileText size={12} />
+          Browse
+        </button>
+        <button
+          onClick={() => navigate('/upload')}
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md bg-teal-600/20 text-teal-300 hover:bg-teal-600/30 transition-colors"
+        >
+          <Upload size={12} />
+          Upload Files
+        </button>
+      </div>
     </div>
   );
 }
@@ -224,19 +205,52 @@ function DiscoverButton({ sourceId, connectionStatus, onDiscoveryComplete }: Dis
 export default function DataSourcesRegistry() {
   const queryClient = useQueryClient();
   const { data: sources, isLoading, isError, refetch } = useDataSources();
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [refreshingId, setRefreshingId] = useState<string | null>(null);
 
-  const handleDiscoveryComplete = () => {
-    void queryClient.invalidateQueries({ queryKey: ['data-sources'] });
+  const discoveryMutation = useMutation<DiscoveryResult, Error, string>({
+    mutationFn: (id: string) => triggerDiscovery(id),
+    onSuccess: () => {
+      setRefreshingId(null);
+      void queryClient.invalidateQueries({ queryKey: ['data-sources'] });
+    },
+    onError: () => {
+      setRefreshingId(null);
+    },
+  });
+
+  const handleRefreshDiscovery = (sourceId: string) => {
+    setRefreshingId(sourceId);
+    discoveryMutation.mutate(sourceId);
   };
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold text-gray-900">Data Sources</h1>
-        <p className="mt-1 text-sm text-gray-500">
-          Connected enterprise data sources, discovery status, and schema catalog.
-        </p>
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-semibold text-white">Data Sources</h1>
+          <p className="mt-1 text-sm text-gray-400">
+            Connect enterprise data sources and make them AI-queryable.
+          </p>
+        </div>
+        <button
+          onClick={() => setShowAddModal(true)}
+          className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg bg-teal-600 text-white hover:bg-teal-500 transition-colors"
+        >
+          <Database size={16} />
+          + Add Source
+        </button>
       </div>
+
+      <AddSourceModal
+        isOpen={showAddModal}
+        onClose={() => setShowAddModal(false)}
+        onSuccess={() => {
+          setShowAddModal(false);
+          void queryClient.invalidateQueries({ queryKey: ['data-sources'] });
+        }}
+      />
 
       {isLoading && <LoadingState variant="full-page" message="Loading data sources..." />}
 
@@ -248,78 +262,28 @@ export default function DataSourcesRegistry() {
       )}
 
       {sources && sources.length === 0 && (
-        <EmptyState message="No data sources configured yet." />
+        <EmptyState message="No data sources configured yet. Click '+ Add Source' to connect your first enterprise data source." />
       )}
 
+      {/* Source cards */}
       {sources && sources.length > 0 && (
-        <div className="overflow-x-auto rounded-lg border border-gray-200 shadow-sm">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                  Name
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                  Type
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                  Connection
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                  Discovery
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                  Last Discovery
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                  Objects
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200 bg-white">
-              {sources.map((source: DataSourceResponse) => (
-                <tr key={source.id} className="hover:bg-gray-50">
-                  <td className="whitespace-nowrap px-6 py-4 text-sm font-medium text-gray-900">
-                    {source.name}
-                  </td>
-                  <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-600 capitalize">
-                    {source.source_type}
-                  </td>
-                  <td className="whitespace-nowrap px-6 py-4 text-sm">
-                    <ConnectionStatusBadge status={source.connection_status} />
-                  </td>
-                  <td className="px-6 py-4 text-sm">
-                    <DiscoveryStatusBadge status={source.discovery_status} />
-                    <DiscoveryProgressIndicator currentStatus={source.discovery_status} />
-                  </td>
-                  <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-600">
-                    {formatTimestamp(source.last_discovery_at)}
-                  </td>
-                  <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-600">
-                    {source.objects_discovered > 0 ? (
-                      <span title={`${source.fields_discovered} fields discovered`}>
-                        {source.objects_discovered} objects
-                      </span>
-                    ) : (
-                      '—'
-                    )}
-                  </td>
-                  <td className="px-6 py-4 text-sm">
-                    <DiscoverButton
-                      sourceId={source.id}
-                      connectionStatus={source.connection_status}
-                      onDiscoveryComplete={handleDiscoveryComplete}
-                    />
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        <div className="space-y-4">
+          {sources.map((source: DataSourceResponse) => (
+            <SourceCard
+              key={source.id}
+              source={source}
+              onRefreshDiscovery={handleRefreshDiscovery}
+              isRefreshing={refreshingId === source.id}
+            />
+          ))}
+
+          {/* Static documents card */}
+          <DocumentsCard />
         </div>
       )}
+
+      {/* Show documents card even when no sources are connected */}
+      {sources && sources.length === 0 && <DocumentsCard />}
     </div>
   );
 }

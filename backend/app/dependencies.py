@@ -442,6 +442,27 @@ async def get_project_health_service(
 
 
 # =============================================================================
+# Query History Service Provider
+# =============================================================================
+
+
+async def get_query_history_service(
+    session: AsyncSession = Depends(get_app_db_session),
+) -> "QueryHistoryService":
+    """Provide a QueryHistoryService instance with repositories injected."""
+    from app.repositories.project_repository import ProjectRepository
+    from app.repositories.query_history_repository import QueryHistoryRepository
+    from app.services.query_history_service import QueryHistoryService
+
+    query_history_repo = QueryHistoryRepository(session)
+    project_repo = ProjectRepository(session)
+    return QueryHistoryService(
+        query_history_repository=query_history_repo,
+        project_repository=project_repo,
+    )
+
+
+# =============================================================================
 # Data Source Service Provider (Phase 2)
 # =============================================================================
 
@@ -450,6 +471,7 @@ async def get_data_source_service(
     session: AsyncSession = Depends(get_app_db_session),
 ) -> "DataSourceService":
     """Provide a DataSourceService instance with repository injected."""
+    from app.repositories.credential_repository import CredentialRepository
     from app.repositories.data_source_repository import DataSourceRepository
     from app.repositories.project_repository import ProjectRepository
     from app.repositories.source_connection_repository import SourceConnectionRepository
@@ -460,12 +482,14 @@ async def get_data_source_service(
     repository = DataSourceRepository(session)
     project_repo = ProjectRepository(session)
     source_conn_repo = SourceConnectionRepository(session)
+    credential_repo = CredentialRepository(session)
     encryptor = CredentialEncryptor(fernet_key=settings.fernet_key)
     return DataSourceService(
         data_source_repository=repository,
         project_repository=project_repo,
         source_connection_repository=source_conn_repo,
         credential_encryptor=encryptor,
+        credential_repository=credential_repo,
     )
 
 
@@ -474,17 +498,20 @@ async def get_connector_service(
     registry: "ConnectorRegistry" = Depends(lambda: get_connector_registry()),
 ) -> "ConnectorService":
     """Provide a ConnectorService instance with dependencies injected."""
+    from app.repositories.credential_repository import CredentialRepository
     from app.repositories.data_source_repository import DataSourceRepository
     from app.security.credential_encryptor import CredentialEncryptor
     from app.services.connector_service import ConnectorService
 
     repository = DataSourceRepository(session)
+    credential_repo = CredentialRepository(session)
     settings = get_settings()
     encryptor = CredentialEncryptor(fernet_key=settings.fernet_key)
     return ConnectorService(
         data_source_repository=repository,
         credential_encryptor=encryptor,
         connector_registry=registry,
+        credential_repository=credential_repo,
     )
 
 

@@ -99,6 +99,14 @@ def configure_logging(
         # Human-readable colored console output for development
         renderer = structlog.dev.ConsoleRenderer()
 
+    # On Windows, stdout may default to cp1252 which cannot encode Unicode
+    # characters used by ConsoleRenderer. Force UTF-8 output in that case.
+    if sys.platform == "win32" and hasattr(sys.stdout, "reconfigure"):
+        try:
+            sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+        except Exception:
+            pass
+
     structlog.configure(
         processors=[
             *shared_processors,

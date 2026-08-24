@@ -95,7 +95,7 @@ export function OverviewSection({ projectId }: OverviewSectionProps) {
         />
         <KpiCard
           label="Variance %"
-          value={`${health.budget_variance_percentage.toFixed(1)}%`}
+          value={`${(Number(health.budget_variance_percentage) || 0).toFixed(1)}%`}
         />
         <KpiCard
           label="Progress"

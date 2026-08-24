@@ -76,7 +76,7 @@ export function ControlsSection({ projectId }: ControlsSectionProps) {
       <div className="rounded-lg border border-gray-200 bg-white px-4 py-3">
         <p className="text-xs font-medium text-gray-500 uppercase">Overall IT Control Compliance</p>
         <p className={`mt-1 text-3xl font-bold ${getComplianceColor(compliance_percentage)}`}>
-          {compliance_percentage.toFixed(1)}%
+          {(Number(compliance_percentage) || 0).toFixed(1)}%
         </p>
       </div>
 

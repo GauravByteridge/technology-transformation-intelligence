@@ -5,15 +5,19 @@ import {
   UploadProgress,
   ProcessingResult,
 } from '@/features/file-upload';
+import { Upload, FileText, ArrowLeft } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import type { FileUploadResponse } from '@/types';
 
 type UploadState = 'idle' | 'uploading' | 'complete' | 'error';
 
+const SUPPORTED_TYPES = ['PDF', 'DOCX', 'XLSX', 'XLS', 'CSV', 'TXT', 'JSON'];
+
 /**
- * File Upload page — orchestrates the upload flow through a simple state machine:
- * idle → uploading → complete/error.
+ * File Upload page — enterprise document ingestion with content-aware processing.
  */
 export default function FileUpload() {
+  const navigate = useNavigate();
   const [uploadState, setUploadState] = useState<UploadState>('idle');
   const [selectedFileName, setSelectedFileName] = useState<string>('');
   const [result, setResult] = useState<FileUploadResponse | null>(null);
@@ -54,19 +58,43 @@ export default function FileUpload() {
   }, []);
 
   return (
-    <div className="mx-auto max-w-2xl space-y-6 p-6">
+    <div className="max-w-2xl mx-auto space-y-6">
+      {/* Back button */}
+      <button
+        onClick={() => navigate('/sources')}
+        className="flex items-center gap-1 text-sm text-teal-400 hover:text-teal-300 transition-colors"
+      >
+        <ArrowLeft size={14} />
+        Back to Data Sources
+      </button>
+
       {/* Header */}
-      <header>
-        <h1 className="text-2xl font-bold text-gray-900">Upload Files</h1>
-        <p className="mt-1 text-sm text-gray-600">
+      <div>
+        <h1 className="text-2xl font-semibold text-white flex items-center gap-2">
+          <Upload size={24} className="text-teal-400" />
+          Upload Enterprise Information
+        </h1>
+        <p className="mt-1 text-sm text-gray-400">
           Upload documents and spreadsheets for content-aware processing.
-          Files are analyzed to extract structured datasets and index documents for AI-powered search.
+          Files are analyzed, classified, chunked and indexed for AI-powered search.
         </p>
-      </header>
+      </div>
+
+      {/* Supported types */}
+      <div className="flex items-center gap-2 flex-wrap">
+        {SUPPORTED_TYPES.map((type) => (
+          <span
+            key={type}
+            className="px-2 py-0.5 bg-gray-800 border border-gray-700 rounded text-xs text-gray-400 font-mono"
+          >
+            {type}
+          </span>
+        ))}
+      </div>
 
       {/* Optional project ID input */}
       <div>
-        <label htmlFor="project-id-input" className="block text-sm font-medium text-gray-700">
+        <label htmlFor="project-id-input" className="block text-sm font-medium text-gray-300 mb-1">
           Project ID (optional)
         </label>
         <input
@@ -76,7 +104,7 @@ export default function FileUpload() {
           onChange={(e) => setProjectId(e.target.value)}
           placeholder="Enter project UUID to associate file"
           disabled={uploadState === 'uploading'}
-          className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm placeholder:text-gray-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:cursor-not-allowed disabled:bg-gray-50 disabled:text-gray-500"
+          className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-teal-500 disabled:opacity-50"
         />
       </div>
 
@@ -86,52 +114,97 @@ export default function FileUpload() {
       )}
 
       {uploadState === 'uploading' && (
-        <UploadProgress fileName={selectedFileName} />
+        <div className="space-y-4">
+          <UploadProgress fileName={selectedFileName} />
+          {/* Processing steps visualization */}
+          <ProcessingSteps fileName={selectedFileName} />
+        </div>
       )}
 
       {uploadState === 'complete' && result && (
         <div className="space-y-4">
           <ProcessingResult result={result} />
-          <button
-            onClick={handleReset}
-            className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-          >
-            Upload another file
-          </button>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={handleReset}
+              className="px-4 py-2 text-sm font-medium rounded-lg bg-teal-600 text-white hover:bg-teal-500 transition-colors"
+            >
+              Upload another file
+            </button>
+            <button
+              onClick={() => navigate('/catalog')}
+              className="px-4 py-2 text-sm font-medium rounded-lg bg-gray-700 text-gray-300 hover:bg-gray-600 transition-colors"
+            >
+              View in Catalog
+            </button>
+          </div>
         </div>
       )}
 
       {uploadState === 'error' && (
-        <div
-          className="rounded-lg border border-red-200 bg-red-50 p-4"
-          role="alert"
-          aria-live="assertive"
-        >
-          <div className="flex items-center gap-2">
-            <svg
-              className="h-5 w-5 text-red-600"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-              aria-hidden="true"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-              />
-            </svg>
-            <p className="text-sm font-medium text-red-800">{errorMessage}</p>
+        <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-4" role="alert">
+          <div className="flex items-center gap-2 mb-3">
+            <span className="text-red-400 text-sm font-medium">{errorMessage}</span>
           </div>
           <button
             onClick={handleReset}
-            className="mt-3 rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
+            className="px-4 py-2 text-sm font-medium rounded-lg bg-red-600 text-white hover:bg-red-500 transition-colors"
           >
             Try again
           </button>
         </div>
       )}
+    </div>
+  );
+}
+
+/** Simulated processing steps shown during upload */
+function ProcessingSteps({ fileName }: { fileName: string }) {
+  const isExcel = /\.(xlsx?|csv)$/i.test(fileName);
+
+  const steps = isExcel
+    ? [
+        { label: '✓ Uploaded', done: true },
+        { label: 'Parsing sheets...', active: true },
+        { label: 'Detecting structured datasets', pending: true },
+        { label: 'Classification', pending: true },
+        { label: 'Catalog registration', pending: true },
+        { label: 'AI Queryable', pending: true },
+      ]
+    : [
+        { label: '✓ Uploaded', done: true },
+        { label: 'Parsing...', active: true },
+        { label: 'Content extraction', pending: true },
+        { label: 'Classification', pending: true },
+        { label: 'Chunking / Dataset extraction', pending: true },
+        { label: 'Indexing', pending: true },
+        { label: 'Catalog registration', pending: true },
+        { label: 'AI Queryable', pending: true },
+      ];
+
+  return (
+    <div className="bg-gray-800/50 border border-gray-700/50 rounded-lg p-4 space-y-2">
+      <div className="flex items-center gap-2 mb-3">
+        <FileText size={14} className="text-teal-400" />
+        <span className="text-sm font-medium text-white">{fileName}</span>
+      </div>
+      {steps.map((step, idx) => (
+        <div
+          key={idx}
+          className={`flex items-center gap-2 text-xs ${
+            step.done
+              ? 'text-green-400'
+              : step.active
+                ? 'text-teal-400'
+                : 'text-gray-500'
+          }`}
+        >
+          {step.done && <span>✓</span>}
+          {step.active && <span className="animate-spin">⟳</span>}
+          {step.pending && <span className="opacity-30">○</span>}
+          <span>{step.label}</span>
+        </div>
+      ))}
     </div>
   );
 }

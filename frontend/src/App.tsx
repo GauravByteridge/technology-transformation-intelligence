@@ -5,11 +5,14 @@ import ProjectPortfolio from './pages/ProjectPortfolio';
 import Project360 from './pages/Project360';
 import AIAssistant from './pages/AIAssistant';
 import ExecutiveBrief from './pages/ExecutiveBrief';
+import ExecutiveBriefs from './pages/ExecutiveBriefs';
 import DataSourcesRegistry from './pages/DataSourcesRegistry';
 import DataLineage from './pages/DataLineage';
 import DatasetBrowser from './pages/DatasetBrowser';
 import FileUpload from './pages/FileUpload';
 import Catalog from './pages/Catalog';
+import QueryHistory from './pages/QueryHistory';
+import Settings from './pages/Settings';
 
 function App() {
   return (
@@ -26,6 +29,9 @@ function App() {
           <Route path="/lineage" element={<DataLineage />} />
           <Route path="/upload" element={<FileUpload />} />
           <Route path="/catalog" element={<Catalog />} />
+          <Route path="/history" element={<QueryHistory />} />
+          <Route path="/briefs" element={<ExecutiveBriefs />} />
+          <Route path="/settings" element={<Settings />} />
         </Route>
       </Routes>
     </BrowserRouter>

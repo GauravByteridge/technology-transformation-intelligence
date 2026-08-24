@@ -10,6 +10,7 @@ from datetime import datetime
 from uuid import UUID, uuid4
 
 import sqlalchemy as sa
+from sqlalchemy.dialects import postgresql
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import AppBase
@@ -27,10 +28,12 @@ class DataSource(AppBase):
     source_type: Mapped[str] = mapped_column(sa.String(50), nullable=False)
     display_label: Mapped[str] = mapped_column(sa.String(255), nullable=False)
     connection_config: Mapped[dict] = mapped_column(
-        sa.JSON, nullable=False, default=dict
+        postgresql.JSON(astext_type=sa.Text()),
+        nullable=False,
+        server_default=sa.text("'{}'::json"),
     )
     connection_status: Mapped[str] = mapped_column(
-        sa.String(50), nullable=False, default="disconnected"
+        sa.String(50), nullable=False
     )
     last_connected_at: Mapped[datetime | None] = mapped_column(
         sa.DateTime(timezone=True), nullable=True
@@ -44,8 +47,7 @@ class DataSource(AppBase):
         onupdate=sa.func.now(),
         nullable=False,
     )
-
-    # Discovery tracking fields
+    # Discovery fields
     last_discovery_at: Mapped[datetime | None] = mapped_column(
         sa.DateTime(timezone=True), nullable=True
     )
@@ -53,14 +55,12 @@ class DataSource(AppBase):
         sa.String(50), nullable=False, server_default=sa.text("'pending'")
     )
     objects_discovered: Mapped[int] = mapped_column(
-        sa.Integer(), nullable=False, server_default=sa.text("0")
+        sa.Integer, nullable=False, server_default=sa.text("0")
     )
     fields_discovered: Mapped[int] = mapped_column(
-        sa.Integer(), nullable=False, server_default=sa.text("0")
+        sa.Integer, nullable=False, server_default=sa.text("0")
     )
-    discovery_error: Mapped[str | None] = mapped_column(
-        sa.Text(), nullable=True
-    )
+    discovery_error: Mapped[str | None] = mapped_column(sa.Text, nullable=True)
 
     # Relationships
     source_connections: Mapped[list["SourceConnection"]] = relationship(
@@ -71,6 +71,15 @@ class DataSource(AppBase):
     )
     project_source_mappings: Mapped[list["ProjectSourceMapping"]] = relationship(
         "ProjectSourceMapping", back_populates="data_source", lazy="selectin"
+    )
+    credentials: Mapped[list["DataSourceCredential"]] = relationship(
+        "DataSourceCredential", back_populates="data_source", lazy="noload"
+    )
+    discovery_runs: Mapped[list["DataSourceDiscoveryRun"]] = relationship(
+        "DataSourceDiscoveryRun", back_populates="data_source", lazy="noload"
+    )
+    catalog_versions: Mapped[list["CatalogVersion"]] = relationship(
+        "CatalogVersion", back_populates="data_source", lazy="noload"
     )
 
     def __repr__(self) -> str:
