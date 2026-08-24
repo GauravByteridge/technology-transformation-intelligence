@@ -611,6 +611,10 @@ def discover_available_sources(project_id: str) -> dict:
     catalog_factory = _get_catalog_factory()
 
     async def _execute() -> dict[str, Any]:
+        import sys
+        if sys.platform == "win32":
+            asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
+
         logger.info(
             "strands_tool_discover_available_sources_invoked",
             extra={"project_id": project_id},
@@ -628,8 +632,25 @@ def discover_available_sources(project_id: str) -> dict:
                 "project_id": project_id,
             }
 
-        catalog_service = await catalog_factory()
-        entries = await catalog_service.get_catalog_for_project(parsed_project_id)
+        # Create thread-local catalog service (fresh engine for new event loop)
+        from sqlalchemy.ext.asyncio import async_sessionmaker as asm, create_async_engine as cae
+        from app.repositories.catalog_repository import CatalogRepository
+        from app.repositories.project_source_mapping_repository import ProjectSourceMappingRepository
+        from app.services.catalog_service import CatalogService
+        from app.dependencies import get_settings
+
+        settings = get_settings()
+        _engine = cae(settings.app_db_url, pool_pre_ping=True)
+        _factory = asm(_engine, expire_on_commit=False)
+
+        async with _factory() as session:
+            catalog_repo = CatalogRepository(session)
+            mapping_repo = ProjectSourceMappingRepository(session)
+            catalog_service = CatalogService(
+                catalog_repository=catalog_repo,
+                project_source_mapping_repository=mapping_repo,
+            )
+            entries = await catalog_service.get_catalog_for_project(parsed_project_id)
 
         sources: list[dict[str, Any]] = []
         for entry in entries:
