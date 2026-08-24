@@ -23,6 +23,9 @@ class Project(AppBase):
     id: Mapped[UUID] = mapped_column(
         sa.UUID, primary_key=True, default=uuid4
     )
+    project_code: Mapped[str | None] = mapped_column(
+        sa.String(50), unique=True, nullable=True
+    )
     name: Mapped[str] = mapped_column(sa.String(255), nullable=False)
     description: Mapped[str | None] = mapped_column(sa.Text, nullable=True)
     status: Mapped[str] = mapped_column(

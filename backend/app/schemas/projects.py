@@ -33,6 +33,7 @@ class ProjectResponse(BaseModel):
     """Response schema for a single project."""
 
     id: UUID = Field(description="Unique project identifier")
+    project_code: str | None = Field(default=None, description="Short human-readable project code")
     name: str = Field(description="Project display name")
     description: str | None = Field(default=None, description="Project description")
     status: str = Field(description="Current project status")

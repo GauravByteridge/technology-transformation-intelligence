@@ -57,6 +57,7 @@ export interface ProjectHealthResponse {
 
 export interface ProjectResponse {
   id: string;
+  project_code: string | null;
   name: string;
   description: string | null;
   status: string;

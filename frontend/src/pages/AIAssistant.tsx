@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Bot, Send, ChevronDown, ChevronUp, Database, FileText, GitBranch } from 'lucide-react';
+import { Bot, ChevronDown, ChevronUp, Database, FileText, GitBranch } from 'lucide-react';
 import {
   useAIChat,
   useQueryHistory,
@@ -14,7 +14,7 @@ import {
   DataLineagePanel,
 } from '@/features/ai-chat';
 import type { SourceReference, EvidenceItem, LineageTrace, PartialFailureInfo } from '@/features/ai-chat/types';
-import { useProjects } from '@/hooks';
+import { ProjectSelector } from '@/components/common';
 
 // ---------------------------------------------------------------------------
 // Suggested Questions
@@ -30,60 +30,6 @@ const SUGGESTED_QUESTIONS = [
 // ---------------------------------------------------------------------------
 // Sub-components
 // ---------------------------------------------------------------------------
-
-function ProjectSelector({
-  selectedProject,
-  onSelect,
-}: {
-  selectedProject: string | null;
-  onSelect: (id: string | null) => void;
-}) {
-  const { data: projects } = useProjects();
-  const [open, setOpen] = useState(false);
-
-  const selectedLabel = selectedProject
-    ? projects?.items.find((p) => p.id === selectedProject)?.name ?? 'Select Project'
-    : 'All Projects';
-
-  return (
-    <div className="relative">
-      <button
-        onClick={() => setOpen(!open)}
-        className="inline-flex items-center gap-2 px-3 py-1.5 bg-gray-800 border border-gray-700 rounded-lg text-sm text-gray-300 hover:border-gray-600 transition-colors"
-      >
-        Project Context: <span className="text-white font-medium">{selectedLabel}</span>
-        <ChevronDown size={14} />
-      </button>
-
-      {open && (
-        <>
-          <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
-          <div className="absolute left-0 top-full mt-1 z-20 w-64 bg-gray-800 border border-gray-700 rounded-lg shadow-xl py-1 max-h-64 overflow-y-auto">
-            <button
-              onClick={() => { onSelect(null); setOpen(false); }}
-              className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-700 transition-colors ${
-                !selectedProject ? 'text-teal-400' : 'text-gray-300'
-              }`}
-            >
-              All Projects
-            </button>
-            {projects?.items.map((p) => (
-              <button
-                key={p.id}
-                onClick={() => { onSelect(p.id); setOpen(false); }}
-                className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-700 transition-colors ${
-                  selectedProject === p.id ? 'text-teal-400' : 'text-gray-300'
-                }`}
-              >
-                {p.name}
-              </button>
-            ))}
-          </div>
-        </>
-      )}
-    </div>
-  );
-}
 
 function ExecutionStatus({ isVisible }: { isVisible: boolean }) {
   if (!isVisible) return null;
@@ -260,8 +206,10 @@ export default function AIAssistant() {
               </p>
             </div>
             <ProjectSelector
-              selectedProject={selectedProject}
-              onSelect={setSelectedProject}
+              value={selectedProject}
+              onChange={setSelectedProject}
+              label="Project Context:"
+              showAllOption={true}
             />
           </div>
         </header>

@@ -237,6 +237,11 @@ export default function Project360() {
           <ArrowLeft size={18} />
         </button>
         <div className="flex items-center gap-3">
+          {project.project_code && (
+            <span className="text-xs font-mono text-teal-400 bg-teal-500/10 px-2 py-0.5 rounded">
+              {project.project_code}
+            </span>
+          )}
           <h1 className="text-2xl font-semibold text-white">{project.name}</h1>
           <span className="text-sm font-medium">
             {getStatusEmoji(status)} {getStatusLabel(status)}

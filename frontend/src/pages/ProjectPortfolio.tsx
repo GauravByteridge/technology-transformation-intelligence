@@ -85,7 +85,14 @@ function ProjectCard({ project, health, onClick }: ProjectCardProps) {
     >
       {/* Header */}
       <div className="flex items-start justify-between mb-4">
-        <h3 className="text-base font-semibold text-white">{project.name}</h3>
+        <div>
+          {project.project_code && (
+            <span className="text-xs font-mono text-teal-400 bg-teal-500/10 px-1.5 py-0.5 rounded mb-1 inline-block">
+              {project.project_code}
+            </span>
+          )}
+          <h3 className="text-base font-semibold text-white">{project.name}</h3>
+        </div>
         <span className="text-sm font-medium flex items-center gap-1.5">
           {getStatusEmoji(status)} <span className="text-gray-300">{getStatusLabel(status)}</span>
         </span>
