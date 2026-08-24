@@ -172,10 +172,10 @@ function DocumentsCard() {
       {/* Stats */}
       <div className="flex items-center gap-6 mb-4 text-sm">
         <span className="text-gray-300">
-          <span className="font-semibold text-white">342</span> Documents
+          <span className="font-semibold text-white">4</span> Documents
         </span>
         <span className="text-gray-300">
-          <span className="font-semibold text-white">18</span> Datasets
+          <span className="font-semibold text-white">2</span> Datasets
         </span>
       </div>
 
