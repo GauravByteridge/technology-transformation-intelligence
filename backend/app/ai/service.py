@@ -626,7 +626,14 @@ class AIService:
         if isinstance(val, (int, float)):
             return True
         if isinstance(val, str):
-            cleaned = val.replace(",", "").replace("$", "").replace("%", "").replace("+", "").replace("-", "").strip()
+            # Don't treat dates (YYYY-MM-DD) as numeric
+            import re
+            if re.match(r'\d{4}-\d{2}-\d{2}', val.strip()):
+                return False
+            cleaned = val.replace(",", "").replace("$", "").replace("%", "").replace("+", "").strip()
+            # Only strip leading minus for negative numbers, not all hyphens
+            if cleaned.startswith("-"):
+                cleaned = cleaned[1:]
             try:
                 float(cleaned)
                 return True
