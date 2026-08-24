@@ -39,13 +39,13 @@ export function QueryHistory({ history, onSelectConversation }: QueryHistoryProp
             <button
               type="button"
               onClick={() => onSelectConversation(group.conversationId)}
-              className="w-full rounded-md px-3 py-2 text-left transition-colors hover:bg-gray-100 focus:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-inset"
+              className="w-full rounded-md px-3 py-2 text-left transition-colors hover:bg-gray-700/50 focus:bg-gray-700/50 focus:outline-none"
               aria-label={`Conversation: ${group.entries[0]?.question ?? 'Unknown'}`}
             >
-              <p className="truncate text-sm font-medium text-gray-800">
+              <p className="truncate text-sm font-medium text-gray-200">
                 {group.entries[0]?.question ?? 'Untitled conversation'}
               </p>
-              <p className="mt-0.5 text-xs text-gray-400">
+              <p className="mt-0.5 text-xs text-gray-500">
                 {formatHistoryTimestamp(group.latestTimestamp)}
                 {group.entries.length > 1 && (
                   <span className="ml-1">· {group.entries.length} messages</span>
