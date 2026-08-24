@@ -329,6 +329,11 @@ class DataSourceService:
             "last_connected_at": data_source.last_connected_at,
             "created_at": data_source.created_at,
             "updated_at": data_source.updated_at,
+            # Discovery tracking fields (Phase 8)
+            "last_discovery_at": data_source.last_discovery_at,
+            "discovery_status": data_source.discovery_status or "pending",
+            "objects_discovered": data_source.objects_discovered or 0,
+            "fields_discovered": data_source.fields_discovered or 0,
         }
 
     def _connection_to_response(self, connection: SourceConnection) -> dict:

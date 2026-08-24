@@ -451,10 +451,22 @@ async def get_data_source_service(
 ) -> "DataSourceService":
     """Provide a DataSourceService instance with repository injected."""
     from app.repositories.data_source_repository import DataSourceRepository
+    from app.repositories.project_repository import ProjectRepository
+    from app.repositories.source_connection_repository import SourceConnectionRepository
+    from app.security.credential_encryptor import CredentialEncryptor
     from app.services.data_source_service import DataSourceService
 
+    settings = get_settings()
     repository = DataSourceRepository(session)
-    return DataSourceService(repository=repository)
+    project_repo = ProjectRepository(session)
+    source_conn_repo = SourceConnectionRepository(session)
+    encryptor = CredentialEncryptor(fernet_key=settings.fernet_key)
+    return DataSourceService(
+        data_source_repository=repository,
+        project_repository=project_repo,
+        source_connection_repository=source_conn_repo,
+        credential_encryptor=encryptor,
+    )
 
 
 async def get_connector_service(
@@ -473,6 +485,57 @@ async def get_connector_service(
         data_source_repository=repository,
         credential_encryptor=encryptor,
         connector_registry=registry,
+    )
+
+
+async def get_catalog_service(
+    session: AsyncSession = Depends(get_app_db_session),
+) -> "CatalogService":
+    """Provide a CatalogService instance with repositories injected."""
+    from app.repositories.catalog_repository import CatalogRepository
+    from app.repositories.project_source_mapping_repository import (
+        ProjectSourceMappingRepository,
+    )
+    from app.services.catalog_service import CatalogService
+
+    catalog_repo = CatalogRepository(session)
+    mapping_repo = ProjectSourceMappingRepository(session)
+    return CatalogService(
+        catalog_repository=catalog_repo,
+        project_source_mapping_repository=mapping_repo,
+    )
+
+
+async def get_discovery_engine(
+    session: AsyncSession = Depends(get_app_db_session),
+    registry: "ConnectorRegistry" = Depends(lambda: get_connector_registry()),
+) -> "DiscoveryEngine":
+    """Provide a DiscoveryEngine instance with all dependencies injected.
+
+    Assembles the engine with connector registry, catalog service,
+    and semantic profiler for schema discovery operations.
+    """
+    from app.repositories.catalog_repository import CatalogRepository
+    from app.repositories.project_source_mapping_repository import (
+        ProjectSourceMappingRepository,
+    )
+    from app.services.catalog_service import CatalogService
+    from app.services.discovery_engine import DiscoveryEngine
+    from app.services.semantic_profiler import SemanticMetadataProfiler
+
+    catalog_repo = CatalogRepository(session)
+    mapping_repo = ProjectSourceMappingRepository(session)
+    catalog_service = CatalogService(
+        catalog_repository=catalog_repo,
+        project_source_mapping_repository=mapping_repo,
+    )
+    semantic_profiler = SemanticMetadataProfiler()
+
+    return DiscoveryEngine(
+        connector_registry=registry,
+        catalog_service=catalog_service,
+        semantic_profiler=semantic_profiler,
+        session=session,
     )
 
 
@@ -808,6 +871,10 @@ def initialize_tool_registry() -> "ToolRegistry":
     from app.ai.tools.registry import ToolRegistry
     from app.ai.tools.project_tools import create_get_project_context
     from app.ai.tools.finance_tools import create_query_project_finance
+    from app.ai.tools.connector_tools import (
+        create_query_connected_source,
+        create_discover_available_sources,
+    )
 
     registry = ToolRegistry()
 
@@ -820,6 +887,14 @@ def initialize_tool_registry() -> "ToolRegistry":
     registry.register(
         "query_project_finance",
         _create_finance_tool(),
+    )
+    registry.register(
+        "query_connected_source",
+        _create_query_connected_source_tool(),
+    )
+    registry.register(
+        "discover_available_sources",
+        _create_discover_available_sources_tool(),
     )
 
     _tool_registry = registry
@@ -884,6 +959,74 @@ def _create_finance_tool():
     return query_project_finance
 
 
+def _create_query_connected_source_tool():
+    """Build the query_connected_source tool with per-invocation session management.
+
+    Creates a fresh session for each call, resolves credentials server-side,
+    and executes read-only queries against connected enterprise data sources.
+
+    Returns:
+        Async tool function that obtains its own session at call time.
+    """
+    from app.ai.tools.connector_tools import create_query_connected_source
+    from app.repositories.data_source_repository import DataSourceRepository
+    from app.security.credential_encryptor import CredentialEncryptor
+
+    settings = get_settings()
+    encryptor = CredentialEncryptor(fernet_key=settings.fernet_key)
+    connector_registry = get_connector_registry()
+
+    async def query_connected_source(
+        source_id: str, query_type: str, query: str | list[dict]
+    ) -> dict:
+        if _app_db_session_factory is None:
+            raise RuntimeError("App_DB not initialized")
+
+        async with _app_db_session_factory() as session:
+            repository = DataSourceRepository(session)
+            tool_fn = create_query_connected_source(
+                data_source_repository=repository,
+                credential_encryptor=encryptor,
+                connector_registry=connector_registry,
+            )
+            return await tool_fn(source_id, query_type, query)
+
+    return query_connected_source
+
+
+def _create_discover_available_sources_tool():
+    """Build the discover_available_sources tool with per-invocation session management.
+
+    Creates a fresh session for each call and queries the Enterprise Data Catalog
+    for the semantic information landscape of a project.
+
+    Returns:
+        Async tool function that obtains its own session at call time.
+    """
+    from app.ai.tools.connector_tools import create_discover_available_sources
+    from app.repositories.catalog_repository import CatalogRepository
+    from app.repositories.project_source_mapping_repository import (
+        ProjectSourceMappingRepository,
+    )
+    from app.services.catalog_service import CatalogService
+
+    async def discover_available_sources(project_id: str) -> dict:
+        if _app_db_session_factory is None:
+            raise RuntimeError("App_DB not initialized")
+
+        async with _app_db_session_factory() as session:
+            catalog_repo = CatalogRepository(session)
+            mapping_repo = ProjectSourceMappingRepository(session)
+            catalog_service = CatalogService(
+                catalog_repository=catalog_repo,
+                project_source_mapping_repository=mapping_repo,
+            )
+            tool_fn = create_discover_available_sources(catalog_service)
+            return await tool_fn(project_id)
+
+    return discover_available_sources
+
+
 def get_tool_registry() -> "ToolRegistry":
     """
     Provide the singleton ToolRegistry with all AI tools pre-registered.
@@ -925,6 +1068,10 @@ def initialize_ai_service(settings: Settings) -> "AIService":
     from app.ai.prompt_manager import PromptManager
     from app.ai.service import AIService
     from app.ai.strands_agent import StrandsAgentWrapper
+    from app.ai.tools.connector_tools import (
+        get_connector_tools,
+        initialize_connector_tools,
+    )
     from app.ai.tools.ingestion_tools import get_ingestion_tools, initialize_ingestion_tools
 
     provider = get_text_generation_provider()
@@ -935,13 +1082,19 @@ def initialize_ai_service(settings: Settings) -> "AIService":
     ingestion = _create_ingestion_interface()
     initialize_ingestion_tools(ingestion)
 
+    # Initialize connector tools with per-invocation factories
+    _initialize_connector_tools_module(settings)
+
     # Load the Strands system prompt
-    system_prompt = prompt_manager.load_prompt("strands_system_prompt", version="v1")
+    system_prompt = prompt_manager.load_prompt("strands_system_prompt", version="v2")
+
+    # Combine all Strands @tool-decorated functions
+    all_tools = get_ingestion_tools() + get_connector_tools()
 
     # Create the Strands Agent wrapper with configured model and tools
     strands_agent = StrandsAgentWrapper(
         settings=settings,
-        tools=get_ingestion_tools(),
+        tools=all_tools,
         system_prompt=system_prompt,
     )
 
@@ -960,9 +1113,60 @@ def initialize_ai_service(settings: Settings) -> "AIService":
         registered_tools=tool_registry.list_tools(),
         provider=type(provider).__name__,
         strands_agent_enabled=True,
+        strands_tool_count=len(all_tools),
     )
 
     return _ai_service
+
+
+def _initialize_connector_tools_module(settings: Settings) -> None:
+    """Initialize the connector_tools module-level dependencies.
+
+    Sets up the factory callables that create per-invocation sessions
+    for the @tool-decorated Strands functions.
+
+    Args:
+        settings: Application settings for credential encryption.
+    """
+    from app.ai.tools.connector_tools import initialize_connector_tools
+    from app.repositories.catalog_repository import CatalogRepository
+    from app.repositories.data_source_repository import DataSourceRepository
+    from app.repositories.project_source_mapping_repository import (
+        ProjectSourceMappingRepository,
+    )
+    from app.security.credential_encryptor import CredentialEncryptor
+    from app.services.catalog_service import CatalogService
+
+    encryptor = CredentialEncryptor(fernet_key=settings.fernet_key)
+    connector_registry = get_connector_registry()
+
+    async def data_source_repo_factory():
+        """Create a fresh DataSourceRepository with its own session."""
+        if _app_db_session_factory is None:
+            raise RuntimeError("App_DB not initialized")
+        session = _app_db_session_factory()
+        s = await session.__aenter__()
+        return DataSourceRepository(s)
+
+    async def catalog_service_factory():
+        """Create a fresh CatalogService with its own session."""
+        if _app_db_session_factory is None:
+            raise RuntimeError("App_DB not initialized")
+        session = _app_db_session_factory()
+        s = await session.__aenter__()
+        catalog_repo = CatalogRepository(s)
+        mapping_repo = ProjectSourceMappingRepository(s)
+        return CatalogService(
+            catalog_repository=catalog_repo,
+            project_source_mapping_repository=mapping_repo,
+        )
+
+    initialize_connector_tools(
+        data_source_repository_factory=data_source_repo_factory,
+        credential_encryptor=encryptor,
+        connector_registry=connector_registry,
+        catalog_service_factory=catalog_service_factory,
+    )
 
 
 def get_ai_service() -> "AIService":
@@ -1267,3 +1471,161 @@ class _SimpleMetadataExtractor:
             "file_name": path.name,
             "content_length": str(len(content)),
         }
+
+
+# =============================================================================
+# Phase 8: Catalog & Discovery Layer
+# =============================================================================
+
+
+async def get_catalog_repository(
+    session: AsyncSession = Depends(get_app_db_session),
+) -> "CatalogRepository":
+    """Provide a CatalogRepository instance with database session.
+
+    Args:
+        session: AsyncSession injected from App_DB session provider.
+
+    Returns:
+        CatalogRepository connected to the App_DB.
+    """
+    from app.repositories.catalog_repository import CatalogRepository
+
+    return CatalogRepository(session)
+
+
+async def get_project_source_mapping_repository(
+    session: AsyncSession = Depends(get_app_db_session),
+) -> "ProjectSourceMappingRepository":
+    """Provide a ProjectSourceMappingRepository instance with database session.
+
+    Args:
+        session: AsyncSession injected from App_DB session provider.
+
+    Returns:
+        ProjectSourceMappingRepository connected to the App_DB.
+    """
+    from app.repositories.project_source_mapping_repository import (
+        ProjectSourceMappingRepository,
+    )
+
+    return ProjectSourceMappingRepository(session)
+
+
+async def get_catalog_service(
+    catalog_repository: "CatalogRepository" = Depends(get_catalog_repository),
+    mapping_repository: "ProjectSourceMappingRepository" = Depends(
+        get_project_source_mapping_repository
+    ),
+) -> "CatalogService":
+    """Provide a CatalogService instance with repository dependencies.
+
+    Assembles the service with its catalog and project mapping repositories.
+
+    Args:
+        catalog_repository: CatalogRepository for catalog entry persistence.
+        mapping_repository: ProjectSourceMappingRepository for project mappings.
+
+    Returns:
+        Fully assembled CatalogService instance.
+    """
+    from app.services.catalog_service import CatalogService
+
+    return CatalogService(
+        catalog_repository=catalog_repository,
+        project_source_mapping_repository=mapping_repository,
+    )
+
+
+def get_semantic_profiler() -> "SemanticMetadataProfiler":
+    """Provide a SemanticMetadataProfiler instance.
+
+    The profiler is stateless (heuristic-based, no LLM calls) so it can be
+    constructed fresh per request without session dependencies.
+
+    Returns:
+        SemanticMetadataProfiler instance.
+    """
+    from app.services.semantic_profiler import SemanticMetadataProfiler
+
+    return SemanticMetadataProfiler()
+
+
+async def get_discovery_engine(
+    session: AsyncSession = Depends(get_app_db_session),
+    catalog_service: "CatalogService" = Depends(get_catalog_service),
+    semantic_profiler: "SemanticMetadataProfiler" = Depends(get_semantic_profiler),
+) -> "DiscoveryEngine":
+    """Provide a DiscoveryEngine instance with all dependencies.
+
+    The DiscoveryEngine orchestrates schema discovery and semantic profiling
+    for connected data sources. It needs access to the ConnectorRegistry
+    (for source introspection), CatalogService (for persisting results),
+    SemanticMetadataProfiler (for semantic enrichment), and a database session.
+
+    Args:
+        session: AsyncSession for data source lookups during discovery.
+        catalog_service: Service for persisting discovery results to the catalog.
+        semantic_profiler: Profiler for generating semantic metadata.
+
+    Returns:
+        Fully assembled DiscoveryEngine instance.
+    """
+    from app.services.discovery_engine import DiscoveryEngine
+
+    connector_registry = get_connector_registry()
+
+    return DiscoveryEngine(
+        connector_registry=connector_registry,
+        catalog_service=catalog_service,
+        semantic_profiler=semantic_profiler,
+        session=session,
+    )
+
+
+async def get_catalog_context_injector(
+    catalog_service: "CatalogService" = Depends(get_catalog_service),
+) -> "CatalogContextInjector":
+    """Provide a CatalogContextInjector instance with catalog service.
+
+    The injector selects relevant catalog entries for a given question/project
+    and formats them for injection into the Strands Agent prompt.
+
+    Args:
+        catalog_service: Service for catalog retrieval and search.
+
+    Returns:
+        CatalogContextInjector instance.
+    """
+    from app.ai.catalog_context import CatalogContextInjector
+
+    return CatalogContextInjector(catalog_service=catalog_service)
+
+
+def get_evidence_builder() -> "EvidenceBuilder":
+    """Provide an EvidenceBuilder instance.
+
+    The builder is stateless — it converts tool execution results into
+    structured evidence items without needing external dependencies.
+
+    Returns:
+        EvidenceBuilder instance.
+    """
+    from app.ai.evidence_builder import EvidenceBuilder
+
+    return EvidenceBuilder()
+
+
+def get_lineage_recorder() -> "LineageRecorder":
+    """Provide a fresh LineageRecorder instance.
+
+    Each request gets its own recorder to track the full execution path
+    for that specific query. The recorder is stateful per-request but
+    has no external dependencies.
+
+    Returns:
+        LineageRecorder instance ready to start a new trace.
+    """
+    from app.ai.lineage_recorder import LineageRecorder
+
+    return LineageRecorder()

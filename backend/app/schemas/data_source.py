@@ -50,6 +50,11 @@ class DataSourceResponse(BaseModel):
     last_connected_at: datetime | None = None
     created_at: datetime
     updated_at: datetime
+    # Discovery tracking fields (Phase 8)
+    last_discovery_at: datetime | None = None
+    discovery_status: str = "pending"
+    objects_discovered: int = 0
+    fields_discovered: int = 0
 
     model_config = {"from_attributes": True}
 

@@ -22,7 +22,7 @@ class AIQueryRequest(BaseModel):
     """Request schema for submitting an AI query."""
 
     question: str = Field(min_length=1, max_length=5000, description="The user's question")
-    project_id: UUID = Field(description="Project context for scoping the query")
+    project_id: UUID | None = Field(default=None, description="Project context for scoping the query (optional for portfolio-level queries)")
     conversation_id: UUID | None = Field(
         default=None,
         description="Existing conversation ID to continue, or None to start a new conversation",
@@ -63,6 +63,22 @@ class AIResponse(BaseModel):
         default=None,
         description="Structured chart/table specification (present only for table/chart response_type)",
     )
+
+    # Phase 8: Cross-Source Intelligence fields
+    lineage_trace: dict[str, Any] | None = Field(
+        default=None,
+        description="Full execution lineage trace from question to answer",
+    )
+    groundedness: list[dict[str, Any]] | None = Field(
+        default=None,
+        description="Groundedness classifications for claims in the answer",
+    )
+    sources_consulted: list[dict[str, Any]] | None = Field(
+        default=None,
+        description="Detailed source references with semantic metadata and record counts",
+    )
+
+    model_config = {"from_attributes": True}
 
     @field_validator("answer")
     @classmethod

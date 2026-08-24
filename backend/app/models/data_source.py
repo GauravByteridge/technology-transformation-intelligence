@@ -45,9 +45,32 @@ class DataSource(AppBase):
         nullable=False,
     )
 
+    # Discovery tracking fields
+    last_discovery_at: Mapped[datetime | None] = mapped_column(
+        sa.DateTime(timezone=True), nullable=True
+    )
+    discovery_status: Mapped[str] = mapped_column(
+        sa.String(50), nullable=False, server_default=sa.text("'pending'")
+    )
+    objects_discovered: Mapped[int] = mapped_column(
+        sa.Integer(), nullable=False, server_default=sa.text("0")
+    )
+    fields_discovered: Mapped[int] = mapped_column(
+        sa.Integer(), nullable=False, server_default=sa.text("0")
+    )
+    discovery_error: Mapped[str | None] = mapped_column(
+        sa.Text(), nullable=True
+    )
+
     # Relationships
     source_connections: Mapped[list["SourceConnection"]] = relationship(
         "SourceConnection", back_populates="data_source", lazy="selectin"
+    )
+    catalog_entries: Mapped[list["CatalogEntry"]] = relationship(
+        "CatalogEntry", back_populates="data_source", lazy="selectin"
+    )
+    project_source_mappings: Mapped[list["ProjectSourceMapping"]] = relationship(
+        "ProjectSourceMapping", back_populates="data_source", lazy="selectin"
     )
 
     def __repr__(self) -> str:

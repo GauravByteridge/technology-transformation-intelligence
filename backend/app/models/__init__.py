@@ -14,6 +14,8 @@ from app.models.base import AppBase, RAGBase
 from app.models.user import User
 from app.models.project import Project, ProjectMember
 from app.models.data_source import DataSource, SourceConnection
+from app.models.catalog_entry import CatalogEntry
+from app.models.project_source_mapping import ProjectSourceMapping
 from app.models.conversation import Conversation, Message
 from app.models.query import QueryHistory, SavedQuery
 from app.models.uploaded_file import UploadedFile
@@ -66,6 +68,8 @@ __all__ = [
     "ProjectMember",
     "DataSource",
     "SourceConnection",
+    "CatalogEntry",
+    "ProjectSourceMapping",
     "Conversation",
     "Message",
     "QueryHistory",

@@ -7,6 +7,9 @@ import AIAssistant from './pages/AIAssistant';
 import ExecutiveBrief from './pages/ExecutiveBrief';
 import DataSourcesRegistry from './pages/DataSourcesRegistry';
 import DataLineage from './pages/DataLineage';
+import DatasetBrowser from './pages/DatasetBrowser';
+import FileUpload from './pages/FileUpload';
+import Catalog from './pages/Catalog';
 
 function App() {
   return (
@@ -19,7 +22,10 @@ function App() {
           <Route path="/projects/:projectId/brief" element={<ExecutiveBrief />} />
           <Route path="/ai" element={<AIAssistant />} />
           <Route path="/sources" element={<DataSourcesRegistry />} />
+          <Route path="/datasets" element={<DatasetBrowser />} />
           <Route path="/lineage" element={<DataLineage />} />
+          <Route path="/upload" element={<FileUpload />} />
+          <Route path="/catalog" element={<Catalog />} />
         </Route>
       </Routes>
     </BrowserRouter>
