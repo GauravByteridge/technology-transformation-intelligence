@@ -1,15 +1,14 @@
 import { useEffect, useRef } from 'react';
 import type { ChatMessage } from '@/types';
 import { MessageBubble } from './MessageBubble';
+import { VisualizationRenderer } from './VisualizationRenderer';
 
 interface ChatThreadProps {
   messages: ChatMessage[];
 }
 
 /**
- * ChatThread — Renders message bubbles in conversation order.
- * Auto-scrolls to the bottom when new messages arrive.
- * Shows an empty state when no messages exist.
+ * ChatThread — Renders message bubbles with inline charts when available.
  */
 export function ChatThread({ messages }: ChatThreadProps) {
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -42,7 +41,19 @@ export function ChatThread({ messages }: ChatThreadProps) {
       aria-label="Chat messages"
     >
       {messages.map((message) => (
-        <MessageBubble key={message.id} message={message} />
+        <div key={message.id}>
+          <MessageBubble message={message} />
+          {message.visualizationSpec && message.responseType === 'chart' && (
+            <div className="mt-2 max-w-lg">
+              <VisualizationRenderer
+                responseType="chart"
+                visualizationSpec={message.visualizationSpec}
+                isPartial={false}
+                failedSources={[]}
+              />
+            </div>
+          )}
+        </div>
       ))}
       <div ref={bottomRef} aria-hidden="true" />
     </div>

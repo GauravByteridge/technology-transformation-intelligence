@@ -74,6 +74,8 @@ export function useAIChat(projectId?: string) {
           content: response.answer,
           timestamp: new Date().toISOString(),
           queryId: response.conversation_id,
+          visualizationSpec: response.visualization_spec,
+          responseType: response.response_type,
         };
         addMessage(assistantMessage);
       } catch (error) {

@@ -484,6 +484,8 @@ export interface ChatMessage {
   content: string;
   timestamp: string;
   queryId?: string;
+  visualizationSpec?: Record<string, unknown> | null;
+  responseType?: string;
 }
 
 export interface Conversation {
