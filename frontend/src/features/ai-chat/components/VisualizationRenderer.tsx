@@ -81,12 +81,12 @@ function TableVisualization({ spec }: { spec: Record<string, unknown> | null }) 
   }
 
   return (
-    <div className="overflow-x-auto rounded-lg border border-gray-700/50">
-      <table className="min-w-full divide-y divide-gray-700">
+    <div className="overflow-x-auto rounded-lg border border-gray-700/50 max-w-2xl">
+      <table className="min-w-full divide-y divide-gray-700 text-xs">
         <thead className="bg-gray-900/50">
           <tr>
             {tableSpec.columns.map((col) => (
-              <th key={col} className="px-4 py-2 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+              <th key={col} className="px-3 py-2 text-left font-medium text-gray-400 uppercase tracking-wider">
                 {col}
               </th>
             ))}
@@ -96,7 +96,7 @@ function TableVisualization({ spec }: { spec: Record<string, unknown> | null }) 
           {tableSpec.rows.map((row, rowIndex) => (
             <tr key={rowIndex}>
               {tableSpec.columns.map((col) => (
-                <td key={`${rowIndex}-${col}`} className="px-4 py-2 text-sm text-gray-300 whitespace-nowrap">
+                <td key={`${rowIndex}-${col}`} className="px-3 py-1.5 text-gray-300 whitespace-nowrap">
                   {formatCellValue(row[col])}
                 </td>
               ))}
