@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Bot, ChevronDown, ChevronUp, Database, FileText, GitBranch } from 'lucide-react';
+import { Bot, ChevronDown, ChevronUp, Database, FileText, GitBranch, BarChart3, Table2, Info } from 'lucide-react';
 import {
   useAIChat,
   useQueryHistory,
@@ -22,28 +22,31 @@ import { ProjectSelector } from '@/components/common';
 
 const SUGGESTED_QUESTIONS = [
   'Why is this project at risk?',
-  'What is causing the budget variance?',
+  'Show me budget vs actual for all projects.',
   'What are the biggest unresolved issues?',
+  'Show me risk distribution by severity.',
   'What should the project manager prioritize?',
+  'Show me resource utilization trend.',
 ];
 
 // ---------------------------------------------------------------------------
 // Sub-components
 // ---------------------------------------------------------------------------
 
+/** Execution status steps shown while AI is processing */
 function ExecutionStatus({ isVisible }: { isVisible: boolean }) {
   if (!isVisible) return null;
 
   return (
-    <div className="bg-gray-800/50 border border-gray-700/50 rounded-lg p-4 space-y-2 animate-pulse">
-      <p className="text-sm text-gray-400">Analyzing your question...</p>
+    <div className="bg-gray-800/50 border border-gray-700/50 rounded-lg p-4 space-y-2">
+      <p className="text-sm text-gray-300 font-medium">Analyzing...</p>
       <div className="space-y-1.5">
-        <StatusStep label="Understanding project context" done />
-        <StatusStep label="Finding relevant enterprise information" done />
-        <StatusStep label="Consulting PostgreSQL — Finance" active />
-        <StatusStep label="Consulting MongoDB — Project Risks" pending />
-        <StatusStep label="Searching Project Documents" pending />
-        <StatusStep label="Correlating evidence" pending />
+        <StatusStep label="Understanding question" done />
+        <StatusStep label="Finding relevant catalog datasets" done />
+        <StatusStep label="Identifying project/risk context" active />
+        <StatusStep label="Querying relevant sources" pending />
+        <StatusStep label="Preparing analytical dataset" pending />
+        <StatusStep label="Generating visualization" pending />
       </div>
     </div>
   );
@@ -65,7 +68,53 @@ function StatusStep({ label, done, active, pending }: {
   );
 }
 
-function SourcesConsultedPanel({ sources }: { sources: SourceReference[] }) {
+/** Toggle between Chart and Table view */
+function ViewToggle({ view, onViewChange }: { view: 'chart' | 'table'; onViewChange: (v: 'chart' | 'table') => void }) {
+  return (
+    <div className="inline-flex rounded-md bg-gray-700/50 p-0.5">
+      <button
+        onClick={() => onViewChange('chart')}
+        className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded transition-colors ${
+          view === 'chart' ? 'bg-teal-600 text-white' : 'text-gray-400 hover:text-white'
+        }`}
+      >
+        <BarChart3 size={12} />
+        Chart
+      </button>
+      <button
+        onClick={() => onViewChange('table')}
+        className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded transition-colors ${
+          view === 'table' ? 'bg-teal-600 text-white' : 'text-gray-400 hover:text-white'
+        }`}
+      >
+        <Table2 size={12} />
+        Table
+      </button>
+    </div>
+  );
+}
+
+/** Dataset info panel showing what was retrieved */
+function DatasetInfoPanel({ sources, recordCount }: { sources: SourceReference[]; recordCount: number }) {
+  if (sources.length === 0) return null;
+
+  return (
+    <div className="bg-gray-800/30 border border-gray-700/30 rounded-lg px-4 py-3">
+      <div className="flex items-center gap-2 mb-2">
+        <Info size={14} className="text-teal-400" />
+        <span className="text-xs font-medium text-gray-300">Dataset Information</span>
+      </div>
+      <div className="flex items-center gap-4 text-xs text-gray-400 flex-wrap">
+        <span>Sources: {sources.map(s => `${s.source_name}`).join(', ')}</span>
+        <span>Records: {recordCount}</span>
+        <span>Retrieved: just now</span>
+      </div>
+    </div>
+  );
+}
+
+/** Collapsible sources panel (dark themed) */
+function SourcesPanel({ sources }: { sources: SourceReference[] }) {
   const [expanded, setExpanded] = useState(false);
 
   if (sources.length === 0) return null;
@@ -76,7 +125,8 @@ function SourcesConsultedPanel({ sources }: { sources: SourceReference[] }) {
         onClick={() => setExpanded(!expanded)}
         className="w-full flex items-center justify-between px-4 py-3 hover:bg-gray-700/30 transition-colors"
       >
-        <span className="text-sm font-medium text-gray-300">
+        <span className="text-sm font-medium text-gray-300 flex items-center gap-2">
+          <Database size={14} className="text-teal-400" />
           Sources Consulted ({sources.length})
         </span>
         {expanded ? <ChevronUp size={14} className="text-gray-400" /> : <ChevronDown size={14} className="text-gray-400" />}
@@ -84,9 +134,15 @@ function SourcesConsultedPanel({ sources }: { sources: SourceReference[] }) {
       {expanded && (
         <div className="px-4 pb-3 space-y-2 border-t border-gray-700/50">
           {sources.map((source, idx) => (
-            <div key={idx} className="flex items-center gap-2 text-sm text-gray-300 py-1">
-              <SourceIcon type={source.source_type} />
-              <span>✓ {source.source_name} — {source.object_name}</span>
+            <div key={idx} className="flex items-center justify-between py-1.5">
+              <div className="flex items-center gap-2 text-sm text-gray-300">
+                <SourceIcon type={source.source_type} />
+                <span>✓ {source.source_name} — {source.object_name}</span>
+              </div>
+              <div className="flex items-center gap-3 text-xs text-gray-500">
+                <span>{source.records_returned} records</span>
+                <span>{source.query_duration_ms}ms</span>
+              </div>
             </div>
           ))}
         </div>
@@ -109,7 +165,51 @@ function SourceIcon({ type }: { type: string }) {
   }
 }
 
-function LineagePanel({ lineage }: { lineage: LineageTrace | null }) {
+/** Collapsible evidence panel (dark themed) */
+function EvidencePanelDark({ evidence }: { evidence: EvidenceItem[] }) {
+  const [expanded, setExpanded] = useState(false);
+
+  if (evidence.length === 0) return null;
+
+  return (
+    <div className="bg-gray-800/50 border border-gray-700/50 rounded-lg overflow-hidden">
+      <button
+        onClick={() => setExpanded(!expanded)}
+        className="w-full flex items-center justify-between px-4 py-3 hover:bg-gray-700/30 transition-colors"
+      >
+        <span className="text-sm font-medium text-gray-300 flex items-center gap-2">
+          📋 Evidence ({evidence.length})
+        </span>
+        {expanded ? <ChevronUp size={14} className="text-gray-400" /> : <ChevronDown size={14} className="text-gray-400" />}
+      </button>
+      {expanded && (
+        <div className="px-4 pb-3 space-y-2 border-t border-gray-700/50">
+          {evidence.map((item, idx) => (
+            <div key={idx} className="bg-gray-900/50 rounded-lg p-3">
+              <div className="flex items-center gap-2 mb-1">
+                <SourceIcon type={item.source_type} />
+                <span className="text-xs font-medium text-gray-300">
+                  {item.source_name} — {item.object_name}
+                </span>
+                <span className="ml-auto text-xs px-1.5 py-0.5 rounded bg-gray-700 text-gray-400">
+                  {item.confidence.replace('_', ' ')}
+                </span>
+              </div>
+              {item.excerpt && (
+                <p className="text-xs text-gray-400 italic mt-1 line-clamp-3">
+                  "{item.excerpt}"
+                </p>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/** Collapsible lineage panel (dark themed) */
+function LineagePanelDark({ lineage }: { lineage: LineageTrace | null }) {
   const [expanded, setExpanded] = useState(false);
 
   if (!lineage) return null;
@@ -121,7 +221,7 @@ function LineagePanel({ lineage }: { lineage: LineageTrace | null }) {
         className="w-full flex items-center justify-between px-4 py-3 hover:bg-gray-700/30 transition-colors"
       >
         <span className="text-sm font-medium text-gray-300 flex items-center gap-2">
-          <GitBranch size={14} />
+          <GitBranch size={14} className="text-teal-400" />
           Data Lineage
         </span>
         {expanded ? <ChevronUp size={14} className="text-gray-400" /> : <ChevronDown size={14} className="text-gray-400" />}
@@ -136,11 +236,12 @@ function LineagePanel({ lineage }: { lineage: LineageTrace | null }) {
 }
 
 // ---------------------------------------------------------------------------
-// Main Page
+// Main Page — AI Query / Analytics Canvas
 // ---------------------------------------------------------------------------
 
 export default function AIAssistant() {
   const [selectedProject, setSelectedProject] = useState<string | null>(null);
+  const [activeView, setActiveView] = useState<'chart' | 'table'>('chart');
 
   const { sendMessage, isLoading, messages, latestResponse, startNewConversation } =
     useAIChat(selectedProject ?? undefined);
@@ -165,6 +266,8 @@ export default function AIAssistant() {
     latestResponse.visualization_spec &&
     latestResponse.response_type !== 'text';
 
+  const totalRecords = sourcesConsulted.reduce((sum, s) => sum + (s.records_returned || 0), 0);
+
   const handleSuggestedQuestion = (question: string) => {
     sendMessage(question);
   };
@@ -172,15 +275,15 @@ export default function AIAssistant() {
   return (
     <div className="flex h-[calc(100vh-4rem)]">
       {/* Sidebar — Query History */}
-      <aside className="hidden lg:flex w-72 flex-shrink-0 flex-col border-r border-gray-700/50 bg-gray-900/50">
-        <div className="flex items-center gap-2 border-b border-gray-700/50 px-4 py-3">
+      <aside className="hidden lg:flex w-64 flex-shrink-0 flex-col border-r border-gray-700/50 bg-gray-900/50">
+        <div className="flex items-center gap-2 border-b border-gray-700/50 px-3 py-3">
           <button
             type="button"
             onClick={startNewConversation}
-            className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-teal-600 px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-teal-500"
+            className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-teal-600 px-3 py-2 text-xs font-medium text-white transition-colors hover:bg-teal-500"
             aria-label="Start new conversation"
           >
-            + New Conversation
+            + New Query
           </button>
         </div>
         <div className="flex-1 overflow-y-auto">
@@ -191,104 +294,113 @@ export default function AIAssistant() {
         </div>
       </aside>
 
-      {/* Main Chat Area */}
+      {/* Main Canvas Area */}
       <main className="flex flex-1 flex-col overflow-hidden">
-        {/* Header */}
-        <header className="flex-shrink-0 border-b border-gray-700/50 px-6 py-4">
+        {/* Header with project context */}
+        <header className="flex-shrink-0 border-b border-gray-700/50 px-6 py-3">
           <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-xl font-semibold text-white flex items-center gap-2">
-                <Bot size={22} className="text-teal-400" />
-                AI Enterprise Intelligence
-              </h1>
-              <p className="mt-0.5 text-sm text-gray-400">
-                Ask questions across your connected enterprise information.
-              </p>
+            <div className="flex items-center gap-3">
+              <Bot size={20} className="text-teal-400" />
+              <h1 className="text-lg font-semibold text-white">AI Query</h1>
             </div>
             <ProjectSelector
               value={selectedProject}
               onChange={setSelectedProject}
-              label="Project Context:"
+              label="Project:"
               showAllOption={true}
             />
           </div>
         </header>
 
-        {/* Chat Thread + Response */}
-        <div className="flex flex-1 flex-col overflow-hidden">
-          <div className="flex-1 overflow-y-auto px-4 py-4">
-            <div className="mx-auto max-w-3xl space-y-4">
-              {messages.length === 0 && !isLoading && (
-                /* Empty state with suggested questions */
-                <div className="py-12 text-center space-y-8">
-                  <div>
-                    <Bot size={48} className="mx-auto text-teal-400/50 mb-4" />
-                    <h2 className="text-lg font-medium text-white">
-                      What would you like to know?
-                    </h2>
-                    <p className="text-sm text-gray-400 mt-1">
-                      Ask questions about your technology transformation portfolio.
-                    </p>
-                  </div>
-
-                  {/* Suggested questions */}
-                  <div className="space-y-2 max-w-md mx-auto">
-                    <p className="text-xs text-gray-500 uppercase tracking-wider">Suggested questions</p>
-                    {SUGGESTED_QUESTIONS.map((q, idx) => (
-                      <button
-                        key={idx}
-                        onClick={() => handleSuggestedQuestion(q)}
-                        className="w-full text-left px-4 py-3 bg-gray-800/50 border border-gray-700/50 rounded-lg text-sm text-gray-300 hover:border-teal-500/30 hover:text-white transition-colors"
-                      >
-                        • {q}
-                      </button>
-                    ))}
-                  </div>
+        {/* Content area */}
+        <div className="flex-1 overflow-y-auto px-6 py-4">
+          <div className="max-w-4xl mx-auto space-y-4">
+            {/* Empty state — suggested questions */}
+            {messages.length === 0 && !isLoading && (
+              <div className="py-8 space-y-6">
+                <div className="text-center">
+                  <Bot size={40} className="mx-auto text-teal-400/50 mb-3" />
+                  <h2 className="text-base font-medium text-white">
+                    Ask questions across your connected enterprise information.
+                  </h2>
+                  <p className="text-sm text-gray-400 mt-1">
+                    Get grounded answers with evidence, or analytical visualizations from real data.
+                  </p>
                 </div>
-              )}
 
-              {messages.length > 0 && <ChatThread messages={messages} />}
-
-              {/* Execution Status */}
-              <ExecutionStatus isVisible={isLoading} />
-
-              {/* Partial Failure Warning */}
-              {isPartial && failedSources.length > 0 && (
-                <PartialFailureWarning failedSources={failedSources} />
-              )}
-
-              {/* Sources Consulted */}
-              {sourcesConsulted.length > 0 && (
-                <SourcesConsultedPanel sources={sourcesConsulted} />
-              )}
-
-              {/* Evidence Panel */}
-              {evidenceItems.length > 0 && (
-                <EvidencePanel evidence={evidenceItems} />
-              )}
-
-              {/* Data Lineage */}
-              <LineagePanel lineage={lineageTrace} />
-
-              {/* Visualization */}
-              {hasVisualization && (
-                <div className="mt-3">
-                  <VisualizationRenderer
-                    responseType={latestResponse.response_type}
-                    visualizationSpec={latestResponse.visualization_spec}
-                    isPartial={latestResponse.is_partial}
-                    failedSources={latestResponse.failed_sources}
-                  />
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-w-2xl mx-auto">
+                  {SUGGESTED_QUESTIONS.map((q, idx) => (
+                    <button
+                      key={idx}
+                      onClick={() => handleSuggestedQuestion(q)}
+                      className="text-left px-4 py-3 bg-gray-800/50 border border-gray-700/50 rounded-lg text-sm text-gray-300 hover:border-teal-500/30 hover:text-white transition-colors"
+                    >
+                      {q}
+                    </button>
+                  ))}
                 </div>
-              )}
-            </div>
+              </div>
+            )}
+
+            {/* Chat messages */}
+            {messages.length > 0 && <ChatThread messages={messages} />}
+
+            {/* Execution status */}
+            <ExecutionStatus isVisible={isLoading} />
+
+            {/* Partial failure warning */}
+            {isPartial && failedSources.length > 0 && (
+              <PartialFailureWarning failedSources={failedSources} />
+            )}
+
+            {/* Analytics Visualization Area */}
+            {hasVisualization && (
+              <div className="space-y-3">
+                {/* View toggle */}
+                <div className="flex items-center justify-between">
+                  <ViewToggle view={activeView} onViewChange={setActiveView} />
+                  <DatasetInfoPanel sources={sourcesConsulted} recordCount={totalRecords} />
+                </div>
+
+                {/* Chart or Table */}
+                <div className="bg-gray-800/30 border border-gray-700/30 rounded-lg p-4">
+                  {activeView === 'chart' ? (
+                    <VisualizationRenderer
+                      responseType={latestResponse!.response_type}
+                      visualizationSpec={latestResponse!.visualization_spec}
+                      isPartial={latestResponse!.is_partial}
+                      failedSources={latestResponse!.failed_sources}
+                    />
+                  ) : (
+                    /* Force table view of the same spec */
+                    <VisualizationRenderer
+                      responseType="table"
+                      visualizationSpec={latestResponse!.visualization_spec}
+                      isPartial={latestResponse!.is_partial}
+                      failedSources={latestResponse!.failed_sources}
+                    />
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Sources, Evidence, Lineage */}
+            {sourcesConsulted.length > 0 && (
+              <SourcesPanel sources={sourcesConsulted} />
+            )}
+
+            {evidenceItems.length > 0 && (
+              <EvidencePanelDark evidence={evidenceItems} />
+            )}
+
+            <LineagePanelDark lineage={lineageTrace} />
           </div>
+        </div>
 
-          {/* Chat Input */}
-          <div className="flex-shrink-0 border-t border-gray-700/50 px-4 py-4">
-            <div className="mx-auto max-w-3xl">
-              <ChatInput onSubmit={sendMessage} isLoading={isLoading} />
-            </div>
+        {/* Input area */}
+        <div className="flex-shrink-0 border-t border-gray-700/50 px-6 py-3">
+          <div className="max-w-4xl mx-auto">
+            <ChatInput onSubmit={sendMessage} isLoading={isLoading} />
           </div>
         </div>
       </main>
