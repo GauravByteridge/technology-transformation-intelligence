@@ -346,18 +346,29 @@ class AIService:
                 if result.success:
                     data = result.data if isinstance(result.data, dict) else {"raw": result.data}
 
-                    source_entry = {
-                        "name": result.source_label,
-                        "type": data.get("source_type", "unknown"),
-                        "records_returned": data.get("record_count", 0),
-                    }
+                    # Build a descriptive source name from tool metadata
+                    source_name = result.source_label or "Unknown"
+                    source_meta = data.get("source_metadata", {})
+                    if isinstance(source_meta, dict) and source_meta.get("source_name"):
+                        obj_name = source_meta.get("object_name", "")
+                        source_name = f"{source_meta['source_name']} — {obj_name}" if obj_name else source_meta["source_name"]
 
-                    if "result_count" in data:
-                        source_entry["records_returned"] = data["result_count"]
-                    elif "total_count" in data:
-                        source_entry["records_returned"] = data["total_count"]
-                    elif "dataset_count" in data:
-                        source_entry["records_returned"] = data["dataset_count"]
+                    # Get record count from various possible fields
+                    records = (
+                        data.get("row_count")
+                        or data.get("record_count")
+                        or data.get("result_count")
+                        or data.get("total_count")
+                        or data.get("dataset_count")
+                        or data.get("total_sources")
+                        or 0
+                    )
+
+                    source_entry = {
+                        "name": source_name,
+                        "type": data.get("source_type", source_meta.get("source_type", "unknown") if isinstance(source_meta, dict) else "unknown"),
+                        "records_returned": records,
+                    }
 
                     sources.append(source_entry)
 
