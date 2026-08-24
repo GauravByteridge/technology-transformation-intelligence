@@ -36,7 +36,7 @@ export interface ApiClient {
 
 // ─── Constants ──────────────────────────────────────────────────────────────
 
-const DEFAULT_TIMEOUT_MS = 30_000;
+const DEFAULT_TIMEOUT_MS = 300_000; // 5 minutes — AI queries can take time
 const REQUEST_ID_HEADER = 'x-request-id';
 
 // ─── Implementation ─────────────────────────────────────────────────────────
