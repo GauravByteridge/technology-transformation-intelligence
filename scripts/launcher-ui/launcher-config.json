@@ -7,7 +7,9 @@
       "port": 8000,
       "runCommand": "uvicorn app.main:app --reload --host 0.0.0.0 --port 8000",
       "debugPort": null,
-      "watchPatterns": ["**/*.py"]
+      "watchPatterns": [
+        "**/*.py"
+      ]
     },
     "frontend": {
       "name": "Frontend (React/Vite)",
@@ -16,7 +18,9 @@
       "port": 5173,
       "runCommand": "npm run dev -- --host",
       "debugPort": null,
-      "watchPatterns": ["src/**/*"]
+      "watchPatterns": [
+        "src/**/*"
+      ]
     }
   },
   "databases": {
@@ -26,7 +30,7 @@
       "port": 5432,
       "database": "app_db",
       "username": "postgres",
-      "password": "postgres"
+      "password": "master"
     },
     "rag_db": {
       "name": "RAG DB (PostgreSQL + pgvector)",
@@ -34,7 +38,7 @@
       "port": 5432,
       "database": "rag_db",
       "username": "postgres",
-      "password": "postgres"
+      "password": "master"
     }
   },
   "seeds": {
@@ -57,9 +61,9 @@
     }
   },
   "environment": {
-    "APP_DB_URL": "postgresql+asyncpg://postgres:postgres@localhost:5432/app_db",
-    "RAG_DB_URL": "postgresql+asyncpg://postgres:postgres@localhost:5432/rag_db",
-    "DEMO_MODE": "true",
+    "APP_DB_URL": "postgresql+asyncpg://postgres:master@localhost:5432/app_db",
+    "RAG_DB_URL": "postgresql+asyncpg://postgres:master@localhost:5432/rag_db",
+    "DEMO_MODE": "false",
     "LOG_LEVEL": "info",
     "CORS_ORIGINS": "http://localhost:5173",
     "FERNET_KEY": "nCDAYBmW-Gj8HRIs-dKZHETxkJSpKGYfrXLuiPwtHwU=",
