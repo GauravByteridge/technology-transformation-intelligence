@@ -232,7 +232,10 @@ class DatasetService:
                 }
                 for col in sorted(dataset.columns, key=lambda c: c.column_index)
             ],
-            "records": query_result["records"],
+            "records": [
+                rec["data"] if isinstance(rec.get("data"), dict) else rec
+                for rec in query_result["records"]
+            ],
             "total_count": query_result["total_count"],
         }
 
