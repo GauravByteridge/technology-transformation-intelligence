@@ -398,6 +398,10 @@ class AIService:
         """
         evidence_items: list[dict[str, Any]] = []
 
+        # Safety: if data is not a dict, skip evidence extraction
+        if not isinstance(result.data, dict):
+            return evidence_items
+
         if result.tool_name == "search_documents":
             evidence_items.extend(self._build_document_evidence(result))
         elif result.tool_name == "query_dataset":
@@ -405,26 +409,24 @@ class AIService:
         elif result.tool_name == "get_evidence":
             evidence_items.extend(self._build_detailed_evidence(result))
         elif result.tool_name in ("list_available_datasets", "get_dataset_metadata"):
-            # Informational tools — don't produce user-facing evidence items
             pass
         else:
-            # Generic fallback — use any evidence items in the result data
             tool_evidence = result.data.get("evidence", [])
             for item in tool_evidence:
-                evidence_items.append({
-                    "claim": item.get("claim", ""),
-                    "source": result.source_label,
-                    "data": item.get("data"),
-                })
+                if isinstance(item, dict):
+                    evidence_items.append({
+                        "claim": item.get("claim", ""),
+                        "source": result.source_label,
+                        "data": item.get("data"),
+                    })
 
         return evidence_items
 
     def _build_document_evidence(self, result: ToolResult) -> list[dict[str, Any]]:
-        """Build evidence items from search_documents results.
-
-        Maps document search results to evidence items with type="document".
-        """
+        """Build evidence items from search_documents results."""
         items: list[dict[str, Any]] = []
+        if not isinstance(result.data, dict):
+            return items
         search_results = result.data.get("results", [])
 
         for doc_result in search_results:
@@ -454,11 +456,10 @@ class AIService:
         return items
 
     def _build_dataset_evidence(self, result: ToolResult) -> list[dict[str, Any]]:
-        """Build evidence items from query_dataset results.
-
-        Maps structured query results to evidence items with type="dataset".
-        """
+        """Build evidence items from query_dataset results."""
         items: list[dict[str, Any]] = []
+        if not isinstance(result.data, dict):
+            return items
         records = result.data.get("records", [])
         aggregations = result.data.get("aggregations", {})
         source_file = result.data.get("source_file", "")
@@ -518,12 +519,10 @@ class AIService:
         return items
 
     def _build_detailed_evidence(self, result: ToolResult) -> list[dict[str, Any]]:
-        """Build evidence items from get_evidence results.
-
-        Maps detailed evidence to items typed as "document" or "excel"
-        depending on the evidence metadata.
-        """
+        """Build evidence items from get_evidence results."""
         items: list[dict[str, Any]] = []
+        if not isinstance(result.data, dict):
+            return items
         evidence_payload = result.data.get("evidence", {})
         evidence_type = result.data.get("evidence_type", "document")
 

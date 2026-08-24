@@ -450,7 +450,14 @@ class StrandsAgentWrapper:
             parsed_data = content
         elif isinstance(content, str):
             try:
-                parsed_data = json.loads(content)
+                parsed = json.loads(content)
+                # Ensure parsed_data is always a dict
+                if isinstance(parsed, dict):
+                    parsed_data = parsed
+                elif isinstance(parsed, list):
+                    parsed_data = {"records": parsed, "source_type": "tool_result"}
+                else:
+                    parsed_data = {"content": parsed, "source_type": "tool_result"}
             except (json.JSONDecodeError, ValueError):
                 # Fall back to storing as plain content
                 parsed_data = {"content": content, "source_type": "tool_result"}
