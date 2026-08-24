@@ -101,19 +101,16 @@ function DatasetInfoPanel({ sources, recordCount }: { sources: SourceReference[]
   const sourceNames = sources
     .map((s: any) => s.source_name || s.name || '')
     .filter(Boolean)
+    .slice(0, 3)
     .join(', ') || 'Connected Sources';
 
   return (
-    <div className="bg-gray-800/30 border border-gray-700/30 rounded-lg px-4 py-3">
-      <div className="flex items-center gap-2 mb-2">
-        <Info size={14} className="text-teal-400" />
-        <span className="text-xs font-medium text-gray-300">Dataset Information</span>
-      </div>
-      <div className="flex items-center gap-4 text-xs text-gray-400 flex-wrap">
-        <span>Sources: {sourceNames}</span>
-        <span>Records: {recordCount}</span>
-        <span>Retrieved: just now</span>
-      </div>
+    <div className="bg-gray-800/30 border border-gray-700/30 rounded-lg px-3 py-2 text-xs text-gray-400 inline-flex items-center gap-3 flex-wrap">
+      <span className="flex items-center gap-1.5">
+        <Info size={12} className="text-teal-400" />
+        <span className="text-gray-300 font-medium">Sources:</span> {sourceNames}
+      </span>
+      <span>Records: {recordCount}</span>
     </div>
   );
 }
@@ -375,19 +372,21 @@ export default function AIAssistant() {
             {/* Execution status */}
             <ExecutionStatus isVisible={isLoading} />
 
-            {/* Partial failure warning */}
-            {isPartial && failedSources.length > 0 && (
+            {/* Partial failure warning — only show when no successful data was retrieved */}
+            {isPartial && failedSources.length > 0 && sourcesConsulted.length === 0 && (
               <PartialFailureWarning failedSources={failedSources} />
             )}
 
             {/* Analytics Visualization Area */}
             {hasVisualization && (
-              <div className="space-y-3">
+              <div className="space-y-3 max-w-2xl">
                 {/* View toggle */}
-                <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
                   <ViewToggle view={activeView} onViewChange={setActiveView} />
-                  <DatasetInfoPanel sources={sourcesConsulted} recordCount={totalRecords} />
                 </div>
+
+                {/* Dataset info */}
+                <DatasetInfoPanel sources={sourcesConsulted} recordCount={totalRecords} />
 
                 {/* Chart or Table */}
                 <div className="bg-gray-800/30 border border-gray-700/30 rounded-lg p-4">
