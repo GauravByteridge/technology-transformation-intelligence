@@ -86,7 +86,7 @@ def search_documents(project_id: str, query: str) -> dict:
 
     try:
         parsed_project_id = UUID(project_id)
-        results = asyncio.get_event_loop().run_until_complete(
+        results = asyncio.run(
             ingestion.search_documents(project_id=parsed_project_id, query=query)
         )
 
@@ -143,7 +143,7 @@ def get_evidence(source_id: str, evidence_type: str) -> dict:
 
     try:
         parsed_source_id = UUID(source_id)
-        evidence = asyncio.get_event_loop().run_until_complete(
+        evidence = asyncio.run(
             ingestion.get_evidence(source_id=parsed_source_id, evidence_type=evidence_type)
         )
 
@@ -199,7 +199,7 @@ def query_dataset(dataset_id: str, query_params: dict) -> dict:
 
     try:
         parsed_dataset_id = UUID(dataset_id)
-        result = asyncio.get_event_loop().run_until_complete(
+        result = asyncio.run(
             ingestion.query_dataset(dataset_id=parsed_dataset_id, query_params=query_params)
         )
 
@@ -259,7 +259,7 @@ def list_available_datasets(project_id: str = "") -> dict:
         if project_id and project_id.strip():
             parsed_project_id = UUID(project_id)
 
-        datasets = asyncio.get_event_loop().run_until_complete(
+        datasets = asyncio.run(
             ingestion.list_available_datasets(project_id=parsed_project_id)
         )
 
@@ -307,7 +307,7 @@ def get_dataset_metadata(dataset_id: str) -> dict:
 
     try:
         parsed_dataset_id = UUID(dataset_id)
-        metadata = asyncio.get_event_loop().run_until_complete(
+        metadata = asyncio.run(
             ingestion.get_dataset_metadata(dataset_id=parsed_dataset_id)
         )
 
