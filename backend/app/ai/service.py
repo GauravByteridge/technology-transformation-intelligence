@@ -216,8 +216,10 @@ class AIService:
                     "conversation_id": str(conversation_id),
                     "duration_ms": duration_ms,
                     "error": safe_error,
+                    "error_type": type(exc).__name__,
                     "execution_status": "failed",
                 },
+                exc_info=True,
             )
             # Return a structured failure response rather than raising
             return AIResponse(
