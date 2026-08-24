@@ -611,9 +611,11 @@ class AIService:
     def _looks_like_date(val: str) -> bool:
         """Check if a string looks like a date."""
         import re
-        if re.match(r'\d{4}-\d{2}-\d{2}', val):
+        # Normalize unicode hyphens/dashes to regular hyphen
+        normalized = val.strip().replace('\u2013', '-').replace('\u2014', '-').replace('\u00a0', ' ')
+        if re.match(r'\d{4}[-/]\d{1,2}[-/]\d{1,2}', normalized):
             return True
-        if re.match(r'\d{1,2}/\d{1,2}/\d{2,4}', val):
+        if re.match(r'\d{1,2}[-/]\d{1,2}[-/]\d{2,4}', normalized):
             return True
         date_keywords = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec']
         if any(kw in val.lower() for kw in date_keywords):
@@ -626,12 +628,13 @@ class AIService:
         if isinstance(val, (int, float)):
             return True
         if isinstance(val, str):
-            # Don't treat dates (YYYY-MM-DD) as numeric
             import re
-            if re.match(r'\d{4}-\d{2}-\d{2}', val.strip()):
+            # Normalize unicode and check for date patterns
+            normalized = val.strip().replace('\u2013', '-').replace('\u2014', '-').replace('\u00a0', ' ')
+            if re.match(r'\d{4}[-/]\d{1,2}[-/]\d{1,2}', normalized):
                 return False
             cleaned = val.replace(",", "").replace("$", "").replace("%", "").replace("+", "").strip()
-            # Only strip leading minus for negative numbers, not all hyphens
+            # Only strip leading minus for negative numbers
             if cleaned.startswith("-"):
                 cleaned = cleaned[1:]
             try:
