@@ -15,6 +15,7 @@ import {
 } from '@/features/ai-chat';
 import type { SourceReference, EvidenceItem, LineageTrace, PartialFailureInfo } from '@/features/ai-chat/types';
 import { ProjectSelector } from '@/components/common';
+import { useProjects } from '@/hooks';
 
 // ---------------------------------------------------------------------------
 // Suggested Questions
@@ -264,8 +265,29 @@ function LineagePanelDark({ lineage }: { lineage: LineageTrace | null }) {
 // ---------------------------------------------------------------------------
 
 export default function AIAssistant() {
-  const [selectedProject, setSelectedProject] = useState<string | null>(null);
+  const [selectedProject, setSelectedProject] = useState<string | null>(() => {
+    // Try to restore from localStorage
+    const saved = localStorage.getItem('ai-selected-project');
+    return saved || null;
+  });
   const [activeView, setActiveView] = useState<'chart' | 'table'>('chart');
+
+  // Persist selected project
+  const handleProjectChange = (id: string | null) => {
+    setSelectedProject(id);
+    if (id) {
+      localStorage.setItem('ai-selected-project', id);
+    } else {
+      localStorage.removeItem('ai-selected-project');
+    }
+  };
+
+  // Auto-select first project if none selected
+  const { data: projectList } = useProjects();
+  if (!selectedProject && projectList?.items?.length) {
+    const firstProject = projectList.items[0];
+    handleProjectChange(firstProject.id);
+  }
 
   const { sendMessage, isLoading, messages, latestResponse, startNewConversation } =
     useAIChat(selectedProject ?? undefined);
@@ -329,7 +351,7 @@ export default function AIAssistant() {
             </div>
             <ProjectSelector
               value={selectedProject}
-              onChange={setSelectedProject}
+              onChange={handleProjectChange}
               label="Project:"
               showAllOption={true}
             />
