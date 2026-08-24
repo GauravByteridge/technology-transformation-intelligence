@@ -133,18 +133,25 @@ function SourcesPanel({ sources }: { sources: SourceReference[] }) {
       </button>
       {expanded && (
         <div className="px-4 pb-3 space-y-2 border-t border-gray-700/50">
-          {sources.map((source, idx) => (
-            <div key={idx} className="flex items-center justify-between py-1.5">
-              <div className="flex items-center gap-2 text-sm text-gray-300">
-                <SourceIcon type={source.source_type} />
-                <span>✓ {source.source_name} — {source.object_name}</span>
+          {sources.map((source: any, idx) => {
+            const name = source.source_name || source.name || 'Unknown';
+            const type = source.source_type || source.type || 'document';
+            const object = source.object_name || '';
+            const records = source.records_returned ?? 0;
+            const duration = source.query_duration_ms ?? 0;
+            return (
+              <div key={idx} className="flex items-center justify-between py-1.5">
+                <div className="flex items-center gap-2 text-sm text-gray-300">
+                  <SourceIcon type={type} />
+                  <span>✓ {name}{object ? ` — ${object}` : ''}</span>
+                </div>
+                <div className="flex items-center gap-3 text-xs text-gray-500">
+                  <span>{records} records</span>
+                  {duration > 0 && <span>{duration}ms</span>}
+                </div>
               </div>
-              <div className="flex items-center gap-3 text-xs text-gray-500">
-                <span>{source.records_returned} records</span>
-                <span>{source.query_duration_ms}ms</span>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>
@@ -184,24 +191,39 @@ function EvidencePanelDark({ evidence }: { evidence: EvidenceItem[] }) {
       </button>
       {expanded && (
         <div className="px-4 pb-3 space-y-2 border-t border-gray-700/50">
-          {evidence.map((item, idx) => (
-            <div key={idx} className="bg-gray-900/50 rounded-lg p-3">
-              <div className="flex items-center gap-2 mb-1">
-                <SourceIcon type={item.source_type} />
-                <span className="text-xs font-medium text-gray-300">
-                  {item.source_name} — {item.object_name}
-                </span>
-                <span className="ml-auto text-xs px-1.5 py-0.5 rounded bg-gray-700 text-gray-400">
-                  {item.confidence.replace('_', ' ')}
-                </span>
+          {evidence.map((item: any, idx) => {
+            // Handle both typed EvidenceItem and raw backend response format
+            const sourceName = item.source_name || item.source || 'Unknown';
+            const sourceType = item.source_type || item.data?.type || 'document';
+            const objectName = item.object_name || item.data?.file_name || '';
+            const confidence = item.confidence || '';
+            const excerpt = item.excerpt || item.claim || item.data?.text_excerpt || '';
+            const pageOrSection = item.page_number || item.data?.page_or_section || '';
+
+            return (
+              <div key={idx} className="bg-gray-900/50 rounded-lg p-3">
+                <div className="flex items-center gap-2 mb-1 flex-wrap">
+                  <SourceIcon type={sourceType} />
+                  <span className="text-xs font-medium text-gray-300">
+                    {sourceName}{objectName ? ` — ${objectName}` : ''}
+                  </span>
+                  {pageOrSection && (
+                    <span className="text-xs text-gray-500">p.{pageOrSection}</span>
+                  )}
+                  {confidence && (
+                    <span className="ml-auto text-xs px-1.5 py-0.5 rounded bg-gray-700 text-gray-400">
+                      {String(confidence).replace('_', ' ')}
+                    </span>
+                  )}
+                </div>
+                {excerpt && (
+                  <p className="text-xs text-gray-400 italic mt-1 line-clamp-4 whitespace-pre-line">
+                    "{excerpt.slice(0, 300)}{excerpt.length > 300 ? '...' : ''}"
+                  </p>
+                )}
               </div>
-              {item.excerpt && (
-                <p className="text-xs text-gray-400 italic mt-1 line-clamp-3">
-                  "{item.excerpt}"
-                </p>
-              )}
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>
