@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
 import type { ChatMessage, Conversation, AIResponse } from '@/types';
 
 interface ChatSessionState {
@@ -18,11 +19,13 @@ interface ChatSessionActions {
 
 type ChatSessionStore = ChatSessionState & ChatSessionActions;
 
-export const useChatSessionStore = create<ChatSessionStore>((set, get) => ({
-  activeConversationId: null,
-  messages: [],
-  conversations: [],
-  latestResponse: null,
+export const useChatSessionStore = create<ChatSessionStore>()(
+  persist(
+    (set, get) => ({
+      activeConversationId: null,
+      messages: [],
+      conversations: [],
+      latestResponse: null,
 
   addMessage: (message: ChatMessage) => {
     const { activeConversationId } = get();
@@ -86,4 +89,9 @@ export const useChatSessionStore = create<ChatSessionStore>((set, get) => ({
   setLatestResponse: (response: AIResponse | null) => {
     set({ latestResponse: response });
   },
-}));
+}),
+    {
+      name: 'chat-session-store',
+    }
+  )
+);
