@@ -415,22 +415,21 @@ def create_discover_available_sources(catalog_service: CatalogService):
 
 @tool
 def query_connected_source(
-    source_id: str, query_type: str, query: str | list[dict]
+    source_id: str, query_type: str, query: str
 ) -> dict:
     """Execute a read-only query against a connected enterprise data source.
 
     Use this when you need to retrieve data from a connected source identified
-    in the catalog. The query must be read-only (SELECT for SQL, aggregation
-    pipeline for MongoDB).
+    in the catalog. The query must be read-only.
 
     Args:
         source_id: UUID of the data source from the catalog.
         query_type: "sql" for PostgreSQL, "mongodb" for MongoDB.
-        query: The source-native query.
+        query: The source-native query as a string.
             For query_type="sql": a SQL SELECT string, e.g.
-                "SELECT budget, actual_cost FROM project_finance WHERE project_id = '...'"
-            For query_type="mongodb": an aggregation pipeline as a list of stage dicts, e.g.
-                [{"$match": {"project_id": "..."}}, {"$group": {"_id": "$status", "count": {"$sum": 1}}}]
+                "SELECT * FROM jira_issues WHERE project_id = 1"
+            For query_type="mongodb": a JSON string with collection and filter, e.g.
+                "{\"collection\": \"project_risks\", \"filter\": {\"project_id\": \"ALPHA\"}}"
 
     Returns:
         Structured results with columns, rows, row_count, source metadata,
@@ -467,17 +466,34 @@ def query_connected_source(
                     duration_ms=_elapsed_ms(start_time),
                 )
 
-            # Validate query format
-            if query_type == "sql" and not isinstance(query, str):
+            # Validate query format — parse JSON string for MongoDB queries
+            import json as _json
+            parsed_query = query
+            if query_type == "mongodb":
+                if isinstance(query, str):
+                    try:
+                        parsed_query = _json.loads(query)
+                    except _json.JSONDecodeError:
+                        return _error_response(
+                            error_type="validation_error",
+                            message="For query_type='mongodb', query must be a valid JSON object or array.",
+                            duration_ms=_elapsed_ms(start_time),
+                        )
+                # Accept dict (single query) or list (pipeline)
+                if isinstance(parsed_query, dict):
+                    parsed_query = parsed_query  # MongoDB connector accepts dict
+                elif isinstance(parsed_query, list):
+                    parsed_query = parsed_query  # Pipeline format
+                else:
+                    return _error_response(
+                        error_type="validation_error",
+                        message="For query_type='mongodb', query must be a JSON object or array.",
+                        duration_ms=_elapsed_ms(start_time),
+                    )
+            elif query_type == "sql" and not isinstance(query, str):
                 return _error_response(
                     error_type="validation_error",
                     message="For query_type='sql', query must be a SQL string.",
-                    duration_ms=_elapsed_ms(start_time),
-                )
-            if query_type == "mongodb" and not isinstance(query, list):
-                return _error_response(
-                    error_type="validation_error",
-                    message="For query_type='mongodb', query must be a list of pipeline stage dicts.",
                     duration_ms=_elapsed_ms(start_time),
                 )
 
@@ -536,7 +552,7 @@ def query_connected_source(
                 )
 
                 # Execute the query
-                result: QueryResult = await connector.execute_read(query)
+                result: QueryResult = await connector.execute_read(parsed_query)
 
             await _engine.dispose()
 
