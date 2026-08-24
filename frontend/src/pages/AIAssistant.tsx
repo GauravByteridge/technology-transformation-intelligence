@@ -399,39 +399,6 @@ export default function AIAssistant() {
               <PartialFailureWarning failedSources={failedSources} />
             )}
 
-            {/* Analytics Visualization Area */}
-            {hasVisualization && (
-              <div className="space-y-3 max-w-2xl">
-                {/* View toggle */}
-                <div className="flex items-center gap-4">
-                  <ViewToggle view={activeView} onViewChange={setActiveView} />
-                </div>
-
-                {/* Dataset info */}
-                <DatasetInfoPanel sources={sourcesConsulted} recordCount={totalRecords} />
-
-                {/* Chart or Table */}
-                <div className="bg-gray-800/30 border border-gray-700/30 rounded-lg p-4">
-                  {activeView === 'chart' ? (
-                    <VisualizationRenderer
-                      responseType={latestResponse!.response_type}
-                      visualizationSpec={latestResponse!.visualization_spec}
-                      isPartial={latestResponse!.is_partial}
-                      failedSources={latestResponse!.failed_sources}
-                    />
-                  ) : (
-                    /* Force table view of the same spec */
-                    <VisualizationRenderer
-                      responseType="table"
-                      visualizationSpec={latestResponse!.visualization_spec}
-                      isPartial={latestResponse!.is_partial}
-                      failedSources={latestResponse!.failed_sources}
-                    />
-                  )}
-                </div>
-              </div>
-            )}
-
             {/* Sources, Evidence, Lineage */}
             {sourcesConsulted.length > 0 && (
               <SourcesPanel sources={sourcesConsulted} />
