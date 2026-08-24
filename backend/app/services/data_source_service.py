@@ -1,8 +1,13 @@
 """
 DataSource service — business logic layer for data source and source connection operations.
 
-Manages data source CRUD with credential encryption/masking, and handles
+Manages data source CRUD with credential isolation, and handles
 project-to-data-source connection relationships (source connections).
+
+Security Invariants:
+- connection_config JSONB stores ONLY non-sensitive fields (host, port, database, schema)
+- Credentials are stored separately in data_source_credentials as vault references
+- API responses NEVER include raw credential values — only *_configured booleans
 """
 
 import structlog
@@ -14,10 +19,12 @@ from app.errors.datasource_errors import (
 )
 from app.errors.project_errors import ProjectNotFoundError
 from app.models.data_source import DataSource, SourceConnection
+from app.models.data_source_credential import DataSourceCredential
+from app.repositories.credential_repository import CredentialRepository
 from app.repositories.data_source_repository import DataSourceRepository
 from app.repositories.project_repository import ProjectRepository
 from app.repositories.source_connection_repository import SourceConnectionRepository
-from app.security.credential_encryptor import CredentialEncryptor
+from app.security.credential_encryptor import CredentialEncryptor, SENSITIVE_FIELDS
 
 logger = structlog.get_logger(__name__)
 
@@ -26,9 +33,10 @@ class DataSourceService:
     """
     Business logic for data source and source connection operations.
 
-    Enforces credential masking on all responses — plaintext secrets never
-    leave the service boundary. Connection configs are encrypted before
-    persistence and masked (never decrypted) for API responses.
+    Enforces credential isolation: connection_config stores ONLY non-sensitive
+    parameters (host, port, database). Credentials are separated and stored
+    in data_source_credentials as encrypted vault references. API responses
+    never include credential values — only *_configured booleans.
     """
 
     def __init__(
@@ -37,6 +45,7 @@ class DataSourceService:
         project_repository: ProjectRepository,
         source_connection_repository: SourceConnectionRepository,
         credential_encryptor: CredentialEncryptor,
+        credential_repository: CredentialRepository | None = None,
     ) -> None:
         """
         Initialize with required dependencies.
@@ -46,11 +55,13 @@ class DataSourceService:
             project_repository: Repository for project existence checks.
             source_connection_repository: Repository for source connection management.
             credential_encryptor: Encryptor for sensitive connection config fields.
+            credential_repository: Repository for credential records (vault references).
         """
         self._data_source_repo = data_source_repository
         self._project_repo = project_repository
         self._source_connection_repo = source_connection_repository
         self._encryptor = credential_encryptor
+        self._credential_repo = credential_repository
 
     async def create_data_source(
         self,
@@ -60,27 +71,36 @@ class DataSourceService:
         connection_config: dict,
     ) -> dict:
         """
-        Create a new data source with encrypted connection config.
+        Create a new data source with credential isolation.
+
+        Separates sensitive fields (password, token, etc.) from connection_config
+        before persistence. Non-sensitive fields are stored in connection_config JSONB.
+        Credentials are encrypted and stored in data_source_credentials as vault references.
 
         Args:
             name: Data source display name.
             source_type: Type identifier (e.g., "postgresql", "mongodb").
             display_label: Human-friendly label for UI display.
-            connection_config: Raw connection config (sensitive fields will be encrypted).
+            connection_config: Raw connection config (may include sensitive fields).
 
         Returns:
             Dictionary with data source fields and masked connection config.
         """
-        encrypted_config = self._encryptor.encrypt_config(connection_config)
+        # Separate credentials from non-sensitive connection parameters
+        clean_config, credential_fields = self._separate_credentials(connection_config)
 
         data_source = DataSource(
             name=name,
             source_type=source_type,
             display_label=display_label,
-            connection_config=encrypted_config,
+            connection_config=clean_config,
         )
 
         created = await self._data_source_repo.create_data_source(data_source)
+
+        # Store credentials as encrypted vault references in data_source_credentials
+        if credential_fields and self._credential_repo:
+            await self._store_credentials(created.id, credential_fields)
 
         logger.info(
             "data_source_created",
@@ -132,8 +152,9 @@ class DataSourceService:
         """
         Update a data source. connection_config is a COMPLETE REPLACEMENT.
 
-        If connection_config is in updates, the entire new config is encrypted
-        before persistence (not merged with existing).
+        If connection_config is in updates, credentials are separated from
+        non-sensitive config. The clean config replaces existing connection_config.
+        Credentials are re-encrypted and stored in data_source_credentials.
 
         Args:
             data_source_id: UUID of the data source to update.
@@ -146,9 +167,16 @@ class DataSourceService:
             DataSourceNotFoundError: If no data source exists with the given ID.
         """
         if "connection_config" in updates:
-            updates["connection_config"] = self._encryptor.encrypt_config(
+            clean_config, credential_fields = self._separate_credentials(
                 updates["connection_config"]
             )
+            updates["connection_config"] = clean_config
+
+            # Replace credentials in data_source_credentials table
+            if self._credential_repo:
+                await self._credential_repo.delete_by_data_source(data_source_id)
+                if credential_fields:
+                    await self._store_credentials(data_source_id, credential_fields)
 
         updated = await self._data_source_repo.update_data_source(data_source_id, updates)
 
@@ -309,32 +337,85 @@ class DataSourceService:
                 "id": str(source.id),
                 "name": source.name,
                 "source_type": source.source_type,
-                "display_label": source.display_label,
-                "connection_status": source.connection_status,
+                "display_label": getattr(source, 'display_label', source.name),
+                "connection_status": getattr(source, 'connection_status', source.status),
             }
             for source in data_sources
         ]
 
     def _to_response(self, data_source: DataSource) -> dict:
-        """Convert a DataSource model to a response dict with masked config."""
+        """Convert a DataSource model to a response dict with credential indicators.
+
+        connection_config now contains ONLY non-sensitive fields (host, port, database).
+        Credential presence is indicated by checking data_source_credentials records.
+        """
+        config = data_source.connection_config or {}
+        # Add credential configured indicators based on credentials relationship
+        has_credentials = bool(data_source.credentials) if hasattr(data_source, 'credentials') else False
+        response_config = dict(config)
+        response_config["password_configured"] = has_credentials
+
         return {
             "id": data_source.id,
             "name": data_source.name,
             "source_type": data_source.source_type,
-            "display_label": data_source.display_label,
-            "connection_config": self._encryptor.mask_config(
-                data_source.connection_config or {}
-            ),
-            "connection_status": data_source.connection_status,
-            "last_connected_at": data_source.last_connected_at,
+            "display_label": getattr(data_source, 'display_label', data_source.name),
+            "connection_config": response_config,
+            "connection_status": getattr(data_source, 'connection_status', data_source.status),
+            "last_connected_at": getattr(data_source, 'last_connected_at', None),
             "created_at": data_source.created_at,
             "updated_at": data_source.updated_at,
             # Discovery tracking fields (Phase 8)
-            "last_discovery_at": data_source.last_discovery_at,
+            "last_discovery_at": getattr(data_source, 'last_discovery_at', data_source.last_discovered_at),
             "discovery_status": data_source.discovery_status or "pending",
-            "objects_discovered": data_source.objects_discovered or 0,
-            "fields_discovered": data_source.fields_discovered or 0,
+            "objects_discovered": getattr(data_source, 'objects_discovered', 0),
+            "fields_discovered": getattr(data_source, 'fields_discovered', 0),
         }
+
+    def _separate_credentials(self, config: dict) -> tuple[dict, dict]:
+        """Separate credential fields from non-sensitive connection parameters.
+
+        Returns:
+            Tuple of (clean_config without credentials, credential_fields only).
+        """
+        clean_config: dict = {}
+        credential_fields: dict = {}
+
+        for key, value in config.items():
+            if key in SENSITIVE_FIELDS:
+                if value is not None and value != "":
+                    credential_fields[key] = value
+            else:
+                clean_config[key] = value
+
+        return clean_config, credential_fields
+
+    async def _store_credentials(self, data_source_id: UUID, credential_fields: dict) -> None:
+        """Store credentials as encrypted vault references in data_source_credentials.
+
+        Each sensitive field is encrypted and stored as a separate credential record
+        with credential_type indicating the field name and secret_reference containing
+        the Fernet-encrypted value prefixed with 'vault://fernet/'.
+
+        Args:
+            data_source_id: UUID of the data source.
+            credential_fields: Dictionary of sensitive field names to raw values.
+        """
+        if not self._credential_repo:
+            return
+
+        for field_name, raw_value in credential_fields.items():
+            # Encrypt the raw value using Fernet
+            encrypted_value = self._encryptor.encrypt_config({field_name: raw_value})[field_name]
+            # Store as vault reference pattern
+            vault_reference = f"vault://fernet/{encrypted_value}"
+
+            credential = DataSourceCredential(
+                data_source_id=data_source_id,
+                credential_type=field_name,
+                secret_reference=vault_reference,
+            )
+            await self._credential_repo.create_credential(credential)
 
     def _connection_to_response(self, connection: SourceConnection) -> dict:
         """Convert a SourceConnection model to a response dict."""

@@ -1315,7 +1315,7 @@ def get_content_classifier() -> "ContentClassifier":
     """Provide a ContentClassifier with default confidence threshold."""
     from app.processors.content_classifier import ContentClassifier
 
-    return ContentClassifier(confidence_threshold=0.75)
+    return ContentClassifier(confidence_threshold=0.50)
 
 
 def get_file_processor_registry() -> "FileProcessorRegistry":

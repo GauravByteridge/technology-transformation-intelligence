@@ -25,8 +25,14 @@ class User(AppBase):
     email: Mapped[str] = mapped_column(
         sa.String(255), unique=True, nullable=False
     )
-    name: Mapped[str] = mapped_column(sa.String(255), nullable=False)
+    display_name: Mapped[str] = mapped_column(sa.String(255), nullable=False)
     role: Mapped[str] = mapped_column(sa.String(50), nullable=False)
+    status: Mapped[str] = mapped_column(
+        sa.String(50), nullable=False, default="ACTIVE"
+    )
+    last_login_at: Mapped[datetime | None] = mapped_column(
+        sa.DateTime(timezone=True), nullable=True
+    )
     created_at: Mapped[datetime] = mapped_column(
         sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False
     )

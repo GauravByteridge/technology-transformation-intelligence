@@ -13,7 +13,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, Form, HTTPException, UploadFile, status
 
 from app.constants import SYSTEM_USER_ID
-from app.dependencies import get_dataset_service, get_ingestion_orchestrator
+from app.dependencies import get_app_db_session, get_dataset_service, get_ingestion_orchestrator
 from app.documents.orchestrator import IngestionOrchestrator
 from app.models.uploaded_file import UploadedFile
 from app.repositories.file_repository import FileRepository
@@ -23,6 +23,7 @@ from app.schemas.dataset import (
     FileUploadResponse,
 )
 from app.services.dataset_service import DatasetService
+from sqlalchemy.ext.asyncio import AsyncSession
 
 logger = logging.getLogger(__name__)
 
@@ -46,6 +47,7 @@ async def upload_file(
     file: UploadFile,
     project_id: UUID | None = Form(None),
     service: IngestionOrchestrator = Depends(get_ingestion_orchestrator),
+    session: AsyncSession = Depends(get_app_db_session),
 ) -> FileUploadResponse:
     """Upload a file for content-aware ingestion processing.
 
@@ -83,6 +85,21 @@ async def upload_file(
             f"Supported types: {', '.join(sorted(SUPPORTED_EXTENSIONS))}",
         )
 
+    # Create uploaded_files record to get a real file_id
+    from uuid import uuid4
+    file_record = UploadedFile(
+        id=uuid4(),
+        file_name=file.filename,
+        file_type=file_extension,
+        file_size=len(content),
+        project_id=project_id,
+        uploaded_by=SYSTEM_USER_ID,
+        processing_status="processing",
+    )
+    session.add(file_record)
+    await session.flush()
+    real_file_id = file_record.id
+
     # Save to temp file for processing
     suffix = f".{file_extension}" if file_extension else ""
     temp_dir = tempfile.mkdtemp(prefix="ingestion_")
@@ -92,7 +109,7 @@ async def upload_file(
     try:
         # Trigger content-aware processing
         result = await service.process_file(
-            file_id=UUID("00000000-0000-0000-0000-000000000000"),  # Placeholder — real ID from DB
+            file_id=real_file_id,
             file_path=str(temp_path),
             file_name=file.filename,
             file_type=file_extension,
@@ -101,6 +118,10 @@ async def upload_file(
             uploaded_by=SYSTEM_USER_ID,
         )
 
+        # Update file record status
+        file_record.processing_status = result.get("status", "READY")
+        await session.flush()
+
         logger.info(
             "file_upload_processed",
             extra={
@@ -108,11 +129,12 @@ async def upload_file(
                 "file_type": file_extension,
                 "file_size": len(content),
                 "status": result.get("status", "unknown"),
+                "file_id": str(real_file_id),
             },
         )
 
         return FileUploadResponse(
-            file_id=UUID(result.get("file_id", "00000000-0000-0000-0000-000000000000")),
+            file_id=real_file_id,
             file_name=file.filename,
             file_type=file_extension,
             processing_status=result.get("status", "UPLOADED"),

@@ -42,6 +42,7 @@ class PortfolioProjectSummary(BaseModel):
     """Summary of a single project within the portfolio overview."""
 
     project_id: UUID
+    name: str = ""
     overall_status: str
     schedule_status: str
     budget_total: Decimal

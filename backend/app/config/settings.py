@@ -75,7 +75,7 @@ class Settings(BaseSettings):
     # =========================================================================
 
     rag_db_url: str | None = None
-    embedding_provider: Literal["azure_openai", "azure_foundry", "sentence_transformers"] | None = None
+    embedding_provider: Literal["azure_openai", "azure_foundry", "sentence_transformers", "mock"] | None = None
     embedding_model: str | None = None
     embedding_dimension: int = 1536
 

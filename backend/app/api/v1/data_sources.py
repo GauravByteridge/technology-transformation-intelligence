@@ -12,8 +12,8 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, Request, status
 
-from app.connectors.registry import ConnectorRegistry
-from app.dependencies import get_app_db_session, get_connector_registry, get_connector_service, get_data_source_service
+from app.connectors.sanitizer import sanitize_message
+from app.dependencies import get_app_db_session, get_connector_service, get_data_source_service
 from app.errors.datasource_errors import DataSourceNotFoundError
 from app.repositories.data_source_repository import DataSourceRepository
 from app.schemas.connector import (
@@ -139,32 +139,35 @@ async def delete_data_source(
 async def test_data_source_connection(
     data_source_id: UUID,
     request: Request,
-    connector_registry: ConnectorRegistry = Depends(get_connector_registry),
+    connector_service: ConnectorService = Depends(get_connector_service),
     session=Depends(get_app_db_session),
 ) -> TestConnectionResponse:
-    """Test connectivity to a configured data source."""
+    """Test connectivity to a configured data source.
+
+    Uses ConnectorService to resolve credentials from data_source_credentials
+    table before testing. Never exposes raw credentials in the response.
+    """
     request_id = getattr(request.state, "request_id", "unknown")
 
+    # Resolve connector through ConnectorService (handles credential retrieval)
     repository = DataSourceRepository(session)
     data_source = await repository.get_data_source(data_source_id)
 
     if data_source is None:
         raise DataSourceNotFoundError(data_source_id=str(data_source_id))
 
-    connector = connector_registry.resolve(
-        source_type=data_source.source_type,
-        connection_config=data_source.connection_config,
-    )
-
     try:
+        connector, _ = await connector_service._resolve_connector(data_source_id)
         success = await connector.test_connection(timeout=10)
+    except DataSourceNotFoundError:
+        raise
     except Exception as exc:
         logger.warning(
             "connection_test_failed",
             extra={
                 "source_id": str(data_source_id),
                 "source_type": data_source.source_type,
-                "error": str(exc),
+                "error": sanitize_message(str(exc)),
                 "request_id": request_id,
             },
         )

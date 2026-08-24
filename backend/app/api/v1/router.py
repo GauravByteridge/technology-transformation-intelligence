@@ -13,10 +13,15 @@ from app.api.v1.data_sources import router as data_sources_router
 from app.api.v1.datasets import router as datasets_router
 from app.api.v1.discovery import router as discovery_router
 from app.api.v1.documents import router as documents_router
+from app.api.v1.evidence_api import router as evidence_router
+from app.api.v1.executive_briefs import router as executive_briefs_router
 from app.api.v1.health import router as health_router
+from app.api.v1.lineage import router as lineage_router
+from app.api.v1.overview import router as overview_router
 from app.api.v1.portfolio import router as portfolio_router
 from app.api.v1.project_domain import router as project_domain_router
 from app.api.v1.projects import router as projects_router
+from app.api.v1.query_history import router as query_history_router
 from app.api.v1.upload import router as upload_router
 
 api_router = APIRouter()
@@ -28,6 +33,7 @@ api_router.include_router(health_router)
 api_router.include_router(projects_router, prefix="/projects", tags=["projects"])
 api_router.include_router(project_domain_router, prefix="/projects", tags=["project-domain"])
 api_router.include_router(portfolio_router, tags=["portfolio"])
+api_router.include_router(overview_router, tags=["overview"])
 api_router.include_router(data_sources_router, prefix="/data-sources", tags=["data-sources"])
 api_router.include_router(discovery_router, prefix="/data-sources", tags=["discovery"])
 api_router.include_router(ai_queries_router, prefix="/ai", tags=["ai"])
@@ -36,3 +42,7 @@ api_router.include_router(config_router, prefix="/config", tags=["config"])
 api_router.include_router(upload_router, prefix="/files", tags=["files"])
 api_router.include_router(datasets_router, prefix="/datasets", tags=["datasets"])
 api_router.include_router(catalog_router, prefix="/catalog", tags=["catalog"])
+api_router.include_router(query_history_router, prefix="/query-history", tags=["query-history"])
+api_router.include_router(evidence_router, prefix="/evidence", tags=["evidence"])
+api_router.include_router(lineage_router, prefix="/lineage", tags=["lineage"])
+api_router.include_router(executive_briefs_router, prefix="/briefs", tags=["executive-briefs"])

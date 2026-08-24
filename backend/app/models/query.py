@@ -1,7 +1,8 @@
 """
-QueryHistory and SavedQuery ORM models for App_DB.
+Query and SavedQuery ORM models for App_DB.
 
-QueryHistory tracks every AI query for traceability and audit.
+The queries table is the primary record of AI query executions per the design spec.
+QueryHistory is retained as a backward-compatible alias for Query.
 SavedQueries allow users to bookmark useful questions for reuse.
 """
 
@@ -9,41 +10,45 @@ from datetime import datetime
 from uuid import UUID, uuid4
 
 import sqlalchemy as sa
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import AppBase
 
 
-class QueryHistory(AppBase):
-    """Record of an AI query execution for traceability."""
+class Query(AppBase):
+    """Record of an AI query execution for traceability and history.
 
-    __tablename__ = "query_history"
+    Spec table name: queries
+    Replaces the prior 'query_history' table with correct column set.
+    """
+
+    __tablename__ = "queries"
 
     id: Mapped[UUID] = mapped_column(
         sa.UUID, primary_key=True, default=uuid4
     )
-    query_id: Mapped[UUID] = mapped_column(sa.UUID, nullable=False, index=True)
     conversation_id: Mapped[UUID] = mapped_column(
-        sa.UUID, sa.ForeignKey("conversations.id"), nullable=False
+        sa.UUID, sa.ForeignKey("conversations.id", ondelete="CASCADE"), nullable=False
     )
-    project_id: Mapped[UUID] = mapped_column(
-        sa.UUID, sa.ForeignKey("projects.id"), nullable=False
+    project_id: Mapped[UUID | None] = mapped_column(
+        sa.UUID, sa.ForeignKey("projects.id", ondelete="SET NULL"), nullable=True
+    )
+    user_id: Mapped[UUID] = mapped_column(
+        sa.UUID, sa.ForeignKey("users.id", ondelete="CASCADE"), nullable=False
     )
     question: Mapped[str] = mapped_column(sa.Text, nullable=False)
-    response: Mapped[dict | None] = mapped_column(sa.JSON, nullable=True)
-    tools_invoked: Mapped[list | None] = mapped_column(sa.JSON, nullable=True)
-    sources_consulted: Mapped[list | None] = mapped_column(sa.JSON, nullable=True)
-    is_partial: Mapped[bool] = mapped_column(
-        sa.Boolean, nullable=False, default=False
+    status: Mapped[str] = mapped_column(
+        sa.String(50), nullable=False, default="PENDING"
     )
+    mode: Mapped[str | None] = mapped_column(sa.String(50), nullable=True)
     llm_provider: Mapped[str | None] = mapped_column(
         sa.String(100), nullable=True
     )
-    llm_model: Mapped[str | None] = mapped_column(
-        sa.String(100), nullable=True
+    started_at: Mapped[datetime | None] = mapped_column(
+        sa.DateTime(timezone=True), nullable=True
     )
-    prompt_version: Mapped[str | None] = mapped_column(
-        sa.String(50), nullable=True
+    completed_at: Mapped[datetime | None] = mapped_column(
+        sa.DateTime(timezone=True), nullable=True
     )
     duration_ms: Mapped[int | None] = mapped_column(
         sa.Integer, nullable=True
@@ -51,15 +56,27 @@ class QueryHistory(AppBase):
     created_at: Mapped[datetime] = mapped_column(
         sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False
     )
-    updated_at: Mapped[datetime] = mapped_column(
-        sa.DateTime(timezone=True),
-        server_default=sa.func.now(),
-        onupdate=sa.func.now(),
-        nullable=False,
+
+    # Relationships
+    conversation: Mapped["Conversation"] = relationship(
+        "Conversation", back_populates="queries"
+    )
+    source_usages: Mapped[list["QuerySourceUsage"]] = relationship(
+        "QuerySourceUsage", back_populates="query", lazy="selectin"
+    )
+    evidence_items: Mapped[list["Evidence"]] = relationship(
+        "Evidence", back_populates="query", lazy="selectin"
+    )
+    lineage_run: Mapped["LineageRun | None"] = relationship(
+        "LineageRun", back_populates="query", uselist=False, lazy="selectin"
     )
 
     def __repr__(self) -> str:
-        return f"<QueryHistory id={self.id} query_id={self.query_id}>"
+        return f"<Query id={self.id} status={self.status}>"
+
+
+# Backward-compatible alias for existing repository/service code
+QueryHistory = Query
 
 
 class SavedQuery(AppBase):
@@ -71,10 +88,10 @@ class SavedQuery(AppBase):
         sa.UUID, primary_key=True, default=uuid4
     )
     user_id: Mapped[UUID] = mapped_column(
-        sa.UUID, sa.ForeignKey("users.id"), nullable=False
+        sa.UUID, sa.ForeignKey("users.id", ondelete="CASCADE"), nullable=False
     )
     project_id: Mapped[UUID] = mapped_column(
-        sa.UUID, sa.ForeignKey("projects.id"), nullable=False
+        sa.UUID, sa.ForeignKey("projects.id", ondelete="CASCADE"), nullable=False
     )
     title: Mapped[str] = mapped_column(sa.String(500), nullable=False)
     question: Mapped[str] = mapped_column(sa.Text, nullable=False)

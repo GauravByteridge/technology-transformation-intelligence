@@ -1,10 +1,10 @@
 """ConnectorService — orchestrates connector operations with security, timeout, and row-cap guarantees.
 
 Design Decision (from Task 2.1):
-    Credentials come from decrypt_config() and go as the first positional arg to connectors.
-    Operational config (row_limit, connection_timeout, etc.) is passed as **kwargs to registry.resolve().
-    These are NEVER mixed — credentials and operational config remain in separate namespaces.
-    Decrypted credentials exist only within the _resolve_connector() scope.
+    Credentials are stored separately in data_source_credentials as vault references.
+    ConnectorService retrieves them, decrypts, and merges with connection_config
+    at the connector execution boundary. Decrypted credentials exist ONLY within
+    the _resolve_connector() scope — they are never persisted to connection_config.
 """
 
 import asyncio
@@ -22,6 +22,7 @@ from app.errors.datasource_errors import (
     QueryValidationError,
     TimeoutOperationError,
 )
+from app.repositories.credential_repository import CredentialRepository
 from app.repositories.data_source_repository import DataSourceRepository
 from app.security.credential_encryptor import CredentialEncryptor
 
@@ -39,15 +40,23 @@ class ConnectorService:
         data_source_repository: DataSourceRepository,
         credential_encryptor: CredentialEncryptor,
         connector_registry: ConnectorRegistry,
+        credential_repository: CredentialRepository | None = None,
     ) -> None:
         self._repo = data_source_repository
         self._encryptor = credential_encryptor
         self._registry = connector_registry
+        self._credential_repo = credential_repository
 
     async def _resolve_connector(self, data_source_id: UUID) -> tuple[DataSourceConnector, str]:
-        """Look up data source, decrypt config, resolve connector.
+        """Look up data source, retrieve and decrypt credentials, resolve connector.
 
-        Decrypted credentials exist only within this operation scope.
+        Credentials are retrieved from data_source_credentials table (vault references),
+        decrypted, and merged with the non-sensitive connection_config. The merged config
+        is passed to the connector. Decrypted credentials exist only within this scope.
+
+        Falls back to decrypting connection_config directly if credential_repository is
+        not available (backward compatibility during migration).
+
         Returns (connector_instance, source_type).
 
         Raises:
@@ -59,10 +68,36 @@ class ConnectorService:
         if data_source is None:
             raise DataSourceNotFoundError(data_source_id=str(data_source_id))
 
-        decrypted_config = self._encryptor.decrypt_config(data_source.connection_config or {})
+        # Start with the non-sensitive connection_config
+        merged_config = dict(data_source.connection_config or {})
+
+        # Retrieve credentials from data_source_credentials and merge
+        if self._credential_repo:
+            credentials = await self._credential_repo.get_by_data_source(data_source_id)
+            for cred in credentials:
+                # Extract encrypted value from vault reference
+                vault_ref = cred.secret_reference
+                if vault_ref.startswith("vault://fernet/"):
+                    encrypted_value = vault_ref[len("vault://fernet/"):]
+                    # Decrypt the single credential field
+                    decrypted = self._encryptor.decrypt_config(
+                        {cred.credential_type: encrypted_value}
+                    )
+                    merged_config.update(decrypted)
+                else:
+                    # NOTE: Unrecognized vault reference pattern — skip with warning
+                    logger.warning(
+                        "unrecognized_vault_reference",
+                        data_source_id=str(data_source_id),
+                        credential_type=cred.credential_type,
+                    )
+        else:
+            # Backward compatibility: decrypt connection_config directly
+            merged_config = self._encryptor.decrypt_config(merged_config)
+
         connector = self._registry.resolve(
             source_type=data_source.source_type,
-            connection_config=decrypted_config,
+            connection_config=merged_config,
         )
         return connector, data_source.source_type
 
