@@ -5,6 +5,7 @@ import {
   DatasetConfirmButton,
   useDatasets,
 } from '@/features/dataset-browser';
+import { ProjectSelector } from '@/components/common';
 
 /**
  * DatasetBrowser — Page for browsing, previewing, confirming, and querying datasets.
@@ -12,6 +13,7 @@ import {
  */
 export default function DatasetBrowser() {
   const [selectedDatasetId, setSelectedDatasetId] = useState<string | null>(null);
+  const [selectedProject, setSelectedProject] = useState<string | null>(null);
   const { data: datasets } = useDatasets();
 
   // Derive the selected dataset's status to determine whether confirm button is shown
@@ -29,11 +31,19 @@ export default function DatasetBrowser() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div>
-        <h1 className="text-2xl font-semibold text-white">Uploaded Files</h1>
-        <p className="mt-1 text-sm text-gray-400">
-          Enterprise documents and data files. Structured files show data preview; documents are searchable via AI Query.
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-semibold text-white">Uploaded Files</h1>
+          <p className="mt-1 text-sm text-gray-400">
+            Enterprise documents and data files. Structured files show data preview; documents are searchable via AI Query.
+          </p>
+        </div>
+        <ProjectSelector
+          value={selectedProject}
+          onChange={setSelectedProject}
+          label="Project:"
+          showAllOption={true}
+        />
       </div>
 
       {/* Dataset List — full width */}
