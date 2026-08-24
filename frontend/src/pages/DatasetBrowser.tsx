@@ -42,9 +42,9 @@ export default function DatasetBrowser() {
 
       {/* Selected Dataset Details */}
       {selectedDatasetId && (
-        <div className="space-y-6 rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+        <div className="space-y-6 rounded-lg border border-gray-700/50 bg-gray-800/50 p-6">
           <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-gray-900">
+            <h2 className="text-lg font-semibold text-white">
               {selectedDataset?.name ?? 'Dataset Details'}
             </h2>
             {selectedStatus === 'REVIEW_REQUIRED' && (
