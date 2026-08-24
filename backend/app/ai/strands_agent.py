@@ -175,8 +175,12 @@ class StrandsAgentWrapper:
         )
 
         # Inject project context into the prompt so tools can use the correct project_id
+        # Resolve project name/code for human-readable references in the answer
+        project_name = await self._resolve_project_name(project_id)
         contextualized_prompt = (
-            f"Project context — Project ID: {project_id}\n\n"
+            f"Project context — Project ID: {project_id}\n"
+            f"Project Name: {project_name}\n"
+            f"IMPORTANT: In your answer, refer to this project as \"{project_name}\" — never show the UUID.\n\n"
             f"User question: {question}"
         )
 
@@ -224,6 +228,27 @@ class StrandsAgentWrapper:
                 tool_results=[],
                 is_partial=True,
             )
+
+    async def _resolve_project_name(self, project_id: UUID) -> str:
+        """Resolve project UUID to human-readable name/code from the database."""
+        try:
+            import asyncpg
+            conn = await asyncpg.connect(
+                dsn=self._settings.app_db_url.replace("+asyncpg", ""),
+                timeout=5,
+            )
+            row = await conn.fetchrow(
+                "SELECT project_code, name FROM projects WHERE id = $1",
+                project_id,
+            )
+            await conn.close()
+            if row:
+                code = row["project_code"]
+                name = row["name"]
+                return f"{code} — {name}" if code else name
+            return str(project_id)
+        except Exception:
+            return str(project_id)
 
     def _build_agent_response(self, result, query_id: UUID) -> AgentResponse:
         """Transform Strands AgentResult into our AgentResponse format.
