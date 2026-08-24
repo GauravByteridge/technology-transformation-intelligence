@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback } from 'react';
 import { useAIQuery } from '@/hooks';
 import { useChatSessionStore } from '../stores/chatSessionStore';
 import type { AIResponse, ChatMessage } from '@/types';
@@ -10,13 +10,14 @@ import type { AIResponse, ChatMessage } from '@/types';
  */
 export function useAIChat(projectId?: string) {
   const aiQuery = useAIQuery();
-  const [latestResponse, setLatestResponse] = useState<AIResponse | null>(null);
   const {
     messages,
     activeConversationId,
     addMessage,
     startNewConversation: storeStartNewConversation,
     getActiveConversation,
+    latestResponse,
+    setLatestResponse,
   } = useChatSessionStore();
 
   const sendMessage = useCallback(

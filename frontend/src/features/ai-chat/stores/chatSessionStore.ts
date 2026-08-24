@@ -1,10 +1,11 @@
 import { create } from 'zustand';
-import type { ChatMessage, Conversation } from '@/types';
+import type { ChatMessage, Conversation, AIResponse } from '@/types';
 
 interface ChatSessionState {
   activeConversationId: string | null;
   messages: ChatMessage[];
   conversations: Conversation[];
+  latestResponse: AIResponse | null;
 }
 
 interface ChatSessionActions {
@@ -12,6 +13,7 @@ interface ChatSessionActions {
   startNewConversation: (projectId?: string) => string;
   setActiveConversation: (id: string) => void;
   getActiveConversation: () => Conversation | undefined;
+  setLatestResponse: (response: AIResponse | null) => void;
 }
 
 type ChatSessionStore = ChatSessionState & ChatSessionActions;
@@ -20,6 +22,7 @@ export const useChatSessionStore = create<ChatSessionStore>((set, get) => ({
   activeConversationId: null,
   messages: [],
   conversations: [],
+  latestResponse: null,
 
   addMessage: (message: ChatMessage) => {
     const { activeConversationId } = get();
@@ -59,6 +62,7 @@ export const useChatSessionStore = create<ChatSessionStore>((set, get) => ({
       conversations: [...state.conversations, newConversation],
       activeConversationId: conversationId,
       messages: [],
+      latestResponse: null,
     }));
 
     return conversationId;
@@ -77,5 +81,9 @@ export const useChatSessionStore = create<ChatSessionStore>((set, get) => ({
     const { activeConversationId, conversations } = get();
     if (!activeConversationId) return undefined;
     return conversations.find((conv) => conv.id === activeConversationId);
+  },
+
+  setLatestResponse: (response: AIResponse | null) => {
+    set({ latestResponse: response });
   },
 }));
