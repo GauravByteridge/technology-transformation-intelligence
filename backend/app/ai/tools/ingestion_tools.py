@@ -31,6 +31,7 @@ logger = logging.getLogger(__name__)
 # =============================================================================
 
 _ingestion_interface: IngestionInterface | None = None
+_db_url: str | None = None
 
 
 def initialize_ingestion_tools(ingestion: IngestionInterface) -> None:
@@ -43,6 +44,15 @@ def initialize_ingestion_tools(ingestion: IngestionInterface) -> None:
     """
     global _ingestion_interface  # noqa: PLW0603
     _ingestion_interface = ingestion
+
+    # Cache the DB URL for creating fresh sessions in tool threads
+    global _db_url  # noqa: PLW0603
+    try:
+        from app.dependencies import get_settings
+        _db_url = get_settings().app_db_url
+    except Exception:
+        pass
+
     logger.info("ingestion_tools_initialized")
 
 
@@ -58,6 +68,30 @@ def _get_ingestion() -> IngestionInterface:
             "Call initialize_ingestion_tools() during application startup."
         )
     return _ingestion_interface
+
+
+def _create_thread_local_facade():
+    """Create a fresh IngestionFacade with its own session factory for use in a thread.
+
+    This is needed because asyncio.run() in tool threads creates a new event loop,
+    and SQLAlchemy async sessions are bound to the loop they were created on.
+    """
+    import sys
+    import asyncio
+
+    # On Windows, asyncpg requires SelectorEventLoop (not ProactorEventLoop)
+    if sys.platform == "win32":
+        asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
+
+    from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
+    from app.services.ingestion_facade import IngestionFacade
+
+    if not _db_url:
+        raise RuntimeError("DB URL not available for thread-local facade")
+
+    engine = create_async_engine(_db_url, pool_pre_ping=True)
+    factory = async_sessionmaker(engine, expire_on_commit=False)
+    return IngestionFacade(session_factory=factory)
 
 
 # =============================================================================
@@ -81,8 +115,11 @@ def search_documents(project_id: str, query: str) -> dict:
         Search results with excerpts, source files, and similarity scores.
     """
     import asyncio
+    import sys
+    if sys.platform == "win32":
+        asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
-    ingestion = _get_ingestion()
+    ingestion = _create_thread_local_facade()
 
     try:
         parsed_project_id = UUID(project_id)
@@ -132,8 +169,11 @@ def get_evidence(source_id: str, evidence_type: str) -> dict:
         Detailed evidence with source traceability.
     """
     import asyncio
+    import sys
+    if sys.platform == "win32":
+        asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
-    ingestion = _get_ingestion()
+    ingestion = _create_thread_local_facade()
 
     if evidence_type not in ("document", "structured"):
         return {
@@ -194,8 +234,11 @@ def query_dataset(dataset_id: str, query_params: dict) -> dict:
         Matching records, total count, and aggregation results.
     """
     import asyncio
+    import sys
+    if sys.platform == "win32":
+        asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
-    ingestion = _get_ingestion()
+    ingestion = _create_thread_local_facade()
 
     try:
         parsed_dataset_id = UUID(dataset_id)
@@ -251,8 +294,11 @@ def list_available_datasets(project_id: str = "") -> dict:
         List of dataset summaries with names, types, and record counts.
     """
     import asyncio
+    import sys
+    if sys.platform == "win32":
+        asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
-    ingestion = _get_ingestion()
+    ingestion = _create_thread_local_facade()
 
     try:
         parsed_project_id: UUID | None = None
@@ -302,8 +348,11 @@ def get_dataset_metadata(dataset_id: str) -> dict:
         Column names, types, record count, and source information.
     """
     import asyncio
+    import sys
+    if sys.platform == "win32":
+        asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
-    ingestion = _get_ingestion()
+    ingestion = _create_thread_local_facade()
 
     try:
         parsed_dataset_id = UUID(dataset_id)
