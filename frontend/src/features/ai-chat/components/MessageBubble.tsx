@@ -75,6 +75,53 @@ function MarkdownContent({ content }: { content: string }) {
   while (i < lines.length) {
     const line = lines[i];
 
+    // Tables (| col1 | col2 |)
+    if (line.trim().startsWith('|') && line.trim().endsWith('|')) {
+      const tableRows: string[][] = [];
+      while (i < lines.length && lines[i].trim().startsWith('|') && lines[i].trim().endsWith('|')) {
+        const row = lines[i].trim();
+        // Skip separator rows (|---|---|)
+        if (row.match(/^\|[\s\-:|]+\|$/)) {
+          i++;
+          continue;
+        }
+        const cells = row.split('|').slice(1, -1).map((c) => c.trim());
+        tableRows.push(cells);
+        i++;
+      }
+      if (tableRows.length > 0) {
+        const header = tableRows[0];
+        const body = tableRows.slice(1);
+        elements.push(
+          <div key={`table-${i}`} className="my-3 overflow-x-auto rounded-lg border border-gray-700/50">
+            <table className="w-full text-xs">
+              <thead>
+                <tr className="border-b border-gray-700/50 bg-gray-900/50">
+                  {header.map((cell, ci) => (
+                    <th key={ci} className="px-3 py-2 text-left font-medium text-gray-300">
+                      <InlineMarkdown text={cell} />
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {body.map((row, ri) => (
+                  <tr key={ri} className="border-b border-gray-700/30 last:border-0">
+                    {row.map((cell, ci) => (
+                      <td key={ci} className="px-3 py-2 text-gray-400">
+                        <InlineMarkdown text={cell} />
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        );
+      }
+      continue;
+    }
+
     // Headers (### Header)
     const headerMatch = line.match(/^(#{1,4})\s+(.+)$/);
     if (headerMatch) {
