@@ -422,9 +422,9 @@ class AIService:
             columns = result.data.get("columns", [])
 
             if len(rows) >= 3 and len(columns) >= 2:
-                x_col, y_cols = self._detect_chart_columns(rows, columns)
+                x_col, y_cols, is_time_series = self._detect_chart_columns(rows, columns)
                 if x_col and y_cols:
-                    # Convert string numbers to floats for charting
+                    chart_type = "line" if is_time_series else "bar"
                     chart_data = []
                     for row in rows[:20]:
                         if isinstance(row, dict):
@@ -435,7 +435,7 @@ class AIService:
                             chart_data.append(entry)
 
                     return {
-                        "chart_type": "bar",
+                        "chart_type": chart_type,
                         "data": chart_data,
                         "xKey": x_col,
                         "yKey": y_cols[0],
@@ -447,8 +447,9 @@ class AIService:
             records = result.data.get("records", [])
             if isinstance(records, list) and len(records) >= 2 and records and isinstance(records[0], dict):
                 keys = list(records[0].keys())
-                x_col, y_cols = self._detect_chart_columns(records, keys)
+                x_col, y_cols, is_time_series = self._detect_chart_columns(records, keys)
                 if x_col and y_cols:
+                    chart_type = "line" if is_time_series else "bar"
                     chart_data = []
                     for rec in records[:20]:
                         entry = {x_col: rec.get(x_col, "")}
@@ -456,7 +457,7 @@ class AIService:
                             entry[yc] = self._to_number(rec.get(yc, 0))
                         chart_data.append(entry)
                     return {
-                        "chart_type": "bar",
+                        "chart_type": chart_type,
                         "data": chart_data,
                         "xKey": x_col,
                         "yKey": y_cols[0],
@@ -548,8 +549,13 @@ class AIService:
         if len(chart_data) < 2:
             return None
 
+        # Detect if X column looks like dates → line chart, otherwise bar
+        x_values = [entry.get(headers[x_idx], "") for entry in chart_data]
+        is_time = any(self._looks_like_date(str(v)) for v in x_values[:3])
+        chart_type = "line" if is_time else "bar"
+
         return {
-            "chart_type": "bar",
+            "chart_type": chart_type,
             "data": chart_data,
             "xKey": headers[x_idx],
             "yKey": headers[y_indices[0]],
@@ -561,6 +567,7 @@ class AIService:
         """Detect X (label) and Y (numeric) columns from data rows."""
         x_col = None
         y_cols = []
+        is_time_series = False
 
         for col in columns:
             values = []
@@ -572,6 +579,13 @@ class AIService:
             text_values = [v for v in values if isinstance(v, str)]
             if text_values and any(len(v) > 24 and '-' in v for v in text_values):
                 continue  # Likely UUIDs/ObjectIDs — skip
+
+            # Detect date columns (for time-series / line charts)
+            if text_values and any(self._looks_like_date(v) for v in text_values):
+                if not x_col:
+                    x_col = col
+                    is_time_series = True
+                continue
 
             numeric_count = sum(1 for v in values if self._is_numeric(v))
             text_count = sum(1 for v in values if isinstance(v, str) and not self._is_numeric(v))
@@ -586,7 +600,20 @@ class AIService:
                 if text_values and all(len(v) < 30 for v in text_values):
                     x_col = col
 
-        return x_col, y_cols
+        return x_col, y_cols, is_time_series
+
+    @staticmethod
+    def _looks_like_date(val: str) -> bool:
+        """Check if a string looks like a date."""
+        import re
+        if re.match(r'\d{4}-\d{2}-\d{2}', val):
+            return True
+        if re.match(r'\d{1,2}/\d{1,2}/\d{2,4}', val):
+            return True
+        date_keywords = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec']
+        if any(kw in val.lower() for kw in date_keywords):
+            return True
+        return False
 
     @staticmethod
     def _is_numeric(val) -> bool:
