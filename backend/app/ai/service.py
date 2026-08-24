@@ -343,19 +343,22 @@ class AIService:
 
         for result in agent_response.tool_results:
             if result.success:
+                # Safety: ensure data is a dict before accessing with .get()
+                data = result.data if isinstance(result.data, dict) else {"raw": result.data}
+
                 source_entry = {
                     "name": result.source_label,
-                    "type": result.data.get("source_type", "unknown"),
-                    "records_returned": result.data.get("record_count", 0),
+                    "type": data.get("source_type", "unknown"),
+                    "records_returned": data.get("record_count", 0),
                 }
 
                 # Enrich source record count from tool-specific fields
-                if "result_count" in result.data:
-                    source_entry["records_returned"] = result.data["result_count"]
-                elif "total_count" in result.data:
-                    source_entry["records_returned"] = result.data["total_count"]
-                elif "dataset_count" in result.data:
-                    source_entry["records_returned"] = result.data["dataset_count"]
+                if "result_count" in data:
+                    source_entry["records_returned"] = data["result_count"]
+                elif "total_count" in data:
+                    source_entry["records_returned"] = data["total_count"]
+                elif "dataset_count" in data:
+                    source_entry["records_returned"] = data["dataset_count"]
 
                 sources.append(source_entry)
 
@@ -586,7 +589,8 @@ class AIService:
         evidence_count = 0
 
         for result in agent_response.tool_results:
-            source_id = result.data.get("source_id") or result.source_label or None
+            data = result.data if isinstance(result.data, dict) else {}
+            source_id = data.get("source_id") or result.source_label or None
             tool_traces.append(
                 ToolInvocationTrace(
                     tool_name=result.tool_name,
@@ -594,12 +598,12 @@ class AIService:
                     execution_status="success" if result.success else "failed",
                     duration_ms=result.duration_ms,
                     error=result.error,
-                    records_returned=result.data.get("record_count", 0) if result.success else 0,
+                    records_returned=data.get("record_count", 0) if result.success else 0,
                 )
             )
             if result.success and result.source_label:
                 sources_queried.append(result.source_label)
-                evidence_count += len(result.data.get("evidence", []))
+                evidence_count += len(data.get("evidence", []))
             if not result.success and result.error:
                 # Sanitize error before storing in trace
                 failures.append(sanitize_log_value(result.error))
