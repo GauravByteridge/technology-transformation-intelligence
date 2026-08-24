@@ -384,6 +384,9 @@ class AIService:
 
         # Detect if we have tabular data suitable for visualization
         visualization_spec = self._detect_visualization(agent_response, sources)
+        # If no tool data was chart-worthy, try parsing the answer's markdown table
+        if not visualization_spec:
+            visualization_spec = self._detect_visualization_from_answer(agent_response.answer)
         response_type = "chart" if visualization_spec else "text"
 
         return AIResponse(
@@ -456,6 +459,78 @@ class AIService:
                     }
 
         return None
+
+    def _detect_visualization_from_answer(self, answer: str) -> dict | None:
+        """Parse markdown tables from the AI answer and build a chart spec.
+
+        Detects | col1 | col2 | format tables and identifies numeric columns.
+        """
+        import re
+
+        lines = answer.split('\n')
+        table_rows: list[list[str]] = []
+        in_table = False
+
+        for line in lines:
+            stripped = line.strip()
+            if stripped.startswith('|') and stripped.endswith('|'):
+                # Skip separator rows
+                if re.match(r'^\|[\s\-:|]+\|$', stripped):
+                    continue
+                cells = [c.strip() for c in stripped.split('|')[1:-1]]
+                if cells:
+                    table_rows.append(cells)
+                    in_table = True
+            elif in_table:
+                break  # End of table
+
+        if len(table_rows) < 3:  # Need header + at least 2 data rows
+            return None
+
+        headers = table_rows[0]
+        data_rows = table_rows[1:]
+
+        # Find X (text) and Y (numeric) columns
+        x_idx = None
+        y_indices = []
+
+        for col_idx, header in enumerate(headers):
+            # Check if this column's values are numeric
+            numeric_count = 0
+            for row in data_rows:
+                if col_idx < len(row):
+                    if self._is_numeric(row[col_idx]):
+                        numeric_count += 1
+
+            if numeric_count >= len(data_rows) * 0.6:  # 60% numeric
+                y_indices.append(col_idx)
+            elif x_idx is None:
+                x_idx = col_idx
+
+        if x_idx is None or not y_indices:
+            return None
+
+        # Build chart data
+        chart_data = []
+        for row in data_rows:
+            if x_idx < len(row):
+                entry = {headers[x_idx]: row[x_idx]}
+                for yi in y_indices:
+                    if yi < len(row):
+                        entry[headers[yi]] = self._to_number(row[yi])
+                chart_data.append(entry)
+
+        if len(chart_data) < 2:
+            return None
+
+        return {
+            "chart_type": "bar",
+            "data": chart_data,
+            "xKey": headers[x_idx],
+            "yKey": headers[y_indices[0]],
+            "columns": headers,
+            "rows": [dict(zip(headers, row)) for row in data_rows],
+        }
 
     def _detect_chart_columns(self, rows: list, columns: list) -> tuple[str | None, list[str]]:
         """Detect X (label) and Y (numeric) columns from data rows."""
