@@ -476,6 +476,16 @@ class AIService:
 
         return None
 
+    @staticmethod
+    def _strip_md(val: str) -> str:
+        """Strip markdown formatting from a value (bold, italic, code)."""
+        import re
+        # Remove **bold**, *italic*, `code`
+        val = re.sub(r'\*\*(.+?)\*\*', r'\1', val)
+        val = re.sub(r'\*(.+?)\*', r'\1', val)
+        val = re.sub(r'`(.+?)`', r'\1', val)
+        return val.strip()
+
     def _strip_markdown_table(self, text: str) -> str:
         """Remove markdown table lines from text to avoid duplicate display."""
         import re
@@ -549,7 +559,7 @@ class AIService:
         chart_data = []
         for row in data_rows:
             if x_idx < len(row):
-                entry = {headers[x_idx]: row[x_idx]}
+                entry = {headers[x_idx]: self._strip_md(row[x_idx])}
                 for yi in y_indices:
                     if yi < len(row):
                         entry[headers[yi]] = self._to_number(row[yi])
@@ -658,7 +668,11 @@ class AIService:
         if isinstance(val, (int, float)):
             return float(val)
         if isinstance(val, str):
-            cleaned = val.replace(",", "").replace("$", "").replace("%", "").replace("+", "").strip()
+            import re
+            # Strip markdown bold/italic
+            cleaned = re.sub(r'\*\*(.+?)\*\*', r'\1', val)
+            cleaned = re.sub(r'\*(.+?)\*', r'\1', cleaned)
+            cleaned = cleaned.replace(",", "").replace("$", "").replace("%", "").replace("+", "").strip()
             try:
                 return float(cleaned)
             except (ValueError, TypeError):
