@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { X, Database, FileText, CheckCircle2, Loader2 } from 'lucide-react';
 
-type SourceType = 'postgresql' | 'mongodb' | 'files';
+type SourceType = 'postgresql' | 'mongodb' | 'jira' | 'files';
 type Step = 'select-type' | 'configure' | 'connecting';
 
 interface AddSourceModalProps {
@@ -31,6 +31,12 @@ const SOURCE_TYPES = [
     label: 'MongoDB',
     icon: '🍃',
     description: 'Connect to MongoDB collections',
+  },
+  {
+    type: 'jira' as const,
+    label: 'Jira Cloud',
+    icon: '🎫',
+    description: 'Connect to Jira for issue tracking data',
   },
   {
     type: 'files' as const,
@@ -72,9 +78,13 @@ export function AddSourceModal({ isOpen, onClose, onSuccess }: AddSourceModalPro
     setSourceType(type);
     if (type === 'files') {
       onClose();
-      // Navigate to upload page instead
       window.location.href = '/upload';
       return;
+    }
+    if (type === 'jira') {
+      setForm({ name: 'Jira Cloud', host: 'https://your-site.atlassian.net', port: '', database: '', username: '', password: '' });
+    } else {
+      setForm({ name: '', host: '', port: type === 'postgresql' ? '5432' : '27017', database: '', username: '', password: '' });
     }
     setStep('configure');
   };
@@ -127,7 +137,7 @@ export function AddSourceModal({ isOpen, onClose, onSuccess }: AddSourceModalPro
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-700">
           <h2 className="text-lg font-semibold text-white">
             {step === 'select-type' && 'Add Data Source'}
-            {step === 'configure' && `Connect ${sourceType === 'postgresql' ? 'PostgreSQL' : 'MongoDB'}`}
+            {step === 'configure' && `Connect ${sourceType === 'postgresql' ? 'PostgreSQL' : sourceType === 'jira' ? 'Jira Cloud' : 'MongoDB'}`}
             {step === 'connecting' && 'Discovering...'}
           </h2>
           <button

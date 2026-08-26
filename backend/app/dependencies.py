@@ -588,10 +588,12 @@ def initialize_connector_registry() -> None:
     global _connector_registry  # noqa: PLW0603
 
     from app.connectors import ConnectorRegistry, MongoDBConnector, PostgresConnector
+    from app.connectors.jira_connector import JiraConnector
 
     registry = ConnectorRegistry()
     registry.register("postgresql", PostgresConnector)
     registry.register("mongodb", MongoDBConnector)
+    registry.register("jira", JiraConnector)
 
     # To add a future connector (e.g., Snowflake):
     # from app.connectors.snowflake_connector import SnowflakeConnector

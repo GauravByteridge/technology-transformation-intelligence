@@ -86,6 +86,12 @@ class Settings(BaseSettings):
     mongodb_enabled: bool = False
     mongodb_url: str | None = None
 
+    # Jira Cloud integration
+    jira_url: str | None = None
+    jira_email: str | None = None
+    jira_api_token: str | None = None
+    jira_project_key: str = "SCRUM"
+
     # =========================================================================
     # Computed Properties
     # =========================================================================
