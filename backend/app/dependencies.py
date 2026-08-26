@@ -1121,8 +1121,13 @@ def initialize_ai_service(settings: Settings) -> "AIService":
     system_prompt = prompt_manager.load_prompt("strands_system_prompt", version="v2")
 
     # Combine all Strands @tool-decorated functions
+    # Connector tools include direct REST API (query_connected_source with query_type="jira")
+    # Rovo tools include MCP-based Jira/Confluence tools
     from app.ai.tools.rovo_tools import get_rovo_tools
-    all_tools = get_ingestion_tools() + get_connector_tools() + get_rovo_tools()
+
+    provider = settings.jira_provider.lower()
+    rovo_tools = get_rovo_tools() if provider != "rest_api" else []
+    all_tools = get_ingestion_tools() + get_connector_tools() + rovo_tools
 
     # Create the Strands Agent wrapper with configured model and tools
     strands_agent = StrandsAgentWrapper(
@@ -1203,26 +1208,52 @@ def _initialize_connector_tools_module(settings: Settings) -> None:
 
 
 def _initialize_rovo_tools(settings: Settings) -> None:
-    """Initialize Rovo MCP tools with Atlassian credentials from settings.
+    """Initialize Rovo MCP tools based on JIRA_PROVIDER setting.
 
-    Uses ROVO_MCP_API_TOKEN if available (has Jira/Confluence scopes),
-    otherwise falls back to JIRA_API_TOKEN.
+    Supports:
+    - "rest_api": Only direct REST connector (no Rovo tools loaded)
+    - "rovo_mcp_v1": Rovo MCP with V1 scoped token (full Jira/Confluence)
+    - "rovo_mcp_v2": Rovo MCP with V2 scoped token (Teamwork Graph only)
+    - "all": All providers active (default)
     """
     from app.ai.tools.rovo_tools import initialize_rovo_tools
+    from app.config.logging import get_logger
 
-    # Prefer the dedicated Rovo MCP token (v1 scopes for Jira/Confluence)
-    api_token = settings.rovo_mcp_api_token or settings.jira_api_token
+    logger = get_logger(__name__)
+    provider = settings.jira_provider.lower()
+
+    if provider == "rest_api":
+        logger.info("rovo_tools_skipped", reason="JIRA_PROVIDER=rest_api, using direct REST only")
+        return
+
+    # Determine which token to use for Rovo MCP
+    # Priority: V1 token (most tools) > legacy rovo_mcp_api_token > V2 token > jira_api_token
+    if provider in ("rovo_mcp_v1", "all"):
+        api_token = settings.rovo_mcp_v1_token or settings.rovo_mcp_api_token
+    elif provider == "rovo_mcp_v2":
+        api_token = settings.rovo_mcp_v2_token
+    else:
+        api_token = settings.rovo_mcp_v1_token or settings.rovo_mcp_api_token or settings.rovo_mcp_v2_token
+
+    if not api_token:
+        # Fallback to jira_api_token (may have limited scopes)
+        api_token = settings.jira_api_token
 
     if settings.jira_email and api_token:
         initialize_rovo_tools(
             email=settings.jira_email,
             api_token=api_token,
-            url=None,  # Use default Atlassian cloud endpoint
+            url=None,  # Default Atlassian cloud endpoint
+        )
+        logger.info(
+            "rovo_tools_initialized",
+            provider=provider,
+            token_source="rovo_mcp_v1" if settings.rovo_mcp_v1_token else
+                         "rovo_mcp_api_token" if settings.rovo_mcp_api_token else
+                         "rovo_mcp_v2" if settings.rovo_mcp_v2_token else "jira_api_token",
         )
     else:
-        from app.config.logging import get_logger
-        logger = get_logger(__name__)
-        logger.warning("rovo_tools_skipped", reason="JIRA_EMAIL or API token not configured")
+        logger.warning("rovo_tools_skipped", reason="No email or API token configured")
 
 
 def get_ai_service() -> "AIService":

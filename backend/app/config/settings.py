@@ -91,7 +91,10 @@ class Settings(BaseSettings):
     jira_email: str | None = None
     jira_api_token: str | None = None
     jira_project_key: str = "SCRUM"
-    rovo_mcp_api_token: str | None = None
+    jira_provider: str = "all"  # "rest_api" | "rovo_mcp_v1" | "rovo_mcp_v2" | "all"
+    rovo_mcp_v1_token: str | None = None
+    rovo_mcp_v2_token: str | None = None
+    rovo_mcp_api_token: str | None = None  # Legacy fallback (maps to v1)
 
     # =========================================================================
     # Computed Properties
