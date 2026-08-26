@@ -23,12 +23,12 @@ interface SidebarProps {
 }
 
 const navItems = [
-  { to: '/', label: 'Overview', icon: LayoutDashboard },
-  { to: '/dashboard', label: 'Dashboard', icon: BarChart3 },
+  { to: '/', label: 'PMO Overview', icon: LayoutDashboard },
   { to: '/portfolio', label: 'Projects', icon: FolderKanban },
+  { to: '/ai', label: 'AI Query', icon: Bot },
+  { to: '/dashboard', label: 'Analytics', icon: BarChart3 },
   { to: '/sources', label: 'Data Sources', icon: Database },
   { to: '/catalog', label: 'Data Catalog', icon: BookOpen },
-  { to: '/ai', label: 'AI Query', icon: Bot },
   { to: '/history', label: 'Query History', icon: History },
   { to: '/briefs', label: 'Executive Briefs', icon: FileText },
 ];
