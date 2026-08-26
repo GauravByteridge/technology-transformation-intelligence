@@ -93,94 +93,58 @@
 }
 
 /*
- * Theme-aware utility overrides.
- * Light mode contrast fixes for components built with dark-first classes.
+ * Light mode — force dark text and proper backgrounds.
+ * Uses html:not(.dark) for maximum specificity over Tailwind utilities.
  */
-@layer components {
-  /* Light mode body bg */
-  :root:not(.dark) body {
-    background-color: #f8fafc;
-  }
-
-  :root:not(.dark) .app-shell-content {
-    background-color: #f8fafc;
-  }
-
-  /* Fix text contrast in light mode */
-  :root:not(.dark) .text-white {
-    color: #111827;
-  }
-
-  :root:not(.dark) .text-gray-100 {
-    color: #1f2937;
-  }
-
-  :root:not(.dark) .text-gray-200 {
-    color: #374151;
-  }
-
-  :root:not(.dark) .text-gray-300 {
-    color: #4b5563;
-  }
-
-  :root:not(.dark) .text-gray-400 {
-    color: #6b7280;
-  }
-
-  /* Fix background colors in light mode */
-  :root:not(.dark) .bg-gray-800\/50,
-  :root:not(.dark) .bg-gray-800\/30 {
-    background-color: rgb(255 255 255 / 0.9);
-    border-color: #e2e8f0;
-  }
-
-  :root:not(.dark) .bg-gray-900\/50 {
-    background-color: #f8fafc;
-  }
-
-  :root:not(.dark) .bg-\[\\#0a0f1e\],
-  :root:not(.dark) .bg-\[\\#0f172a\] {
-    background-color: #ffffff;
-  }
-
-  /* Fix borders in light mode */
-  :root:not(.dark) .border-gray-700\/50,
-  :root:not(.dark) .border-gray-700\/30,
-  :root:not(.dark) .border-gray-800 {
-    border-color: #e2e8f0;
-  }
-
-  /* Fix hover states in light mode */
-  :root:not(.dark) .hover\:bg-gray-700\/20:hover,
-  :root:not(.dark) .hover\:bg-gray-700\/30:hover,
-  :root:not(.dark) .hover\:bg-gray-700\/40:hover {
-    background-color: #f1f5f9;
-  }
-
-  :root:not(.dark) .hover\:bg-gray-800:hover {
-    background-color: #f1f5f9;
-  }
-
-  /* Fix divide colors in light mode */
-  :root:not(.dark) .divide-gray-700\/20 > :not([hidden]) ~ :not([hidden]),
-  :root:not(.dark) .divide-gray-700\/50 > :not([hidden]) ~ :not([hidden]) {
-    border-color: #e5e7eb;
-  }
-
-  /* Cards and panels */
-  :root:not(.dark) .bg-gray-800\/50 {
-    background-color: #ffffff;
-    box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.05);
-  }
-
-  /* KPI cards — keep colored backgrounds but improve text contrast */
-  :root:not(.dark) .bg-red-500\/5 {
-    background-color: rgb(254 242 242 / 0.8);
-  }
-  :root:not(.dark) .bg-amber-500\/5 {
-    background-color: rgb(255 251 235 / 0.8);
-  }
+html:not(.dark) body {
+  background-color: #f8fafc;
+  color: #111827;
 }
+
+html:not(.dark) .app-shell-content {
+  background-color: #f8fafc;
+}
+
+/* All text becomes dark in light mode */
+html:not(.dark) [class*="text-white"] { color: #111827 !important; }
+html:not(.dark) [class*="text-gray-100"] { color: #1f2937 !important; }
+html:not(.dark) [class*="text-gray-200"] { color: #374151 !important; }
+html:not(.dark) [class*="text-gray-300"] { color: #4b5563 !important; }
+html:not(.dark) [class*="text-gray-400"] { color: #6b7280 !important; }
+html:not(.dark) [class*="text-gray-500"] { color: #6b7280 !important; }
+
+/* Dark backgrounds → white/light in light mode */
+html:not(.dark) [class*="bg-gray-800"] { background-color: #ffffff !important; }
+html:not(.dark) [class*="bg-gray-900"] { background-color: #f8fafc !important; }
+html:not(.dark) [class*="bg-[#0a0f1e]"] { background-color: #f8fafc !important; }
+html:not(.dark) [class*="bg-[#0f172a]"] { background-color: #ffffff !important; }
+html:not(.dark) [class*="bg-[#0f1729]"] { background-color: #ffffff !important; }
+html:not(.dark) [class*="bg-[#0b1120]"] { background-color: #f8fafc !important; }
+html:not(.dark) [class*="bg-[#020617]"] { background-color: #f1f5f9 !important; }
+
+/* Borders → light gray */
+html:not(.dark) [class*="border-gray-700"] { border-color: #e2e8f0 !important; }
+html:not(.dark) [class*="border-gray-800"] { border-color: #e2e8f0 !important; }
+
+/* Dividers */
+html:not(.dark) [class*="divide-gray-700"] > :not([hidden]) ~ :not([hidden]) { border-color: #e5e7eb !important; }
+html:not(.dark) [class*="divide-gray-100"] > :not([hidden]) ~ :not([hidden]) { border-color: #e5e7eb !important; }
+
+/* Hover states */
+html:not(.dark) [class*="hover:bg-gray-700"]:hover { background-color: #f1f5f9 !important; }
+html:not(.dark) [class*="hover:bg-gray-800"]:hover { background-color: #f1f5f9 !important; }
+
+/* Cards get shadow in light mode */
+html:not(.dark) [class*="bg-gray-800"] {
+  box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.06);
+}
+
+/* KPI colored backgrounds — slightly more saturated in light */
+html:not(.dark) [class*="bg-red-500/5"] { background-color: #fef2f2 !important; }
+html:not(.dark) [class*="bg-amber-500/5"] { background-color: #fffbeb !important; }
+html:not(.dark) [class*="bg-red-500/20"] { background-color: #fee2e2 !important; }
+html:not(.dark) [class*="bg-amber-500/20"] { background-color: #fef3c7 !important; }
+html:not(.dark) [class*="bg-green-500/20"] { background-color: #dcfce7 !important; }
 
 @keyframes indeterminate {
   0% { transform: translateX(-100%); }
