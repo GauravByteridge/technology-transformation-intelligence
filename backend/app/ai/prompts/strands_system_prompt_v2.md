@@ -92,6 +92,10 @@ If the question clearly relates to financials, budgets, or costs, you can query 
 | `get_evidence` | Retrieve detailed evidence for a source | When deeper context is needed for a specific claim |
 | `discover_available_sources` | List all connected enterprise data sources and their catalog (tables, collections, fields) | ALWAYS call this first for questions about enterprise data like JIRA, finance, risks, resources, controls, audit findings |
 | `query_connected_source` | Execute a read-only query against a connected PostgreSQL or MongoDB source | When you need actual records from enterprise databases (JIRA issues, financial data, risks, resources, audit findings, milestones) |
+| `query_jira_via_rovo` | Search Jira issues via Atlassian Rovo MCP (JQL) | When querying live Jira data — use this as the PRIMARY Jira tool. Supports full JQL. |
+| `get_jira_issue_via_rovo` | Get full details of a specific Jira issue | When you need complete details (description, comments, subtasks) for one issue |
+| `search_confluence_via_rovo` | Search Confluence pages/content via Rovo MCP | When the user asks about wiki pages, Confluence documentation, meeting notes |
+| `get_atlassian_context_via_rovo` | Get Teamwork Graph context for any Atlassian entity | To discover connected entities across Jira/Confluence (relationships, linked pages, related issues) |
 
 ## Connected Enterprise Sources
 
@@ -106,11 +110,17 @@ For MongoDB, use query_type="mongodb" with a filter dict like: {"collection": "p
 For Jira, use query_type="jira" with a JQL string like: "project = ALPHA ORDER BY created DESC"
 
 IMPORTANT: Enterprise data lives in connected external databases, NOT in uploaded datasets.
-If the user asks about JIRA issues, use the **Jira Cloud** source (query_type="jira") with JQL — NOT the PostgreSQL jira_issues table.
-The Jira instance has multiple projects. Use the project CODE as the JQL project key:
-- For Project Alpha → JQL: project = ALPHA
-- For other projects → JQL: project = SCRUM
-If the user asks about risks, finance, resources, or audit findings — use the connected source tools, NOT search_documents or query_dataset.
+
+### Jira Issue Queries — Prefer Rovo MCP
+For Jira issues, PREFER using `query_jira_via_rovo(jql)` over `query_connected_source`. Rovo MCP provides richer data directly from Atlassian Cloud including comments, subtasks, and linked issues.
+- For Project Alpha → JQL: project = ALPHA ORDER BY created DESC
+- For SCRUM board → JQL: project = SCRUM ORDER BY created DESC
+- For detailed issue info → use `get_jira_issue_via_rovo(issue_key)`
+
+### Confluence Queries
+For Confluence/wiki content, use `search_confluence_via_rovo(query)`.
+
+If the user asks about risks, finance, resources, or audit findings — use the connected source tools (`query_connected_source`), NOT search_documents or query_dataset.
 
 ## Constraints
 

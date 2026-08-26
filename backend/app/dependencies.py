@@ -1114,11 +1114,15 @@ def initialize_ai_service(settings: Settings) -> "AIService":
     # Initialize connector tools with per-invocation factories
     _initialize_connector_tools_module(settings)
 
+    # Initialize Rovo MCP tools (Atlassian cloud integration)
+    _initialize_rovo_tools(settings)
+
     # Load the Strands system prompt
     system_prompt = prompt_manager.load_prompt("strands_system_prompt", version="v2")
 
     # Combine all Strands @tool-decorated functions
-    all_tools = get_ingestion_tools() + get_connector_tools()
+    from app.ai.tools.rovo_tools import get_rovo_tools
+    all_tools = get_ingestion_tools() + get_connector_tools() + get_rovo_tools()
 
     # Create the Strands Agent wrapper with configured model and tools
     strands_agent = StrandsAgentWrapper(
@@ -1196,6 +1200,25 @@ def _initialize_connector_tools_module(settings: Settings) -> None:
         connector_registry=connector_registry,
         catalog_service_factory=catalog_service_factory,
     )
+
+
+def _initialize_rovo_tools(settings: Settings) -> None:
+    """Initialize Rovo MCP tools with Atlassian credentials from settings.
+
+    Only initializes if JIRA_EMAIL and JIRA_API_TOKEN are configured.
+    """
+    from app.ai.tools.rovo_tools import initialize_rovo_tools
+
+    if settings.jira_email and settings.jira_api_token:
+        initialize_rovo_tools(
+            email=settings.jira_email,
+            api_token=settings.jira_api_token,
+            url=None,  # Use default Atlassian cloud endpoint
+        )
+    else:
+        from app.config.logging import get_logger
+        logger = get_logger(__name__)
+        logger.warning("rovo_tools_skipped", reason="JIRA_EMAIL or JIRA_API_TOKEN not configured")
 
 
 def get_ai_service() -> "AIService":

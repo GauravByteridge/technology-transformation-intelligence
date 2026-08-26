@@ -45,5 +45,8 @@ httpx==0.28.1
 # --- AI Agent Framework ---
 strands-agents==1.47.0
 
+# --- MCP Client (Atlassian Rovo integration) ---
+mcp>=1.28.0
+
 # --- File Upload (multipart form handling) ---
 python-multipart==0.0.20
