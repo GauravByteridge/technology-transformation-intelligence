@@ -168,7 +168,7 @@ class PDFProcessor:
             end_column=0,
             header_row=None,
             content_sample=content_sample,
-            row_count=page_count,
+            row_count=len(paragraphs),
             column_count=1,
             raw_text=raw_text,
         )

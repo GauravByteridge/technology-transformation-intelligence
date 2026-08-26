@@ -295,7 +295,7 @@ class ContentClassifier:
         A region is considered empty/decorative if:
         - It has 0 rows or 0 columns
         - All cells are empty or whitespace
-        - It's a single-cell region
+        - It's a single-cell region (unless it has substantial raw_text)
         - It's very small (< 2 rows and < 2 columns) with minimal content
 
         Args:
@@ -304,6 +304,13 @@ class ContentClassifier:
         Returns:
             True if the region should be classified as IGNORE.
         """
+        # If region has significant raw_text content, it's not decorative.
+        # This handles PDFs and other unstructured documents that appear as
+        # single-cell regions (row_count=pages, column_count=1) but contain
+        # real document text.
+        if region.raw_text and len(region.raw_text.strip()) > 50:
+            return False
+
         # Zero dimensions
         if region.row_count <= 0 or region.column_count <= 0:
             return True

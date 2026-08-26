@@ -92,6 +92,11 @@ class Settings(BaseSettings):
     jira_api_token: str | None = None
     jira_project_key: str = "SCRUM"
 
+    # Gmail integration
+    google_client_id: str | None = None
+    google_client_secret: str | None = None
+    google_redirect_uri: str = "http://localhost:8000/api/v1/gmail/auth/callback"
+
     # =========================================================================
     # Computed Properties
     # =========================================================================

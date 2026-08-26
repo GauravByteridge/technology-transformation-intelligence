@@ -5,7 +5,7 @@
       "tech": "Python 3.11+ / FastAPI / Uvicorn / SQLAlchemy",
       "directory": "../../backend",
       "port": 8000,
-      "runCommand": "uvicorn app.main:app --reload --host 0.0.0.0 --port 8000",
+      "runCommand": ".venv\\Scripts\\uvicorn.exe app.main:app --reload --host 0.0.0.0 --port 8000",
       "debugPort": null,
       "watchPatterns": [
         "**/*.py"
@@ -30,7 +30,7 @@
       "port": 5432,
       "database": "app_db",
       "username": "postgres",
-      "password": "postgres"
+      "password": "test"
     },
     "rag_db": {
       "name": "RAG DB (PostgreSQL + pgvector)",
@@ -38,7 +38,7 @@
       "port": 5432,
       "database": "rag_db",
       "username": "postgres",
-      "password": "postgres"
+      "password": "test"
     }
   },
   "seeds": {
@@ -61,8 +61,8 @@
     }
   },
   "environment": {
-    "APP_DB_URL": "postgresql+asyncpg://postgres:master@localhost:5432/app_db",
-    "RAG_DB_URL": "postgresql+asyncpg://postgres:master@localhost:5432/rag_db",
+    "APP_DB_URL": "postgresql+asyncpg://postgres:test@localhost:5432/app_db",
+    "RAG_DB_URL": "postgresql+asyncpg://postgres:test@localhost:5432/rag_db",
     "DEMO_MODE": "false",
     "LOG_LEVEL": "info",
     "CORS_ORIGINS": "http://localhost:5173",
