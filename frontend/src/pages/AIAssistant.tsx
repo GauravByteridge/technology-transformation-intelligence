@@ -280,6 +280,8 @@ export default function AIAssistant() {
     } else {
       localStorage.removeItem('ai-selected-project');
     }
+    // Switch chat context to this project's conversations
+    useChatSessionStore.getState().setActiveProject(id);
   };
 
   // Auto-select first project if none selected
@@ -294,6 +296,15 @@ export default function AIAssistant() {
   const { history } = useQueryHistory();
   const setActiveConversation = useChatSessionStore(
     (state) => state.setActiveConversation,
+  );
+  const getConversationsForProject = useChatSessionStore(
+    (state) => state.getConversationsForProject,
+  );
+
+  // Filter history to show only current project's conversations
+  const projectConversations = getConversationsForProject(selectedProject);
+  const projectHistory = history.filter((h) =>
+    projectConversations.some((c) => c.id === h.conversation_id)
   );
 
   // Phase 8 — typed fields from latest response
@@ -334,7 +345,7 @@ export default function AIAssistant() {
         </div>
         <div className="flex-1 overflow-y-auto">
           <QueryHistory
-            history={history}
+            history={projectHistory}
             onSelectConversation={setActiveConversation}
           />
         </div>
