@@ -23,25 +23,25 @@ const SOURCE_TYPES = [
   {
     type: 'postgresql' as const,
     label: 'PostgreSQL',
-    icon: '🐘',
+    icon: '/icons/postgresql.png',
     description: 'Connect to PostgreSQL databases',
   },
   {
     type: 'mongodb' as const,
     label: 'MongoDB',
-    icon: '🍃',
+    icon: '/icons/mongodb.png',
     description: 'Connect to MongoDB collections',
   },
   {
     type: 'jira' as const,
     label: 'Jira Cloud',
-    icon: '🎫',
+    icon: '/icons/jira.png',
     description: 'Connect to Jira for issue tracking data',
   },
   {
     type: 'files' as const,
     label: 'Files / Documents',
-    icon: '📄',
+    icon: '/icons/document.png',
     description: 'Upload and index enterprise documents',
   },
 ];
@@ -160,7 +160,7 @@ export function AddSourceModal({ isOpen, onClose, onSuccess }: AddSourceModalPro
                   onClick={() => handleSelectType(type)}
                   className="w-full flex items-center gap-4 p-4 rounded-lg border border-gray-700 hover:border-teal-500/50 hover:bg-teal-500/5 transition-colors text-left"
                 >
-                  <span className="text-2xl">{icon}</span>
+                  <img src={icon} alt={label} className="w-8 h-8 object-contain" />
                   <div>
                     <p className="text-sm font-medium text-white">{label}</p>
                     <p className="text-xs text-gray-400">{description}</p>
