@@ -24,14 +24,16 @@ import {
 function getSourceIcon(sourceType: string): string {
   switch (sourceType.toLowerCase()) {
     case 'postgresql':
-      return '🐘';
+      return '/icons/postgresql.png';
     case 'mongodb':
-      return '🍃';
+      return '/icons/mongodb.png';
+    case 'jira':
+      return '/icons/jira.png';
     case 'document':
     case 'files':
-      return '📄';
+      return '/icons/document.png';
     default:
-      return '🔌';
+      return '/icons/document.png';
   }
 }
 
@@ -82,7 +84,7 @@ function SourceCard({ source, onRefreshDiscovery, isRefreshing }: SourceCardProp
       {/* Header */}
       <div className="flex items-start justify-between mb-4">
         <div className="flex items-center gap-3">
-          <span className="text-2xl">{icon}</span>
+          <img src={icon} alt={source.source_type} className="w-8 h-8 object-contain" />
           <div>
             <h3 className="text-base font-semibold text-white">{source.name}</h3>
             <p className="text-xs text-gray-400 capitalize">{source.source_type}</p>
