@@ -1,41 +1,10 @@
 @import "tailwindcss";
 
 /*
- * Design System Tokens
- *
- * Defines the platform's visual language: colors, spacing, typography,
- * border-radius, and shadow variants. These CSS custom properties are
- * consumed by Tailwind utilities and shadcn/ui components.
+ * Design System Tokens — Light & Dark Themes
  */
 
 @theme {
-  /* Color Palette */
-  --color-background: #f9fafb;
-  --color-foreground: #111827;
-  --color-card: #ffffff;
-  --color-card-foreground: #111827;
-  --color-popover: #ffffff;
-  --color-popover-foreground: #111827;
-  --color-primary: #0d9488;
-  --color-primary-foreground: #ffffff;
-  --color-secondary: #f3f4f6;
-  --color-secondary-foreground: #1f2937;
-  --color-muted: #f3f4f6;
-  --color-muted-foreground: #6b7280;
-  --color-accent: #f3f4f6;
-  --color-accent-foreground: #1f2937;
-  --color-destructive: #ef4444;
-  --color-destructive-foreground: #ffffff;
-  --color-border: #e5e7eb;
-  --color-input: #e5e7eb;
-  --color-ring: #0d9488;
-
-  /* Sidebar-specific tokens */
-  --color-sidebar: #0f1729;
-  --color-sidebar-foreground: #d1d5db;
-  --color-sidebar-accent: #134e4a;
-  --color-sidebar-accent-foreground: #5eead4;
-
   /* Border Radius Scale */
   --radius-sm: 0.25rem;
   --radius-md: 0.375rem;
@@ -50,11 +19,20 @@
   --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
   --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
   --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+
+  /* Color tokens — overridden per theme in @layer base */
+  --color-primary: #0d9488;
+  --color-primary-foreground: #ffffff;
+  --color-destructive: #ef4444;
+  --color-ring: #0d9488;
+
+  /* Sidebar stays dark in both themes */
+  --color-sidebar: #0f1729;
+  --color-sidebar-foreground: #d1d5db;
+  --color-sidebar-accent: #134e4a;
+  --color-sidebar-accent-foreground: #5eead4;
 }
 
-/*
- * Base layer resets and defaults applied via Tailwind v4 @layer.
- */
 @layer base {
   *,
   *::before,
@@ -63,20 +41,66 @@
   }
 
   body {
-    background-color: var(--color-background);
-    color: var(--color-foreground);
     font-family: "Inter", ui-sans-serif, system-ui, sans-serif;
+    transition: background-color 0.2s, color 0.2s;
+  }
+
+  /* ─── Light Theme (default) ─────────────────────────────────────── */
+  :root {
+    --color-background: #ffffff;
+    --color-foreground: #1a1a2e;
+    --color-card: #ffffff;
+    --color-card-foreground: #1a1a2e;
+    --color-border: #e2e8f0;
+    --color-muted: #f1f5f9;
+    --color-muted-foreground: #64748b;
+    --color-surface: #f8fafc;
+    --color-surface-hover: #f1f5f9;
+    color-scheme: light;
+  }
+
+  :root body {
+    background-color: #f8fafc;
+    color: #1a1a2e;
+  }
+
+  /* ─── Dark Theme ────────────────────────────────────────────────── */
+  .dark {
+    --color-background: #0b1120;
+    --color-foreground: #e2e8f0;
+    --color-card: #1e293b;
+    --color-card-foreground: #e2e8f0;
+    --color-border: #334155;
+    --color-muted: #1e293b;
+    --color-muted-foreground: #94a3b8;
+    --color-surface: #0f172a;
+    --color-surface-hover: #1e293b;
+    color-scheme: dark;
+  }
+
+  .dark body {
+    background-color: #0b1120;
+    color: #e2e8f0;
   }
 }
 
 /*
- * Custom keyframes for indeterminate progress bar animation.
+ * Theme-aware utility overrides.
+ * In light mode, override the dark-first component styles.
  */
+@layer components {
+  /* Light mode body bg */
+  :root:not(.dark) body {
+    background-color: #f8fafc;
+  }
+
+  /* Light mode - main content area */
+  :root:not(.dark) .app-shell-content {
+    background-color: #f8fafc;
+  }
+}
+
 @keyframes indeterminate {
-  0% {
-    transform: translateX(-100%);
-  }
-  100% {
-    transform: translateX(300%);
-  }
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(300%); }
 }
