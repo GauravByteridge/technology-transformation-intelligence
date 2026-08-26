@@ -1,137 +1,170 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, X, Plus } from 'lucide-react';
-import { useProjects, usePortfolioSummary } from '@/hooks';
-import { LoadingState } from '@/components/common/LoadingState';
-import { ErrorState } from '@/components/common/ErrorState';
-import { EmptyState } from '@/components/common/EmptyState';
-import type { ProjectResponse, PortfolioProjectSummary } from '@/types';
+import { Search, X, Plus, TrendingUp, TrendingDown, Minus } from 'lucide-react';
+import { useProjects } from '@/hooks';
+
+// ---------------------------------------------------------------------------
+// Types (from PMO API)
+// ---------------------------------------------------------------------------
+
+interface PMOProject {
+  id: number;
+  code: string;
+  name: string;
+  overall_status: string;
+  schedule_status: string;
+  budget_status: string;
+  manager: string | null;
+  department: string | null;
+  budget: number | null;
+  actual_cost: number | null;
+  variance_percentage: number | null;
+  planned_percent: number | null;
+  actual_percent: number | null;
+  open_risks: number;
+  high_severity_risks: number;
+  overdue_actions: number;
+  critical_defects: number;
+}
+
+// ---------------------------------------------------------------------------
+// Hooks
+// ---------------------------------------------------------------------------
+
+function usePMOProjects() {
+  const [projects, setProjects] = useState<PMOProject[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch('http://localhost:8000/api/v1/pmo')
+      .then(r => r.json())
+      .then(data => setProjects(data.projects || []))
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, []);
+
+  return { projects, loading };
+}
 
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
 
-function formatCurrency(value: number | null | undefined): string {
-  const num = Number(value) || 0;
-  if (num >= 1_000_000) return `$${(num / 1_000_000).toFixed(2)}M`;
-  if (num >= 1_000) return `$${(num / 1_000).toFixed(0)}K`;
-  return `$${num.toFixed(0)}`;
+function formatCurrency(value: number | null): string {
+  if (!value) return '$0';
+  if (value >= 1_000_000) return `$${(value / 1_000_000).toFixed(1)}M`;
+  if (value >= 1_000) return `$${(value / 1_000).toFixed(0)}K`;
+  return `$${value.toFixed(0)}`;
 }
 
-function getStatusEmoji(status: string): string {
-  switch (status) {
-    case 'on_track':
-      return '🟢';
-    case 'at_risk':
-      return '🔴';
-    case 'delayed':
-      return '🟠';
-    case 'completed':
-      return '🔵';
-    default:
-      return '⚪';
-  }
+function StatusBadge({ status }: { status: string }) {
+  const normalized = status.toLowerCase();
+  const config: Record<string, { bg: string; text: string; dot: string }> = {
+    red: { bg: 'bg-red-500/15', text: 'text-red-400', dot: 'bg-red-500' },
+    amber: { bg: 'bg-amber-500/15', text: 'text-amber-400', dot: 'bg-amber-500' },
+    green: { bg: 'bg-green-500/15', text: 'text-green-400', dot: 'bg-green-500' },
+  };
+  const c = config[normalized] || { bg: 'bg-gray-500/15', text: 'text-gray-400', dot: 'bg-gray-500' };
+  return (
+    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${c.bg} ${c.text}`}>
+      <span className={`w-2 h-2 rounded-full ${c.dot}`} />
+      {status}
+    </span>
+  );
 }
 
-function getStatusLabel(status: string): string {
-  switch (status) {
-    case 'on_track':
-      return 'On Track';
-    case 'at_risk':
-      return 'At Risk';
-    case 'delayed':
-      return 'Delayed';
-    case 'completed':
-      return 'Completed';
-    default:
-      return status;
-  }
+function ProgressBar({ planned, actual }: { planned: number; actual: number }) {
+  const behind = actual < planned;
+  return (
+    <div className="space-y-1">
+      <div className="flex justify-between text-xs">
+        <span className={`font-semibold ${behind ? 'text-amber-400' : 'text-green-400'}`}>{actual}%</span>
+        <span className="text-gray-500">plan: {planned}%</span>
+      </div>
+      <div className="h-1.5 bg-gray-700/50 rounded-full overflow-hidden">
+        <div
+          className={`h-full rounded-full transition-all ${behind ? 'bg-amber-500' : 'bg-green-500'}`}
+          style={{ width: `${Math.min(actual, 100)}%` }}
+        />
+      </div>
+    </div>
+  );
 }
 
 // ---------------------------------------------------------------------------
-// Sub-components
+// Project Card
 // ---------------------------------------------------------------------------
 
-interface ProjectCardProps {
-  project: ProjectResponse;
-  health: PortfolioProjectSummary | undefined;
-  onClick: () => void;
-}
-
-function ProjectCard({ project, health, onClick }: ProjectCardProps) {
-  const status = health?.overall_status ?? project.status;
-  const budgetTotal = health?.budget_total ?? 0;
-  const budgetSpent = health?.budget_spent ?? 0;
-  const progress = health?.progress_percentage ?? 0;
-  const openRisks = health?.open_risks_count ?? 0;
-  const openIssues = health?.open_issues_count ?? 0;
-  const scheduleStatus = health?.schedule_status ?? '';
-
-  // Calculate schedule deviation text
-  const scheduleDays = scheduleStatus.includes('delayed')
-    ? '+18 days'
-    : scheduleStatus.includes('ahead')
-      ? '-5 days'
-      : 'On schedule';
-
+function ProjectCard({ project, onClick }: { project: PMOProject; onClick: () => void }) {
   return (
     <div
-      className="bg-gray-800/50 border border-gray-700/50 rounded-lg p-5 hover:border-teal-500/30 transition-colors cursor-pointer"
+      className="bg-gray-800/50 border border-gray-700/50 rounded-xl p-5 hover:border-teal-500/30 transition-all cursor-pointer"
       onClick={onClick}
       role="button"
       tabIndex={0}
       onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && onClick()}
-      aria-label={`View ${project.name}`}
     >
       {/* Header */}
       <div className="flex items-start justify-between mb-4">
-        <div>
-          {project.project_code && (
-            <span className="text-xs font-mono text-teal-400 bg-teal-500/10 px-1.5 py-0.5 rounded mb-1 inline-block">
-              {project.project_code}
+        <div className="flex-1">
+          <div className="flex items-center gap-2 mb-1">
+            <span className="text-xs font-mono font-bold text-teal-400 bg-teal-500/10 px-2 py-0.5 rounded">
+              {project.code}
             </span>
-          )}
-          <h3 className="text-base font-semibold text-white">{project.name}</h3>
+            {project.manager && (
+              <span className="text-xs text-gray-500">• {project.manager}</span>
+            )}
+          </div>
+          <h3 className="text-sm font-semibold text-white leading-snug">{project.name}</h3>
         </div>
-        <span className="text-sm font-medium flex items-center gap-1.5">
-          {getStatusEmoji(status)} <span className="text-gray-300">{getStatusLabel(status)}</span>
-        </span>
+        <StatusBadge status={project.overall_status} />
       </div>
 
-      {/* Metrics grid */}
-      <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 text-sm">
+      {/* Metrics */}
+      <div className="grid grid-cols-3 lg:grid-cols-6 gap-4 mb-4">
         <div>
-          <p className="text-gray-500 text-xs">Budget</p>
-          <p className="text-white font-medium">{formatCurrency(budgetTotal)}</p>
+          <p className="text-xs text-gray-500 mb-0.5">Budget</p>
+          <p className="text-sm font-semibold text-white">{formatCurrency(project.budget)}</p>
         </div>
         <div>
-          <p className="text-gray-500 text-xs">Actual</p>
-          <p className="text-white font-medium">{formatCurrency(budgetSpent)}</p>
+          <p className="text-xs text-gray-500 mb-0.5">Actual</p>
+          <p className="text-sm font-semibold text-white">{formatCurrency(project.actual_cost)}</p>
         </div>
         <div>
-          <p className="text-gray-500 text-xs">Progress</p>
-          <p className="text-white font-medium">{progress}%</p>
+          <p className="text-xs text-gray-500 mb-0.5">Variance</p>
+          <p className={`text-sm font-semibold ${
+            (project.variance_percentage || 0) < 0 ? 'text-red-400' : 'text-green-400'
+          }`}>
+            {project.variance_percentage != null ? `${project.variance_percentage > 0 ? '+' : ''}${project.variance_percentage}%` : '—'}
+          </p>
         </div>
         <div>
-          <p className="text-gray-500 text-xs">Schedule</p>
-          <p className="text-white font-medium">{scheduleDays}</p>
+          <p className="text-xs text-gray-500 mb-0.5">Schedule</p>
+          <p className={`text-sm font-semibold ${
+            project.schedule_status === 'On Track' ? 'text-green-400' :
+            project.schedule_status === 'At Risk' ? 'text-amber-400' : 'text-red-400'
+          }`}>
+            {project.schedule_status}
+          </p>
         </div>
         <div>
-          <p className="text-gray-500 text-xs">Open Risks</p>
-          <p className="text-white font-medium">{openRisks}</p>
+          <p className="text-xs text-gray-500 mb-0.5">Open Risks</p>
+          <p className={`text-sm font-semibold ${project.open_risks >= 4 ? 'text-red-400' : project.open_risks >= 2 ? 'text-amber-400' : 'text-white'}`}>
+            {project.open_risks}
+          </p>
         </div>
         <div>
-          <p className="text-gray-500 text-xs">Issues</p>
-          <p className="text-white font-medium">{openIssues}</p>
+          <p className="text-xs text-gray-500 mb-0.5">Overdue</p>
+          <p className={`text-sm font-semibold ${project.overdue_actions > 0 ? 'text-red-400' : 'text-white'}`}>
+            {project.overdue_actions}
+          </p>
         </div>
       </div>
 
-      {/* CTA */}
-      <div className="mt-4 pt-3 border-t border-gray-700/50">
-        <span className="text-xs text-teal-400 font-medium hover:text-teal-300">
-          Open Project 360 →
-        </span>
-      </div>
+      {/* Progress bar */}
+      {project.planned_percent != null && project.actual_percent != null && (
+        <ProgressBar planned={project.planned_percent} actual={project.actual_percent} />
+      )}
     </div>
   );
 }
@@ -142,22 +175,9 @@ function ProjectCard({ project, health, onClick }: ProjectCardProps) {
 
 export default function ProjectPortfolio() {
   const navigate = useNavigate();
+  const { projects, loading } = usePMOProjects();
+  const { data: appProjects } = useProjects(); // For UUID-based navigation
 
-  const {
-    data: projectList,
-    isLoading: projectsLoading,
-    error: projectsError,
-    refetch: refetchProjects,
-  } = useProjects();
-
-  const {
-    data: portfolioSummary,
-    isLoading: summaryLoading,
-    error: summaryError,
-    refetch: refetchSummary,
-  } = usePortfolioSummary();
-
-  // Search state
   const [searchInput, setSearchInput] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
 
@@ -166,54 +186,44 @@ export default function ProjectPortfolio() {
     return () => clearTimeout(timer);
   }, [searchInput]);
 
-  // Build health map
-  const healthMap = useMemo(() => {
-    const map = new Map<string, PortfolioProjectSummary>();
-    if (portfolioSummary?.projects) {
-      for (const p of portfolioSummary.projects) {
-        map.set(p.project_id, p);
+  // Build code→UUID map from app_db projects
+  const codeToId = useMemo(() => {
+    const map = new Map<string, string>();
+    if (appProjects?.items) {
+      for (const p of appProjects.items) {
+        if (p.project_code) map.set(p.project_code, p.id);
       }
     }
     return map;
-  }, [portfolioSummary]);
+  }, [appProjects]);
 
-  // Filter projects
   const filteredProjects = useMemo(() => {
-    if (!projectList?.items) return [];
-    if (!debouncedSearch.trim()) return projectList.items;
+    if (!debouncedSearch.trim()) return projects;
     const q = debouncedSearch.toLowerCase();
-    return projectList.items.filter((p) => p.name.toLowerCase().includes(q));
-  }, [projectList, debouncedSearch]);
-
-  const isLoading = projectsLoading || summaryLoading;
-  const error = projectsError || summaryError;
-
-  if (isLoading) {
-    return (
-      <div className="space-y-6">
-        <h1 className="text-2xl font-semibold text-white">Projects</h1>
-        <LoadingState variant="full-page" message="Loading projects..." />
-      </div>
+    return projects.filter(p =>
+      p.name.toLowerCase().includes(q) || p.code.toLowerCase().includes(q)
     );
-  }
+  }, [projects, debouncedSearch]);
 
-  if (error) {
+  if (loading) {
     return (
-      <div className="space-y-6">
+      <div className="p-6 space-y-6">
         <h1 className="text-2xl font-semibold text-white">Projects</h1>
-        <ErrorState
-          message="Failed to load projects. Please try again."
-          onRetry={() => { refetchProjects(); refetchSummary(); }}
-        />
+        <div className="flex items-center justify-center py-20">
+          <div className="animate-spin w-6 h-6 border-2 border-teal-400 border-t-transparent rounded-full" />
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
+    <div className="p-6 space-y-6 max-w-6xl mx-auto">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold text-white">Projects</h1>
+        <div>
+          <h1 className="text-2xl font-semibold text-white">Projects</h1>
+          <p className="text-sm text-gray-400 mt-0.5">{projects.length} active transformation programmes</p>
+        </div>
         <button className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg bg-teal-600 text-white hover:bg-teal-500 transition-colors">
           <Plus size={16} />
           New Project
@@ -221,21 +231,19 @@ export default function ProjectPortfolio() {
       </div>
 
       {/* Search */}
-      <div className="relative max-w-md">
+      <div className="relative max-w-sm">
         <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
         <input
           type="text"
           value={searchInput}
           onChange={(e) => setSearchInput(e.target.value)}
           placeholder="Search projects..."
-          className="w-full pl-9 pr-9 py-2 bg-gray-800 border border-gray-700 rounded-lg text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-teal-500 focus:border-teal-500"
-          aria-label="Search projects"
+          className="w-full pl-9 pr-9 py-2.5 bg-gray-800/50 border border-gray-700/50 rounded-lg text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-teal-500 focus:border-teal-500"
         />
         {searchInput && (
           <button
             onClick={() => setSearchInput('')}
             className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-200"
-            aria-label="Clear search"
           >
             <X size={14} />
           </button>
@@ -244,17 +252,19 @@ export default function ProjectPortfolio() {
 
       {/* Project cards */}
       {filteredProjects.length === 0 ? (
-        <EmptyState
-          message={debouncedSearch ? 'No projects match your search.' : 'No projects found.'}
-        />
+        <div className="text-center py-12 text-gray-400">
+          {debouncedSearch ? 'No projects match your search.' : 'No projects found.'}
+        </div>
       ) : (
         <div className="space-y-4">
           {filteredProjects.map((project) => (
             <ProjectCard
               key={project.id}
               project={project}
-              health={healthMap.get(project.id)}
-              onClick={() => navigate(`/projects/${project.id}`)}
+              onClick={() => {
+                const uuid = codeToId.get(project.code);
+                if (uuid) navigate(`/projects/${uuid}`);
+              }}
             />
           ))}
         </div>
