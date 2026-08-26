@@ -36,17 +36,19 @@ class RovoMCPClient:
         result = await client.call_tool("jira_search_issues", {"jql": "..."})
     """
 
-    def __init__(self, email: str, api_token: str, url: str | None = None) -> None:
+    def __init__(self, email: str, api_token: str, url: str | None = None, cloud_id: str | None = None) -> None:
         """Initialize with Atlassian credentials.
 
         Args:
             email: Atlassian account email.
             api_token: Personal API token with MCP scopes.
             url: Optional override for MCP server URL (default: Atlassian cloud).
+            cloud_id: Optional cloudId for the Atlassian site. Auto-discovered if not set.
         """
         self._email = email
         self._api_token = api_token
         self._url = url or ROVO_MCP_URL
+        self._cloud_id = cloud_id
         self._auth_header = self._build_auth_header()
 
     def _build_auth_header(self) -> str:
@@ -124,6 +126,28 @@ class RovoMCPClient:
                 )
                 return response
 
+    async def _ensure_cloud_id(self) -> str:
+        """Get the cloudId, auto-discovering from Atlassian if not set."""
+        if self._cloud_id:
+            return self._cloud_id
+
+        # Discover from getAccessibleAtlassianResources
+        result = await self.call_tool("getAccessibleAtlassianResources", {})
+        if not result.get("is_error"):
+            import json
+            for block in result.get("content", []):
+                if block.get("type") == "text":
+                    try:
+                        resources = json.loads(block["text"])
+                        if resources and isinstance(resources, list):
+                            self._cloud_id = resources[0]["id"]
+                            logger.info("rovo_mcp_cloud_id_discovered", extra={"cloud_id": self._cloud_id})
+                            return self._cloud_id
+                    except (json.JSONDecodeError, KeyError, IndexError):
+                        pass
+
+        raise RuntimeError("Could not discover Atlassian cloudId")
+
     async def search_jira_issues(self, jql: str, max_results: int = 20) -> dict[str, Any]:
         """Convenience: search Jira issues via JQL.
 
@@ -136,7 +160,9 @@ class RovoMCPClient:
         Returns:
             Tool result with issue data.
         """
+        cloud_id = await self._ensure_cloud_id()
         return await self.call_tool("searchJiraIssuesUsingJql", {
+            "cloudId": cloud_id,
             "jql": jql,
             "maxResults": max_results,
         })
@@ -152,14 +178,16 @@ class RovoMCPClient:
         Returns:
             Tool result with issue details.
         """
+        cloud_id = await self._ensure_cloud_id()
         return await self.call_tool("getJiraIssue", {
-            "issueKey": issue_key,
+            "cloudId": cloud_id,
+            "issueIdOrKey": issue_key,
         })
 
     async def search_confluence(self, query: str, limit: int = 10) -> dict[str, Any]:
         """Convenience: search Confluence content.
 
-        Uses searchConfluenceContent if available (requires scoped token).
+        Uses searchConfluenceUsingCql if available (requires scoped token).
 
         Args:
             query: Search query (CQL or text).
@@ -168,33 +196,36 @@ class RovoMCPClient:
         Returns:
             Tool result with page data.
         """
-        return await self.call_tool("searchConfluenceContent", {
-            "query": query,
+        cloud_id = await self._ensure_cloud_id()
+        return await self.call_tool("searchConfluenceUsingCql", {
+            "cloudId": cloud_id,
+            "cql": f'text ~ "{query}"',
             "limit": limit,
         })
 
     async def get_teamwork_graph_context(
         self,
-        cloud_id: str,
+        cloud_id: str | None,
         object_type: str,
         object_identifier: str,
-        detail_level: str = "DETAILED",
+        detail_level: str = "full",
     ) -> dict[str, Any]:
         """Get connected context from Teamwork Graph for an Atlassian entity.
 
         Available with any API token (no special scopes needed).
 
         Args:
-            cloud_id: The Atlassian site URL (e.g., "https://yoursite.atlassian.net").
-            object_type: Entity type (e.g., "project", "issue", "page").
-            object_identifier: Entity ID or key.
-            detail_level: "SUMMARY" or "DETAILED".
+            cloud_id: The Atlassian cloudId UUID. Auto-discovered if None.
+            object_type: Entity type (e.g., "AtlassianProject", "JiraWorkItem").
+            object_identifier: Entity ARI or key.
+            detail_level: "summary" or "full".
 
         Returns:
             Teamwork Graph context data.
         """
+        resolved_cloud_id = cloud_id or await self._ensure_cloud_id()
         return await self.call_tool("getTeamworkGraphContext", {
-            "cloudId": cloud_id,
+            "cloudId": resolved_cloud_id,
             "objectType": object_type,
             "objectIdentifier": object_identifier,
             "detailLevel": detail_level,

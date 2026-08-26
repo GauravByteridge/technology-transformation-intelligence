@@ -267,13 +267,8 @@ def get_atlassian_context_via_rovo(object_type: str, object_identifier: str) -> 
     async def _execute() -> dict[str, Any]:
         start = time.monotonic()
         try:
-            # Use the site URL as cloudId
-            from app.dependencies import get_settings
-            settings = get_settings()
-            cloud_id = settings.jira_url or "https://byteridge-team-gaurav.atlassian.net"
-
             result = await client.get_teamwork_graph_context(
-                cloud_id=cloud_id,
+                cloud_id=None,
                 object_type=object_type,
                 object_identifier=object_identifier,
             )

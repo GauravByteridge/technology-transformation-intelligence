@@ -15,7 +15,7 @@ async def main():
     s = Settings()
     client = RovoMCPClient(
         email=s.jira_email,
-        api_token=s.jira_api_token,
+        api_token=s.rovo_mcp_api_token or s.jira_api_token,
     )
 
     print("=== Listing Rovo MCP Tools ===")
@@ -40,37 +40,54 @@ async def main():
     # If Jira tools are available, test them
     tool_names = [t['name'] for t in tools]
     if 'searchJiraIssuesUsingJql' in tool_names:
-        print("\n=== Searching Jira Issues (project = ALPHA) ===")
+        print("\n=== Searching Jira Issues (project = ALPHA) via Rovo MCP ===")
         try:
-            result = await client.call_tool("searchJiraIssuesUsingJql", {
-                "jql": "project = ALPHA ORDER BY created DESC",
-                "maxResults": 10,
-            })
+            result = await client.search_jira_issues("project = ALPHA ORDER BY created DESC", max_results=10)
             print(f"Error: {result.get('is_error')}")
             for block in result.get("content", []):
                 text = block.get("text", "")
-                print(f"  Content ({len(text)} chars): {text[:300]}")
+                print(f"  Content ({len(text)} chars): {text[:500]}")
         except Exception as e:
             print(f"ERROR: {e}")
+            import traceback
+            traceback.print_exc()
     else:
         print("\n⚠ Jira tools not available with current token.")
-        print("  To enable Jira/Confluence tools, generate a SCOPED API token at:")
-        print("  https://id.atlassian.com/manage-profile/security/api-tokens")
-        print("  Required scopes: read:jira-work, read:page:confluence, search:confluence, search:rovo:mcp")
 
     # Try Teamwork Graph if available
     if 'getTeamworkGraphContext' in tool_names:
-        print("\n=== Testing Teamwork Graph ===")
+        print("\n=== Testing getAccessibleAtlassianResources ===")
         try:
-            # Need to find the cloudId first
-            result = await client.call_tool("getTeamworkGraphObject", {
-                "cloudId": "https://byteridge-team-gaurav.atlassian.net",
-                "objects": [{"objectType": "project", "objectIdentifier": "ALPHA"}],
-            })
+            result = await client.call_tool("getAccessibleAtlassianResources", {})
+            print(f"Error: {result.get('is_error')}")
+            for block in result.get("content", []):
+                text = block.get("text", "")
+                print(f"  Content: {text[:500]}")
+        except Exception as e:
+            print(f"ERROR: {e}")
+
+        print("\n=== Testing atlassianUserInfo ===")
+        try:
+            result = await client.call_tool("atlassianUserInfo", {})
             print(f"Error: {result.get('is_error')}")
             for block in result.get("content", []):
                 text = block.get("text", "")
                 print(f"  Content: {text[:300]}")
+        except Exception as e:
+            print(f"ERROR: {e}")
+
+        print("\n=== Testing Teamwork Graph with cloudId UUID ===")
+        try:
+            result = await client.call_tool("getTeamworkGraphContext", {
+                "cloudId": "82c91a1e-ce3f-4b9e-8e54-eb2f8712355f",
+                "objectType": "AtlassianProject",
+                "objectIdentifier": "ALPHA",
+                "detailLevel": "full",
+            })
+            print(f"Error: {result.get('is_error')}")
+            for block in result.get("content", []):
+                text = block.get("text", "")
+                print(f"  Content: {text[:800]}")
         except Exception as e:
             print(f"ERROR: {e}")
 

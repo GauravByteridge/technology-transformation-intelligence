@@ -91,6 +91,7 @@ class Settings(BaseSettings):
     jira_email: str | None = None
     jira_api_token: str | None = None
     jira_project_key: str = "SCRUM"
+    rovo_mcp_api_token: str | None = None
 
     # =========================================================================
     # Computed Properties

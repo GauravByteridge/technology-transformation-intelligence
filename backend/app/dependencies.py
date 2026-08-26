@@ -1205,20 +1205,24 @@ def _initialize_connector_tools_module(settings: Settings) -> None:
 def _initialize_rovo_tools(settings: Settings) -> None:
     """Initialize Rovo MCP tools with Atlassian credentials from settings.
 
-    Only initializes if JIRA_EMAIL and JIRA_API_TOKEN are configured.
+    Uses ROVO_MCP_API_TOKEN if available (has Jira/Confluence scopes),
+    otherwise falls back to JIRA_API_TOKEN.
     """
     from app.ai.tools.rovo_tools import initialize_rovo_tools
 
-    if settings.jira_email and settings.jira_api_token:
+    # Prefer the dedicated Rovo MCP token (v1 scopes for Jira/Confluence)
+    api_token = settings.rovo_mcp_api_token or settings.jira_api_token
+
+    if settings.jira_email and api_token:
         initialize_rovo_tools(
             email=settings.jira_email,
-            api_token=settings.jira_api_token,
+            api_token=api_token,
             url=None,  # Use default Atlassian cloud endpoint
         )
     else:
         from app.config.logging import get_logger
         logger = get_logger(__name__)
-        logger.warning("rovo_tools_skipped", reason="JIRA_EMAIL or JIRA_API_TOKEN not configured")
+        logger.warning("rovo_tools_skipped", reason="JIRA_EMAIL or API token not configured")
 
 
 def get_ai_service() -> "AIService":
