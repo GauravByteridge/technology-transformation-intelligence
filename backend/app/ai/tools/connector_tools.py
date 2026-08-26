@@ -181,7 +181,7 @@ def create_query_connected_source(
                 )
 
             # Validate query_type
-            if query_type not in ("sql", "mongodb"):
+            if query_type not in ("sql", "mongodb", "jira"):
                 return _error_response(
                     error_type="validation_error",
                     message=f"Invalid query_type '{query_type}'. Must be 'sql' or 'mongodb'.",
@@ -424,12 +424,14 @@ def query_connected_source(
 
     Args:
         source_id: UUID of the data source from the catalog.
-        query_type: "sql" for PostgreSQL, "mongodb" for MongoDB.
+        query_type: "sql" for PostgreSQL, "mongodb" for MongoDB, "jira" for Jira Cloud.
         query: The source-native query as a string.
             For query_type="sql": a SQL SELECT string, e.g.
                 "SELECT * FROM jira_issues WHERE project_id = 1"
             For query_type="mongodb": a JSON string with collection and filter, e.g.
                 "{\"collection\": \"project_risks\", \"filter\": {\"project_id\": \"ALPHA\"}}"
+            For query_type="jira": a JQL string, e.g.
+                "project = SCRUM AND status = 'In Progress' ORDER BY created DESC"
 
     Returns:
         Structured results with columns, rows, row_count, source metadata,
@@ -459,7 +461,7 @@ def query_connected_source(
                 )
 
             # Validate query_type
-            if query_type not in ("sql", "mongodb"):
+            if query_type not in ("sql", "mongodb", "jira"):
                 return _error_response(
                     error_type="validation_error",
                     message=f"Invalid query_type '{query_type}'. Must be 'sql' or 'mongodb'.",
