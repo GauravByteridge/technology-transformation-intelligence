@@ -8,6 +8,7 @@ classifications (STRUCTURED, SEMI_STRUCTURED, UNSTRUCTURED, or IGNORE).
 
 from __future__ import annotations
 
+import asyncio
 import logging
 from datetime import date, datetime, time
 from typing import Any
@@ -58,9 +59,10 @@ class ExcelProcessor:
     async def inspect(self, file_path: str) -> InspectionResult:
         """Discover sheets, detect regions, and provide content samples for classification.
 
-        Opens the workbook, discovers all sheets, and detects contiguous data
-        regions within each sheet. Each region includes a content_sample (up to 20
-        rows) and raw_text for the ContentClassifier to determine processing strategy.
+        Offloads all synchronous openpyxl I/O to a thread pool via
+        asyncio.to_thread so the FastAPI event loop is never blocked.
+        Large workbooks (thousands of rows) can be inspected without
+        causing HTTP request timeouts.
 
         Args:
             file_path: Path to the XLSX/XLS file on disk.
@@ -71,6 +73,10 @@ class ExcelProcessor:
         Raises:
             FileProcessingError: If the workbook cannot be opened or inspected.
         """
+        return await asyncio.to_thread(self._sync_inspect, file_path)
+
+    def _sync_inspect(self, file_path: str) -> InspectionResult:
+        """Synchronous implementation of inspect() — runs inside asyncio.to_thread."""
         try:
             workbook = openpyxl.load_workbook(
                 file_path, read_only=True, data_only=True
@@ -125,10 +131,9 @@ class ExcelProcessor:
     async def extract(
         self, file_path: str, region: DetectedRegion | None = None
     ) -> NormalizedDataset:
-        """Extract structured records from a confirmed region.
+        """Extract structured records from a confirmed region (non-blocking).
 
-        Uses the detected header row to establish column names and reads
-        data rows below the header within the region boundaries.
+        Offloads all synchronous openpyxl I/O to asyncio.to_thread.
 
         Args:
             file_path: Path to the XLSX/XLS file on disk.
@@ -141,6 +146,12 @@ class ExcelProcessor:
         Raises:
             FileProcessingError: If extraction fails.
         """
+        return await asyncio.to_thread(self._sync_extract, file_path, region)
+
+    def _sync_extract(
+        self, file_path: str, region: DetectedRegion | None = None
+    ) -> NormalizedDataset:
+        """Synchronous implementation of extract() — runs inside asyncio.to_thread."""
         try:
             workbook = openpyxl.load_workbook(
                 file_path, read_only=True, data_only=True
@@ -221,10 +232,9 @@ class ExcelProcessor:
             workbook.close()
 
     async def extract_text(self, file_path: str, region: DetectedRegion) -> str:
-        """Extract plain text from an unstructured region for RAG processing.
+        """Extract plain text from an unstructured region for RAG processing (non-blocking).
 
-        Concatenates cell values row-by-row, separating with newlines.
-        Preserves paragraph structure where possible.
+        Offloads all synchronous openpyxl I/O to asyncio.to_thread.
 
         Args:
             file_path: Path to the XLSX/XLS file on disk.
@@ -236,6 +246,10 @@ class ExcelProcessor:
         Raises:
             FileProcessingError: If the workbook cannot be opened.
         """
+        return await asyncio.to_thread(self._sync_extract_text, file_path, region)
+
+    def _sync_extract_text(self, file_path: str, region: DetectedRegion) -> str:
+        """Synchronous implementation of extract_text() — runs inside asyncio.to_thread."""
         try:
             workbook = openpyxl.load_workbook(
                 file_path, read_only=True, data_only=True

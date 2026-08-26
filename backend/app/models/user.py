@@ -25,7 +25,7 @@ class User(AppBase):
     email: Mapped[str] = mapped_column(
         sa.String(255), unique=True, nullable=False
     )
-    display_name: Mapped[str] = mapped_column(sa.String(255), nullable=False)
+    name: Mapped[str] = mapped_column(sa.String(255), nullable=False)
     role: Mapped[str] = mapped_column(sa.String(50), nullable=False)
     status: Mapped[str] = mapped_column(
         sa.String(50), nullable=False, default="ACTIVE"
