@@ -94,7 +94,7 @@
 
 /*
  * Theme-aware utility overrides.
- * In light mode, override the dark-first component styles.
+ * Light mode contrast fixes for components built with dark-first classes.
  */
 @layer components {
   /* Light mode body bg */
@@ -102,9 +102,83 @@
     background-color: #f8fafc;
   }
 
-  /* Light mode - main content area */
   :root:not(.dark) .app-shell-content {
     background-color: #f8fafc;
+  }
+
+  /* Fix text contrast in light mode */
+  :root:not(.dark) .text-white {
+    color: #111827;
+  }
+
+  :root:not(.dark) .text-gray-100 {
+    color: #1f2937;
+  }
+
+  :root:not(.dark) .text-gray-200 {
+    color: #374151;
+  }
+
+  :root:not(.dark) .text-gray-300 {
+    color: #4b5563;
+  }
+
+  :root:not(.dark) .text-gray-400 {
+    color: #6b7280;
+  }
+
+  /* Fix background colors in light mode */
+  :root:not(.dark) .bg-gray-800\/50,
+  :root:not(.dark) .bg-gray-800\/30 {
+    background-color: rgb(255 255 255 / 0.9);
+    border-color: #e2e8f0;
+  }
+
+  :root:not(.dark) .bg-gray-900\/50 {
+    background-color: #f8fafc;
+  }
+
+  :root:not(.dark) .bg-\[\\#0a0f1e\],
+  :root:not(.dark) .bg-\[\\#0f172a\] {
+    background-color: #ffffff;
+  }
+
+  /* Fix borders in light mode */
+  :root:not(.dark) .border-gray-700\/50,
+  :root:not(.dark) .border-gray-700\/30,
+  :root:not(.dark) .border-gray-800 {
+    border-color: #e2e8f0;
+  }
+
+  /* Fix hover states in light mode */
+  :root:not(.dark) .hover\:bg-gray-700\/20:hover,
+  :root:not(.dark) .hover\:bg-gray-700\/30:hover,
+  :root:not(.dark) .hover\:bg-gray-700\/40:hover {
+    background-color: #f1f5f9;
+  }
+
+  :root:not(.dark) .hover\:bg-gray-800:hover {
+    background-color: #f1f5f9;
+  }
+
+  /* Fix divide colors in light mode */
+  :root:not(.dark) .divide-gray-700\/20 > :not([hidden]) ~ :not([hidden]),
+  :root:not(.dark) .divide-gray-700\/50 > :not([hidden]) ~ :not([hidden]) {
+    border-color: #e5e7eb;
+  }
+
+  /* Cards and panels */
+  :root:not(.dark) .bg-gray-800\/50 {
+    background-color: #ffffff;
+    box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.05);
+  }
+
+  /* KPI cards — keep colored backgrounds but improve text contrast */
+  :root:not(.dark) .bg-red-500\/5 {
+    background-color: rgb(254 242 242 / 0.8);
+  }
+  :root:not(.dark) .bg-amber-500\/5 {
+    background-color: rgb(255 251 235 / 0.8);
   }
 }
 
