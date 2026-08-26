@@ -33,7 +33,7 @@ class CredentialDecryptionError(Exception):
 
 # Fields considered sensitive — values are encrypted at rest and masked in responses
 SENSITIVE_FIELDS: frozenset[str] = frozenset(
-    {"password", "token", "secret", "api_key", "private_key"}
+    {"password", "token", "secret", "api_key", "api_token", "private_key"}
 )
 
 

@@ -103,10 +103,13 @@ For questions about JIRA issues, project finance, audit findings, risks, resourc
 
 For PostgreSQL, use query_type="sql" with a SELECT query.
 For MongoDB, use query_type="mongodb" with a filter dict like: {"collection": "project_risks", "filter": {"project_id": "ALPHA"}}
-For Jira, use query_type="jira" with a JQL string like: "project = SCRUM ORDER BY created DESC"
+For Jira, use query_type="jira" with a JQL string like: "project = ALPHA ORDER BY created DESC"
 
 IMPORTANT: Enterprise data lives in connected external databases, NOT in uploaded datasets.
 If the user asks about JIRA issues, use the **Jira Cloud** source (query_type="jira") with JQL — NOT the PostgreSQL jira_issues table.
+The Jira instance has multiple projects. Use the project CODE as the JQL project key:
+- For Project Alpha → JQL: project = ALPHA
+- For other projects → JQL: project = SCRUM
 If the user asks about risks, finance, resources, or audit findings — use the connected source tools, NOT search_documents or query_dataset.
 
 ## Constraints

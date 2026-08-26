@@ -40,15 +40,25 @@ def contains_markup(text: str) -> bool:
 
 
 def strip_markup(text: str) -> str:
-    """Remove HTML/JSX tags from text, preserving inner content.
+    """Remove HTML/JSX tags and source attribution markers from text.
+
+    Strips:
+    - HTML/JSX tags (preserving inner content)
+    - Source markers like 【source: ...】 or 【query_connected_source】
+    - Bracketed source refs like [source: ...]
 
     Args:
         text: The text potentially containing markup.
 
     Returns:
-        Cleaned text with all HTML/JSX tags removed.
+        Cleaned text with all markup and source markers removed.
     """
-    return _HTML_JSX_PATTERN.sub("", text)
+    cleaned = _HTML_JSX_PATTERN.sub("", text)
+    # Remove 【...】 markers (Chinese fullwidth brackets used by some models)
+    cleaned = re.sub(r'【[^】]*】', '', cleaned)
+    # Remove [source: ...] markers
+    cleaned = re.sub(r'\[source:\s*[^\]]*\]', '', cleaned)
+    return cleaned
 
 
 class ResponseBuilder:
