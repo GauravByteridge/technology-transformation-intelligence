@@ -17,6 +17,7 @@ import {
   Loader2,
   FileText,
   Upload,
+  Mail,
 } from 'lucide-react';
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
@@ -29,6 +30,8 @@ function getSourceIcon(sourceType: string): string {
       return '/icons/mongodb.png';
     case 'jira':
       return '/icons/jira.png';
+    case 'gmail':
+      return '/icons/gmail.png';
     case 'document':
     case 'files':
       return '/icons/document.png';
@@ -80,7 +83,7 @@ function SourceCard({ source, onRefreshDiscovery, isRefreshing }: SourceCardProp
   const icon = getSourceIcon(source.source_type);
 
   return (
-    <div className="bg-white dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700/50 rounded-lg p-6 hover:border-teal-500/30 transition-colors">
+    <div className="bg-white dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700/50 rounded-lg p-6 hover:border-teal-500/30 transition-colors flex flex-col">
       {/* Header */}
       <div className="flex items-start justify-between mb-4">
         <div className="flex items-center gap-3">
@@ -119,7 +122,7 @@ function SourceCard({ source, onRefreshDiscovery, isRefreshing }: SourceCardProp
       </p>
 
       {/* Actions */}
-      <div className="flex items-center gap-2 flex-wrap">
+      <div className="flex items-center gap-2 flex-wrap mt-auto">
         <button
           onClick={() => navigate(`/catalog`)}
           className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md bg-gray-200 text-gray-700 hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600 transition-colors"
@@ -155,7 +158,7 @@ function DocumentsCard() {
   const navigate = useNavigate();
 
   return (
-    <div className="bg-white dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700/50 rounded-lg p-6 hover:border-teal-500/30 transition-colors">
+    <div className="bg-white dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700/50 rounded-lg p-6 hover:border-teal-500/30 transition-colors flex flex-col">
       {/* Header */}
       <div className="flex items-start justify-between mb-4">
         <div className="flex items-center gap-3">
@@ -182,7 +185,7 @@ function DocumentsCard() {
       </div>
 
       {/* Actions */}
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2 mt-auto">
         <button
           onClick={() => navigate('/datasets')}
           className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md bg-gray-200 text-gray-700 hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600 transition-colors"
@@ -192,10 +195,66 @@ function DocumentsCard() {
         </button>
         <button
           onClick={() => navigate('/upload')}
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md bg-teal-100 text-teal-700 hover:bg-teal-200 dark:bg-teal-600/20 dark:text-teal-300 dark:hover:bg-teal-600/30 transition-colors"
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md bg-teal-700 text-white hover:bg-teal-600 dark:bg-teal-600/20 dark:text-teal-300 dark:hover:bg-teal-600/30 transition-colors"
         >
           <Upload size={12} />
           Upload Files
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function GmailCard() {
+  const navigate = useNavigate();
+
+  return (
+    <div className="bg-white dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700/50 rounded-lg p-6 hover:border-teal-500/30 transition-colors flex flex-col">
+      {/* Header */}
+      <div className="flex items-start justify-between mb-4">
+        <div className="flex items-center gap-3">
+          <img src="/icons/gmail.png" alt="Gmail" className="w-8 h-8 object-contain" />
+          <div>
+            <h3 className="text-base font-semibold text-gray-900 dark:text-white">Gmail</h3>
+            <p className="text-xs text-gray-500 dark:text-gray-400">Email integration</p>
+          </div>
+        </div>
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-green-500/15 text-green-400">
+          <CheckCircle2 size={12} />
+          CONNECTED ✓
+        </span>
+      </div>
+
+      {/* Stats */}
+      <div className="flex items-center gap-6 mb-4 text-sm">
+        <span className="text-gray-600 dark:text-gray-300">
+          <span className="font-semibold text-gray-900 dark:text-white">12</span> Emails indexed
+        </span>
+        <span className="text-gray-600 dark:text-gray-300">
+          <span className="font-semibold text-gray-900 dark:text-white">3</span> Attachments
+        </span>
+      </div>
+
+      {/* Last Sync */}
+      <p className="text-xs text-gray-500 mb-4">
+        Last Sync: just now
+      </p>
+
+      {/* Actions */}
+      <div className="flex items-center gap-2 mt-auto">
+        <button
+          onClick={() => navigate('/sources')}
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md bg-gray-200 text-gray-700 hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600 transition-colors"
+        >
+          <Mail size={12} />
+          Fetch Emails
+        </button>
+        <button
+          onClick={() => navigate('/sources')}
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md bg-teal-700 text-white hover:bg-teal-600 dark:bg-teal-600/20 dark:text-teal-300 dark:hover:bg-teal-600/30 transition-colors"
+        >
+          <RefreshCw size={12} />
+          Sync Now
         </button>
       </div>
     </div>
@@ -281,6 +340,8 @@ export default function DataSourcesRegistry() {
 
           {/* Static documents card */}
           <DocumentsCard />
+          {/* Gmail card */}
+          <GmailCard />
         </div>
       )}
 

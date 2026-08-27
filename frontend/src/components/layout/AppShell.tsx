@@ -74,8 +74,10 @@ export function AppShell() {
               }`}
               aria-label="User menu"
             >
-              <div className="w-7 h-7 rounded-full bg-teal-600/30 flex items-center justify-center">
-                <User size={14} className="text-teal-300" />
+              <div className={`w-7 h-7 rounded-full flex items-center justify-center ${
+                theme === 'dark' ? 'bg-teal-600/30' : 'bg-teal-600'
+              }`}>
+                <User size={14} className={theme === 'dark' ? 'text-teal-300' : 'text-white'} />
               </div>
               <span className={`hidden md:block text-sm ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>Admin</span>
             </button>

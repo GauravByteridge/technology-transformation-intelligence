@@ -45,7 +45,7 @@ class DocumentSearchService:
         project_id: UUID,
         query: str,
         limit: int = 10,
-        threshold: float = 0.7,
+        threshold: float = 0.0,
     ) -> list[dict]:
         """Search documents by natural language query with similarity filtering.
 
@@ -58,7 +58,8 @@ class DocumentSearchService:
             query: Natural language question or search text.
             limit: Maximum number of results to return (default 10).
             threshold: Minimum similarity_score to include in results (0.0–1.0).
-                Results below this threshold are excluded. Default 0.7.
+                Results below this threshold are excluded. Default 0.0
+                (no filtering — appropriate for deterministic/mock embeddings).
 
         Returns:
             List of evidence dicts with: file_name, page_number, section,

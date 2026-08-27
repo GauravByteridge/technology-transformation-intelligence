@@ -96,6 +96,11 @@ class Settings(BaseSettings):
     rovo_mcp_v2_token: str | None = None
     rovo_mcp_api_token: str | None = None  # Legacy fallback (maps to v1)
 
+    # Gmail integration
+    google_client_id: str | None = None
+    google_client_secret: str | None = None
+    google_redirect_uri: str = "http://localhost:8000/api/v1/gmail/auth/callback"
+
     # =========================================================================
     # Computed Properties
     # =========================================================================

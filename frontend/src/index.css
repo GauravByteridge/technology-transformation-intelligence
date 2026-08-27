@@ -152,3 +152,8 @@ html:not(.dark) [class*="bg-green-500/20"] { background-color: #dcfce7 !importan
   0% { transform: translateX(-100%); }
   100% { transform: translateX(300%); }
 }
+
+/* Ensure all buttons show pointer cursor */
+button, [role="button"] {
+  cursor: pointer;
+}
