@@ -10,6 +10,7 @@ from app.documents.embedder import DeterministicEmbeddingGenerator
 from app.documents.extractors import (
     DocxContentExtractor,
     PdfContentExtractor,
+    PptxContentExtractor,
     TxtContentExtractor,
 )
 from app.documents.orchestrator import IngestionOrchestrator
@@ -42,6 +43,7 @@ __all__ = [
     # Implementations
     "TxtContentExtractor",
     "PdfContentExtractor",
+    "PptxContentExtractor",
     "DocxContentExtractor",
     "FixedSizeChunker",
     "DeterministicEmbeddingGenerator",

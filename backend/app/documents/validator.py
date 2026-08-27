@@ -10,7 +10,7 @@ from app.errors.document_errors import DocumentValidationError
 # Allowed file types for ingestion.
 # Architecture accommodates future image formats (png, jpeg) without
 # changing core pipeline flow — just add them to this set.
-ALLOWED_FILE_TYPES: set[str] = {"txt", "pdf", "docx"}
+ALLOWED_FILE_TYPES: set[str] = {"txt", "pdf", "docx", "pptx"}
 
 # Maximum file size in bytes (default: 50 MB)
 MAX_FILE_SIZE_BYTES: int = 50 * 1024 * 1024
