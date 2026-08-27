@@ -14,6 +14,7 @@ import {
   FileText,
   BarChart3,
 } from 'lucide-react';
+import { useTheme } from '../../context/ThemeContext';
 
 interface SidebarProps {
   collapsed: boolean;
@@ -38,6 +39,9 @@ const bottomNavItems = [
 ];
 
 export function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose }: SidebarProps) {
+  const { theme } = useTheme();
+  const isDark = theme === 'dark';
+
   return (
     <>
       {/* Mobile overlay */}
@@ -53,23 +57,24 @@ export function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose }: Side
       <aside
         className={`
           fixed top-0 left-0 h-full z-50 flex flex-col
-          bg-[#0f1729] text-gray-300 transition-all duration-300 ease-in-out
+          transition-all duration-300 ease-in-out
+          ${isDark ? 'bg-[#0f1729] text-gray-300' : 'bg-white text-gray-600 border-r border-gray-200'}
           ${collapsed ? 'w-14' : 'w-[220px]'}
           ${mobileOpen ? 'translate-x-0' : '-translate-x-full'}
           md:translate-x-0 md:static md:z-auto
         `}
       >
         {/* Header with collapse toggle */}
-        <div className={`flex items-center h-14 border-b border-gray-700/50 ${collapsed ? 'justify-center px-2' : 'justify-between px-4'}`}>
+        <div className={`flex items-center h-14 border-b ${collapsed ? 'justify-center px-2' : 'justify-between px-4'} ${isDark ? 'border-gray-700/50' : 'border-gray-200'}`}>
           {!collapsed && (
-            <span className="text-sm font-semibold text-white whitespace-nowrap overflow-hidden">
+            <span className={`text-sm font-semibold whitespace-nowrap overflow-hidden ${isDark ? 'text-white' : 'text-gray-900'}`}>
               Navigation
             </span>
           )}
           {/* Desktop collapse toggle */}
           <button
             onClick={onToggle}
-            className="hidden md:flex items-center justify-center w-7 h-7 rounded hover:bg-gray-700/50 text-gray-400 hover:text-white transition-colors"
+            className={`hidden md:flex items-center justify-center w-7 h-7 rounded transition-colors ${isDark ? 'hover:bg-gray-700/50 text-gray-400 hover:text-white' : 'hover:bg-gray-100 text-gray-400 hover:text-gray-900'}`}
             aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
           >
             {collapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
@@ -77,7 +82,7 @@ export function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose }: Side
           {/* Mobile close button */}
           <button
             onClick={onMobileClose}
-            className="md:hidden flex items-center justify-center w-7 h-7 rounded hover:bg-gray-700/50 text-gray-400 hover:text-white transition-colors"
+            className={`md:hidden flex items-center justify-center w-7 h-7 rounded transition-colors ${isDark ? 'hover:bg-gray-700/50 text-gray-400 hover:text-white' : 'hover:bg-gray-100 text-gray-400 hover:text-gray-900'}`}
             aria-label="Close sidebar"
           >
             <X size={16} />
@@ -96,8 +101,12 @@ export function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose }: Side
                   className={({ isActive }) =>
                     `flex items-center gap-3 rounded-md px-2.5 py-2 text-sm font-medium transition-colors
                     ${isActive
-                      ? 'bg-teal-600/20 text-teal-300'
-                      : 'text-gray-400 hover:bg-gray-700/40 hover:text-white'
+                      ? isDark
+                        ? 'bg-teal-600/20 text-teal-300'
+                        : 'bg-teal-600/15 text-teal-700 font-semibold'
+                      : isDark
+                        ? 'text-gray-400 hover:bg-gray-700/40 hover:text-white'
+                        : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
                     }
                     ${collapsed ? 'justify-center' : ''}`
                   }
@@ -111,7 +120,7 @@ export function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose }: Side
           </ul>
 
           {/* Bottom section: Settings */}
-          <div className="border-t border-gray-700/50 pt-2 px-2">
+          <div className={`border-t pt-2 px-2 ${isDark ? 'border-gray-700/50' : 'border-gray-200'}`}>
             <ul className="space-y-1">
               {bottomNavItems.map(({ to, label, icon: Icon }) => (
                 <li key={to}>
@@ -121,8 +130,12 @@ export function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose }: Side
                     className={({ isActive }) =>
                       `flex items-center gap-3 rounded-md px-2.5 py-2 text-sm font-medium transition-colors
                       ${isActive
-                        ? 'bg-teal-600/20 text-teal-300'
-                        : 'text-gray-400 hover:bg-gray-700/40 hover:text-white'
+                        ? isDark
+                          ? 'bg-teal-600/20 text-teal-300'
+                          : 'bg-teal-600/15 text-teal-700 font-semibold'
+                        : isDark
+                          ? 'text-gray-400 hover:bg-gray-700/40 hover:text-white'
+                          : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
                       }
                       ${collapsed ? 'justify-center' : ''}`
                     }

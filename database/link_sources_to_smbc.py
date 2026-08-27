@@ -13,7 +13,7 @@ from sqlalchemy import text
 from app.config.settings import Settings
 
 PROJECT_IDS = [
-    "a1b2c3d4-0002-4000-8000-000000000001",  # GTB
+    "a1b2c3d4-0002-4000-8000-000000000001",  # GTBPM
     "a1b2c3d4-0002-4000-8000-000000000002",  # CMTT
     "a1b2c3d4-0002-4000-8000-000000000003",  # GDP
     "a1b2c3d4-0002-4000-8000-000000000004",  # RRRT

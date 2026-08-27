@@ -215,7 +215,7 @@ function ActionsTable({ actions }: { actions: UnattendedAction[] }) {
                 <td className="px-4 py-2.5 text-gray-600 dark:text-gray-400 text-xs">{action.due_date || '—'}</td>
                 <td className="px-4 py-2.5 text-center">
                   <span className={`text-xs font-semibold px-2 py-0.5 rounded ${
-                    action.status === 'Overdue' ? 'bg-red-500/20 text-red-400' : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
+                    action.status === 'Overdue' ? 'bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-400' : 'bg-gray-700 text-gray-100 dark:bg-gray-600 dark:text-gray-200'
                   }`}>
                     {action.status}
                   </span>

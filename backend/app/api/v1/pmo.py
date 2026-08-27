@@ -14,6 +14,8 @@ from fastapi import APIRouter
 from pydantic import BaseModel
 import asyncpg
 
+from app.services.jira_live import count_critical_defects, get_jira_project_key
+
 router = APIRouter(prefix="/pmo", tags=["pmo"])
 
 # External DB connection (technology_transformation)
@@ -128,14 +130,9 @@ async def get_pmo_overview() -> PMOOverviewResponse:
         """)
         overdue_map = {r["project_id"]: r["count"] for r in overdue_counts}
 
-        # Get critical defect counts (from jira_issues)
-        defect_counts = await conn.fetch("""
-            SELECT project_id, COUNT(*) as count
-            FROM jira_issues
-            WHERE priority IN ('Critical') AND status NOT IN ('Done', 'Closed')
-            GROUP BY project_id
-        """)
-        defect_map = {r["project_id"]: r["count"] for r in defect_counts}
+        # Get critical defect counts (from Jira Cloud API)
+        # We'll populate this after fetching project codes
+        defect_map: dict[int, int] = {}
 
         # Get all unattended actions
         actions_raw = await conn.fetch("""
@@ -366,10 +363,10 @@ async def get_project_detail(project_code: str) -> ProjectDetailResponse:
             "SELECT name, planned_date::text, actual_date::text, status FROM project_milestones WHERE project_id = $1 ORDER BY planned_date", pid
         )
 
-        # JIRA issues
-        jira = await conn.fetch(
-            "SELECT issue_key, summary, status, priority, assignee, story_points, due_date::text FROM jira_issues WHERE project_id = $1 ORDER BY priority, due_date", pid
-        )
+        # JIRA issues (fetched from Jira Cloud API)
+        jira_project_key = get_jira_project_key(project["project_code"])
+        from app.services.jira_live import fetch_issues_for_project, count_critical_defects as _count_critical, count_open_issues as _count_open
+        jira_issues_live = await fetch_issues_for_project(jira_project_key) if jira_project_key else []
 
         # Resources
         resource_stats = await conn.fetchrow(
@@ -398,15 +395,11 @@ async def get_project_detail(project_code: str) -> ProjectDetailResponse:
             "SELECT COUNT(*) FROM unattended_actions WHERE project_id = $1 AND status = 'Overdue'", pid
         )
 
-        # Critical defects
-        critical_count = await conn.fetchval(
-            "SELECT COUNT(*) FROM jira_issues WHERE project_id = $1 AND priority = 'Critical' AND status NOT IN ('Done', 'Closed')", pid
-        )
+        # Critical defects (from Jira Cloud API)
+        critical_count = await _count_critical(jira_project_key) if jira_project_key else 0
 
-        # Open issues count
-        open_issues = await conn.fetchval(
-            "SELECT COUNT(*) FROM jira_issues WHERE project_id = $1 AND status NOT IN ('Done', 'Closed')", pid
-        )
+        # Open issues count (from Jira Cloud API)
+        open_issues = await _count_open(jira_project_key) if jira_project_key else 0
 
     finally:
         await conn.close()
@@ -446,10 +439,10 @@ async def get_project_detail(project_code: str) -> ProjectDetailResponse:
             actual_date=m["actual_date"], status=m["status"]
         ) for m in milestones],
         jira_issues=[JiraIssueItem(
-            issue_key=j["issue_key"], summary=j["summary"], status=j["status"],
-            priority=j["priority"], assignee=j["assignee"],
-            story_points=j["story_points"], due_date=j["due_date"]
-        ) for j in jira],
+            issue_key=j.issue_key, summary=j.summary, status=j.status,
+            priority=j.priority, assignee=j.assignee,
+            story_points=j.story_points, due_date=j.due_date
+        ) for j in jira_issues_live],
         progress_history=[ProgressEntry(
             status_date=p["status_date"],
             planned_percent=float(p["planned_percent"]),

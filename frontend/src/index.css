@@ -116,6 +116,7 @@ html:not(.dark) [class*="text-gray-500"] { color: #6b7280 !important; }
 /* Dark backgrounds → white/light in light mode */
 html:not(.dark) [class*="bg-gray-800"] { background-color: #ffffff !important; }
 html:not(.dark) [class*="bg-gray-900"] { background-color: #f8fafc !important; }
+html:not(.dark) [class*="bg-gray-700"] { background-color: #e5e7eb !important; }
 html:not(.dark) [class*="bg-[#0a0f1e]"] { background-color: #f8fafc !important; }
 html:not(.dark) [class*="bg-[#0f172a]"] { background-color: #ffffff !important; }
 html:not(.dark) [class*="bg-[#0f1729]"] { background-color: #ffffff !important; }
@@ -132,6 +133,7 @@ html:not(.dark) [class*="divide-gray-100"] > :not([hidden]) ~ :not([hidden]) { b
 
 /* Hover states */
 html:not(.dark) [class*="hover:bg-gray-700"]:hover { background-color: #f1f5f9 !important; }
+html:not(.dark) [class*="hover:bg-gray-600"]:hover { background-color: #d1d5db !important; }
 html:not(.dark) [class*="hover:bg-gray-800"]:hover { background-color: #f1f5f9 !important; }
 
 /* Cards get shadow in light mode */

@@ -2,7 +2,7 @@
 Seed script for SMBC POC — 4 banking transformation projects.
 
 Replaces existing demo projects with:
-1. GTB  — Global Transaction Banking Platform Modernization (🔴 Red)
+1. GTBPM  — Global Transaction Banking Platform Modernization (🔴 Red)
 2. CMTT — Capital Markets Technology Transformation (🟠 Amber)
 3. GDP  — Global Digital Platform Enhancement (🟢 Green)
 4. RRRT — Regulatory & Risk Reporting Transformation (🟠 Amber)
@@ -192,7 +192,7 @@ CREATE INDEX idx_actions_project ON unattended_actions(project_id);
 POSTGRES_SEED = """
 -- 4 SMBC POC Projects
 INSERT INTO projects (project_code, name, status, health, schedule_status, budget_status, start_date, end_date, manager, department, description) VALUES
-('GTB', 'Global Transaction Banking Platform Modernization', 'Active', 'Red', 'Delayed', 'Over Budget', '2025-01-15', '2026-09-30', 'Takeshi Yamamoto', 'Transaction Banking', 'End-to-end modernization of the global transaction banking platform including payments, cash management and trade finance systems'),
+('GTBPM', 'Global Transaction Banking Platform Modernization', 'Active', 'Red', 'Delayed', 'Over Budget', '2025-01-15', '2026-09-30', 'Takeshi Yamamoto', 'Transaction Banking', 'End-to-end modernization of the global transaction banking platform including payments, cash management and trade finance systems'),
 ('CMTT', 'Capital Markets Technology Transformation', 'Active', 'Amber', 'At Risk', 'On Budget', '2025-03-01', '2026-12-31', 'Rachel Morgan', 'Capital Markets', 'Technology transformation of trading, risk and post-trade systems to support regulatory compliance and market competitiveness'),
 ('GDP', 'Global Digital Platform Enhancement', 'Active', 'Green', 'On Track', 'On Budget', '2025-06-01', '2026-06-30', 'Kenji Tanaka', 'Digital Banking', 'Enhancement of digital banking platform covering mobile, internet banking and API gateway modernization'),
 ('RRRT', 'Regulatory & Risk Reporting Transformation', 'Active', 'Amber', 'Delayed', 'On Budget', '2025-04-01', '2026-10-31', 'Sarah Mitchell', 'Risk & Compliance', 'Transformation of regulatory reporting infrastructure to meet Basel IV, FRTB and ESG reporting requirements');
@@ -229,11 +229,11 @@ INSERT INTO project_progress (project_id, planned_percent, actual_percent, statu
 
 -- Risks
 INSERT INTO project_risks_ext (project_id, risk_id, severity, status, category, description, owner, identified_date, due_date, impact) VALUES
-(1, 'GTB-R01', 'Critical', 'Open', 'Schedule', 'UAT delayed by 2 weeks due to critical defects in payment processing module', 'Takeshi Yamamoto', '2026-07-15', '2026-09-01', 'Go-live date at risk'),
-(1, 'GTB-R02', 'High', 'Open', 'Quality', '3 critical defects in SWIFT messaging integration remain unresolved', 'Dev Team', '2026-07-20', '2026-08-30', 'Payment processing reliability'),
-(1, 'GTB-R03', 'High', 'Open', 'Budget', 'Budget 8% above plan due to extended testing and infrastructure costs', 'Finance', '2026-06-01', '2026-09-30', 'Additional funding required'),
-(1, 'GTB-R04', 'Medium', 'Open', 'Integration', 'SWIFT gpi integration complexity higher than estimated', 'Tech Lead', '2026-05-10', '2026-09-15', 'Extended development cycle'),
-(1, 'GTB-R05', 'High', 'Open', 'Resource', '2 senior developers leaving — knowledge transfer incomplete', 'HR', '2026-08-01', '2026-09-15', 'Critical path activities impacted'),
+(1, 'GTBPM-R01', 'Critical', 'Open', 'Schedule', 'UAT delayed by 2 weeks due to critical defects in payment processing module', 'Takeshi Yamamoto', '2026-07-15', '2026-09-01', 'Go-live date at risk'),
+(1, 'GTBPM-R02', 'High', 'Open', 'Quality', '3 critical defects in SWIFT messaging integration remain unresolved', 'Dev Team', '2026-07-20', '2026-08-30', 'Payment processing reliability'),
+(1, 'GTBPM-R03', 'High', 'Open', 'Budget', 'Budget 8% above plan due to extended testing and infrastructure costs', 'Finance', '2026-06-01', '2026-09-30', 'Additional funding required'),
+(1, 'GTBPM-R04', 'Medium', 'Open', 'Integration', 'SWIFT gpi integration complexity higher than estimated', 'Tech Lead', '2026-05-10', '2026-09-15', 'Extended development cycle'),
+(1, 'GTBPM-R05', 'High', 'Open', 'Resource', '2 senior developers leaving — knowledge transfer incomplete', 'HR', '2026-08-01', '2026-09-15', 'Critical path activities impacted'),
 (2, 'CMTT-R01', 'High', 'Open', 'Requirements', 'Trading desk requirements still pending sign-off from 3 business units', 'Rachel Morgan', '2026-06-15', '2026-09-01', 'Development cannot proceed on key modules'),
 (2, 'CMTT-R02', 'Medium', 'Open', 'Schedule', 'Performance testing delayed by 3 weeks due to market data feed setup', 'Test Manager', '2026-07-01', '2026-09-30', 'Timeline compression needed'),
 (2, 'CMTT-R03', 'Medium', 'Open', 'Dependency', 'Market data vendor API changes require code refactoring', 'Tech Lead', '2026-07-20', '2026-10-15', 'Rework estimated at 4 weeks'),
@@ -245,9 +245,9 @@ INSERT INTO project_risks_ext (project_id, risk_id, severity, status, category, 
 
 -- Audit Findings
 INSERT INTO audit_findings (project_id, finding_id, severity, status, description, due_date, auditor) VALUES
-(1, 'GTB-AF01', 'Critical', 'Open', 'Insufficient disaster recovery testing for payment systems', '2026-09-01', 'Internal Audit'),
-(1, 'GTB-AF02', 'High', 'Open', 'Change management process not followed for 4 production deployments', '2026-08-30', 'Internal Audit'),
-(1, 'GTB-AF03', 'High', 'In Progress', 'Incomplete access control documentation for SWIFT connectivity', '2026-09-15', 'External Auditor'),
+(1, 'GTBPM-AF01', 'Critical', 'Open', 'Insufficient disaster recovery testing for payment systems', '2026-09-01', 'Internal Audit'),
+(1, 'GTBPM-AF02', 'High', 'Open', 'Change management process not followed for 4 production deployments', '2026-08-30', 'Internal Audit'),
+(1, 'GTBPM-AF03', 'High', 'In Progress', 'Incomplete access control documentation for SWIFT connectivity', '2026-09-15', 'External Auditor'),
 (2, 'CMTT-AF01', 'Medium', 'Open', 'Trading system test coverage below 60% threshold', '2026-10-01', 'Internal Audit'),
 (4, 'RRRT-AF01', 'High', 'Open', 'Regulatory data lineage not fully documented', '2026-09-30', 'Compliance'),
 (4, 'RRRT-AF02', 'Medium', 'Open', 'Reconciliation gaps between source and reporting systems', '2026-10-15', 'Internal Audit');
@@ -267,10 +267,10 @@ INSERT INTO unattended_actions (project_id, action, owner, due_date, status, sou
 
 -- IT Controls
 INSERT INTO it_controls (project_id, control_id, control_name, compliance_status, last_tested) VALUES
-(1, 'GTB-C01', 'Payment Processing Access Control', 'Partial', '2026-07-15'),
-(1, 'GTB-C02', 'Change Management', 'Non-Compliant', '2026-08-01'),
-(1, 'GTB-C03', 'SWIFT Message Encryption', 'Compliant', '2026-07-20'),
-(1, 'GTB-C04', 'Disaster Recovery', 'Non-Compliant', '2026-06-30'),
+(1, 'GTBPM-C01', 'Payment Processing Access Control', 'Partial', '2026-07-15'),
+(1, 'GTBPM-C02', 'Change Management', 'Non-Compliant', '2026-08-01'),
+(1, 'GTBPM-C03', 'SWIFT Message Encryption', 'Compliant', '2026-07-20'),
+(1, 'GTBPM-C04', 'Disaster Recovery', 'Non-Compliant', '2026-06-30'),
 (2, 'CMTT-C01', 'Trading System Access', 'Compliant', '2026-08-01'),
 (2, 'CMTT-C02', 'Market Data Security', 'Compliant', '2026-07-15'),
 (3, 'GDP-C01', 'API Gateway Security', 'Compliant', '2026-08-10'),
@@ -298,13 +298,13 @@ INSERT INTO resources (project_id, employee_name, role, allocation_percent, util
 
 -- JIRA Issues
 INSERT INTO jira_issues (project_id, issue_key, summary, status, priority, assignee, story_points, due_date) VALUES
-(1, 'GTB-1001', 'Critical: SWIFT gpi message parsing failure in production path', 'Open', 'Critical', 'David Park', 13, '2026-08-25'),
-(1, 'GTB-1002', 'UAT blocked: Payment reconciliation mismatch on cross-border txns', 'Open', 'Critical', 'Aisha Khan', 8, '2026-08-22'),
-(1, 'GTB-1003', 'Performance degradation on batch payment processing (>3x baseline)', 'In Progress', 'Critical', 'Chen Wei', 8, '2026-08-28'),
-(1, 'GTB-1004', 'Implement retry logic for failed SWIFT acknowledgements', 'Open', 'High', 'David Park', 5, '2026-09-01'),
-(1, 'GTB-1005', 'Complete UAT test cases for cash management module', 'In Progress', 'High', 'James Wright', 13, '2026-09-05'),
-(1, 'GTB-1006', 'Fix timezone handling in multi-currency settlement', 'Open', 'High', 'Aisha Khan', 5, '2026-08-30'),
-(1, 'GTB-1007', 'Update DR runbook for new payment infrastructure', 'Blocked', 'High', 'Operations', 3, '2026-08-25'),
+(1, 'GTBPM-1001', 'Critical: SWIFT gpi message parsing failure in production path', 'Open', 'Critical', 'David Park', 13, '2026-08-25'),
+(1, 'GTBPM-1002', 'UAT blocked: Payment reconciliation mismatch on cross-border txns', 'Open', 'Critical', 'Aisha Khan', 8, '2026-08-22'),
+(1, 'GTBPM-1003', 'Performance degradation on batch payment processing (>3x baseline)', 'In Progress', 'Critical', 'Chen Wei', 8, '2026-08-28'),
+(1, 'GTBPM-1004', 'Implement retry logic for failed SWIFT acknowledgements', 'Open', 'High', 'David Park', 5, '2026-09-01'),
+(1, 'GTBPM-1005', 'Complete UAT test cases for cash management module', 'In Progress', 'High', 'James Wright', 13, '2026-09-05'),
+(1, 'GTBPM-1006', 'Fix timezone handling in multi-currency settlement', 'Open', 'High', 'Aisha Khan', 5, '2026-08-30'),
+(1, 'GTBPM-1007', 'Update DR runbook for new payment infrastructure', 'Blocked', 'High', 'Operations', 3, '2026-08-25'),
 (2, 'CMTT-2001', 'Market data feed latency exceeds SLA (>500ms)', 'In Progress', 'High', 'Marcus Cole', 8, '2026-09-10'),
 (2, 'CMTT-2002', 'Requirements: FX derivatives pricing model sign-off pending', 'Blocked', 'High', 'Rachel Morgan', 3, '2026-08-25'),
 (2, 'CMTT-2003', 'Implement real-time position calculation engine', 'In Progress', 'Medium', 'Priya Sharma', 13, '2026-09-30'),
@@ -346,15 +346,15 @@ INSERT INTO project_milestones (project_id, name, planned_date, actual_date, sta
 
 MONGODB_DATA = {
     "project_risks": [
-        {"project_id": "GTB", "severity": "Critical", "status": "Open", "category": "Schedule",
+        {"project_id": "GTBPM", "severity": "Critical", "status": "Open", "category": "Schedule",
          "description": "UAT has been delayed by 2 weeks due to critical defects in SWIFT messaging and payment reconciliation modules. 3 critical defects remain unresolved with no clear resolution timeline. Business users have raised formal concerns about go-live readiness.",
          "identified_date": "2026-07-15", "owner": "Takeshi Yamamoto",
          "impact": "Go-live date at serious risk. Estimated 4-6 week delay unless critical defects are resolved within 10 days."},
-        {"project_id": "GTB", "severity": "High", "status": "Open", "category": "Budget",
+        {"project_id": "GTBPM", "severity": "High", "status": "Open", "category": "Budget",
          "description": "Project budget is currently 8% above plan ($3.6M over). Main drivers: extended testing cycles, additional infrastructure for performance testing, and overtime costs. Trend indicates potential 12% overrun by completion.",
          "identified_date": "2026-06-01", "owner": "Finance",
          "impact": "Additional funding request of $5.4M being prepared for steering committee approval."},
-        {"project_id": "GTB", "severity": "High", "status": "Open", "category": "Resource",
+        {"project_id": "GTBPM", "severity": "High", "status": "Open", "category": "Resource",
          "description": "2 senior developers (David Park, Chen Wei) have submitted resignations. Knowledge transfer window is only 3 weeks. These individuals are sole owners of critical SWIFT integration and batch processing modules.",
          "identified_date": "2026-08-01", "owner": "HR / Takeshi Yamamoto",
          "impact": "Critical path activities will be significantly impacted. No internal replacements identified with equivalent SWIFT expertise."},
@@ -376,12 +376,12 @@ MONGODB_DATA = {
          "impact": "Scope expansion. Timeline extension request submitted. Regulatory deadline is non-negotiable."},
     ],
     "project_updates": [
-        {"project_id": "GTB", "date": "2026-08-20", "author": "Takeshi Yamamoto", "type": "Weekly Status",
+        {"project_id": "GTBPM", "date": "2026-08-20", "author": "Takeshi Yamamoto", "type": "Weekly Status",
          "summary": "Project remains RED. UAT delayed by 2 weeks. 3 critical defects unresolved. Budget 8% over. 2 key developers departing. Steering committee escalation planned for Thursday.",
          "concerns": ["UAT completion date unknown", "Go-live at serious risk", "Budget overrun trajectory worsening", "Key resource departures"],
          "decisions": ["Approved weekend overtime for testing team", "Engaged contractor for SWIFT expertise", "Escalating to Group CTO"],
          "next_steps": ["Present recovery options to steering committee Aug 22", "Finalize contractor onboarding by Aug 25", "Identify DR test date"]},
-        {"project_id": "GTB", "date": "2026-08-13", "author": "Takeshi Yamamoto", "type": "Weekly Status",
+        {"project_id": "GTBPM", "date": "2026-08-13", "author": "Takeshi Yamamoto", "type": "Weekly Status",
          "summary": "UAT environment stabilized but critical defects blocking test execution. Payment processing failures in cross-border scenarios. Business users unable to complete acceptance criteria.",
          "concerns": ["3 critical defects with no ETA", "Business confidence declining", "DR test not scheduled"],
          "decisions": ["Requested dedicated defect resolution team", "Daily defect triage calls starting Monday"],
@@ -403,7 +403,7 @@ MONGODB_DATA = {
          "next_steps": ["Data quality remediation by Sep 15", "Basel IV design update by Sep 1", "Test scenarios from regulator by Sep 5"]},
     ],
     "project_meeting_observations": [
-        {"project_id": "GTB", "date": "2026-08-22", "meeting_type": "Steering Committee",
+        {"project_id": "GTBPM", "date": "2026-08-22", "meeting_type": "Steering Committee",
          "attendees": ["Group CTO", "Head of Transaction Banking", "Takeshi Yamamoto", "CFO representative"],
          "key_observations": [
              "Group CTO expressed serious concern about go-live readiness",
@@ -414,7 +414,7 @@ MONGODB_DATA = {
          ],
          "action_items": ["Weekly CTO update from Takeshi", "Cost containment plan by Aug 28", "Defect resolution daily tracking"],
          "sentiment": "Serious concern — executive patience running thin"},
-        {"project_id": "GTB", "date": "2026-08-15", "meeting_type": "Defect Triage",
+        {"project_id": "GTBPM", "date": "2026-08-15", "meeting_type": "Defect Triage",
          "attendees": ["David Park", "QA Lead", "Business Analyst", "Aisha Khan"],
          "key_observations": [
              "SWIFT message parsing failure traced to character encoding in non-Latin currencies",
@@ -436,13 +436,13 @@ MONGODB_DATA = {
          "sentiment": "Challenging — regulatory pressure significant but pragmatic approach possible"},
     ],
     "project_health_signals": [
-        {"project_id": "GTB", "date": "2026-08-20", "signal_type": "velocity_decline",
+        {"project_id": "GTBPM", "date": "2026-08-20", "signal_type": "velocity_decline",
          "description": "Sprint velocity dropped 40% over last 4 sprints (from 55 to 33 story points)", "severity": "Critical"},
-        {"project_id": "GTB", "date": "2026-08-20", "signal_type": "budget_trend",
+        {"project_id": "GTBPM", "date": "2026-08-20", "signal_type": "budget_trend",
          "description": "Monthly burn rate exceeds plan by $300K/month for last 4 months. Total variance: $3.6M (8%)", "severity": "High"},
-        {"project_id": "GTB", "date": "2026-08-20", "signal_type": "defect_density",
+        {"project_id": "GTBPM", "date": "2026-08-20", "signal_type": "defect_density",
          "description": "3 critical defects open >2 weeks. Defect discovery rate exceeding resolution rate.", "severity": "Critical"},
-        {"project_id": "GTB", "date": "2026-08-20", "signal_type": "resource_attrition",
+        {"project_id": "GTBPM", "date": "2026-08-20", "signal_type": "resource_attrition",
          "description": "2 senior developers leaving. Utilization >100% for 3 team members.", "severity": "High"},
         {"project_id": "CMTT", "date": "2026-08-20", "signal_type": "requirements_gap",
          "description": "Requirements sign-off pending for 10 weeks. 3 business units in conflict.", "severity": "High"},
@@ -478,7 +478,7 @@ async def seed_app_db_projects():
 
         # Insert the 4 SMBC projects
         projects = [
-            (PROJECT_GTB_ID, "GTB", "Global Transaction Banking Platform Modernization",
+            (PROJECT_GTB_ID, "GTBPM", "Global Transaction Banking Platform Modernization",
              "End-to-end modernization of the global transaction banking platform including payments, cash management and trade finance systems. Status: RED — UAT delayed, critical defects, budget overrun.",
              "active"),
             (PROJECT_CMTT_ID, "CMTT", "Capital Markets Technology Transformation",
@@ -598,7 +598,7 @@ async def main():
     print("  ✅ SMBC POC data seeded successfully!")
     print("")
     print("  Projects:")
-    print("    🔴 GTB  — Global Transaction Banking Platform Modernization")
+    print("    🔴 GTBPM  — Global Transaction Banking Platform Modernization")
     print("    🟠 CMTT — Capital Markets Technology Transformation")
     print("    🟢 GDP  — Global Digital Platform Enhancement")
     print("    🟠 RRRT — Regulatory & Risk Reporting Transformation")

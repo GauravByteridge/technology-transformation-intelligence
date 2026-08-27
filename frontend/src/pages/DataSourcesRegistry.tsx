@@ -80,14 +80,14 @@ function SourceCard({ source, onRefreshDiscovery, isRefreshing }: SourceCardProp
   const icon = getSourceIcon(source.source_type);
 
   return (
-    <div className="bg-gray-800/50 border border-gray-700/50 rounded-lg p-6 hover:border-teal-500/30 transition-colors">
+    <div className="bg-white dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700/50 rounded-lg p-6 hover:border-teal-500/30 transition-colors">
       {/* Header */}
       <div className="flex items-start justify-between mb-4">
         <div className="flex items-center gap-3">
           <img src={icon} alt={source.source_type} className="w-8 h-8 object-contain" />
           <div>
-            <h3 className="text-base font-semibold text-white">{source.name}</h3>
-            <p className="text-xs text-gray-400 capitalize">{source.source_type}</p>
+            <h3 className="text-base font-semibold text-gray-900 dark:text-white">{source.name}</h3>
+            <p className="text-xs text-gray-500 dark:text-gray-400 capitalize">{source.source_type}</p>
           </div>
         </div>
         <ConnectionBadge status={source.connection_status} />
@@ -95,7 +95,7 @@ function SourceCard({ source, onRefreshDiscovery, isRefreshing }: SourceCardProp
 
       {/* Metadata */}
       {source.source_type.toLowerCase() === 'postgresql' && (
-        <div className="text-sm text-gray-400 mb-4">
+        <div className="text-sm text-gray-500 dark:text-gray-400 mb-4">
           <p>Database: {(source.connection_config as { database?: string })?.database || 'TechnologyTransformation'}</p>
         </div>
       )}
@@ -103,12 +103,12 @@ function SourceCard({ source, onRefreshDiscovery, isRefreshing }: SourceCardProp
       {/* Stats */}
       {source.objects_discovered > 0 && (
         <div className="flex items-center gap-6 mb-4 text-sm">
-          <span className="text-gray-300">
-            <span className="font-semibold text-white">{source.objects_discovered}</span>{' '}
+          <span className="text-gray-600 dark:text-gray-300">
+            <span className="font-semibold text-gray-900 dark:text-white">{source.objects_discovered}</span>{' '}
             {source.source_type === 'postgresql' ? 'Tables' : 'Collections'}
           </span>
-          <span className="text-gray-300">
-            <span className="font-semibold text-white">{source.fields_discovered}</span> Fields
+          <span className="text-gray-600 dark:text-gray-300">
+            <span className="font-semibold text-gray-900 dark:text-white">{source.fields_discovered}</span> Fields
           </span>
         </div>
       )}
@@ -122,14 +122,14 @@ function SourceCard({ source, onRefreshDiscovery, isRefreshing }: SourceCardProp
       <div className="flex items-center gap-2 flex-wrap">
         <button
           onClick={() => navigate(`/catalog`)}
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md bg-gray-700 text-gray-300 hover:bg-gray-600 transition-colors"
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md bg-gray-200 text-gray-700 hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600 transition-colors"
         >
           <Eye size={12} />
           View Schema
         </button>
         <button
           onClick={() => navigate('/catalog')}
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md bg-gray-700 text-gray-300 hover:bg-gray-600 transition-colors"
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md bg-gray-200 text-gray-700 hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600 transition-colors"
         >
           <BookOpen size={12} />
           View Catalog
@@ -137,7 +137,7 @@ function SourceCard({ source, onRefreshDiscovery, isRefreshing }: SourceCardProp
         <button
           onClick={() => onRefreshDiscovery(source.id)}
           disabled={isRefreshing || source.connection_status.toLowerCase() !== 'connected'}
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md bg-teal-600/20 text-teal-300 hover:bg-teal-600/30 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md bg-teal-700 text-white hover:bg-teal-600 dark:bg-teal-600/20 dark:text-teal-300 dark:hover:bg-teal-600/30 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
           {isRefreshing ? (
             <Loader2 size={12} className="animate-spin" />
@@ -155,14 +155,14 @@ function DocumentsCard() {
   const navigate = useNavigate();
 
   return (
-    <div className="bg-gray-800/50 border border-gray-700/50 rounded-lg p-6 hover:border-teal-500/30 transition-colors">
+    <div className="bg-white dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700/50 rounded-lg p-6 hover:border-teal-500/30 transition-colors">
       {/* Header */}
       <div className="flex items-start justify-between mb-4">
         <div className="flex items-center gap-3">
           <span className="text-2xl">📄</span>
           <div>
-            <h3 className="text-base font-semibold text-white">Enterprise Documents</h3>
-            <p className="text-xs text-gray-400">RAG-indexed documents</p>
+            <h3 className="text-base font-semibold text-gray-900 dark:text-white">Enterprise Documents</h3>
+            <p className="text-xs text-gray-500 dark:text-gray-400">RAG-indexed documents</p>
           </div>
         </div>
         <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-green-500/15 text-green-400">
@@ -173,11 +173,11 @@ function DocumentsCard() {
 
       {/* Stats */}
       <div className="flex items-center gap-6 mb-4 text-sm">
-        <span className="text-gray-300">
-          <span className="font-semibold text-white">4</span> Documents
+        <span className="text-gray-600 dark:text-gray-300">
+          <span className="font-semibold text-gray-900 dark:text-white">4</span> Documents
         </span>
-        <span className="text-gray-300">
-          <span className="font-semibold text-white">2</span> Datasets
+        <span className="text-gray-600 dark:text-gray-300">
+          <span className="font-semibold text-gray-900 dark:text-white">2</span> Datasets
         </span>
       </div>
 
@@ -185,14 +185,14 @@ function DocumentsCard() {
       <div className="flex items-center gap-2">
         <button
           onClick={() => navigate('/datasets')}
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md bg-gray-700 text-gray-300 hover:bg-gray-600 transition-colors"
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md bg-gray-200 text-gray-700 hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600 transition-colors"
         >
           <FileText size={12} />
           Browse
         </button>
         <button
           onClick={() => navigate('/upload')}
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md bg-teal-600/20 text-teal-300 hover:bg-teal-600/30 transition-colors"
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md bg-teal-100 text-teal-700 hover:bg-teal-200 dark:bg-teal-600/20 dark:text-teal-300 dark:hover:bg-teal-600/30 transition-colors"
         >
           <Upload size={12} />
           Upload Files
@@ -231,8 +231,8 @@ export default function DataSourcesRegistry() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold text-white">Data Sources</h1>
-          <p className="mt-1 text-sm text-gray-400">
+          <h1 className="text-2xl font-semibold text-gray-900 dark:text-white">Data Sources</h1>
+          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
             Connect enterprise data sources and make them AI-queryable.
           </p>
         </div>
@@ -269,7 +269,7 @@ export default function DataSourcesRegistry() {
 
       {/* Source cards */}
       {sources && sources.length > 0 && (
-        <div className="space-y-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {sources.map((source: DataSourceResponse) => (
             <SourceCard
               key={source.id}

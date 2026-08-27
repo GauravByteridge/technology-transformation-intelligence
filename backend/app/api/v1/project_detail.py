@@ -11,6 +11,8 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 import asyncpg
 
+from app.services.jira_live import fetch_issues_for_project, get_jira_project_key
+
 router = APIRouter(prefix="/pmo/projects", tags=["pmo"])
 
 EXT_DB_DSN = "postgresql://postgres:master@localhost:5432/technology_transformation"
@@ -170,12 +172,14 @@ async def get_project_detail(project_code: str) -> ProjectDetailResponse:
         )
         resources = [ResourceItem(**dict(r)) for r in resource_rows]
 
-        # JIRA Issues
-        issue_rows = await conn.fetch(
-            "SELECT issue_key, summary, status, priority, assignee, story_points, due_date::text FROM jira_issues WHERE project_id = $1 ORDER BY priority DESC",
-            pid
-        )
-        issues = [JiraIssueItem(**dict(r)) for r in issue_rows]
+        # JIRA Issues (from Jira Cloud API)
+        jira_project_key = get_jira_project_key(project["project_code"])
+        jira_issues_live = await fetch_issues_for_project(jira_project_key) if jira_project_key else []
+        issues = [JiraIssueItem(
+            issue_key=j.issue_key, summary=j.summary, status=j.status,
+            priority=j.priority, assignee=j.assignee,
+            story_points=j.story_points, due_date=j.due_date
+        ) for j in jira_issues_live]
 
         # Audit Findings
         audit_rows = await conn.fetch(
