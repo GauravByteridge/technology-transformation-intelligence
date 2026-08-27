@@ -19,7 +19,7 @@ from app.errors.document_errors import EmbeddingGenerationError
 logger = logging.getLogger(__name__)
 
 # Default dimension matching the project configuration
-DEFAULT_EMBEDDING_DIMENSION = 1536
+DEFAULT_EMBEDDING_DIMENSION = 384
 
 # Maximum number of texts per batch call to the provider
 _MAX_BATCH_SIZE = 100

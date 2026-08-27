@@ -203,7 +203,7 @@ def _validate_llm_provider_credentials(settings: Settings, errors: list[str]) ->
 
 
 # Known embedding model dimensions supported by common providers
-VALID_EMBEDDING_DIMENSIONS: set[int] = {512, 768, 1024, 1536, 3072}
+VALID_EMBEDDING_DIMENSIONS: set[int] = {384, 512, 768, 1024, 1536, 3072}
 
 
 def _validate_embedding_dimension(settings: Settings, errors: list[str]) -> None:

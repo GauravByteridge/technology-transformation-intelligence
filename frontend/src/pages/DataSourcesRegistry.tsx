@@ -205,7 +205,7 @@ function DocumentsCard() {
   );
 }
 
-function GmailCard() {
+function GmailCard({ onFetchEmails }: { onFetchEmails: () => void }) {
   const navigate = useNavigate();
 
   return (
@@ -243,7 +243,7 @@ function GmailCard() {
       {/* Actions */}
       <div className="flex items-center gap-2 mt-auto">
         <button
-          onClick={() => navigate('/sources')}
+          onClick={onFetchEmails}
           className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md bg-gray-200 text-gray-700 hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600 transition-colors"
         >
           <Mail size={12} />
@@ -267,6 +267,7 @@ export default function DataSourcesRegistry() {
   const queryClient = useQueryClient();
   const { data: sources, isLoading, isError, refetch } = useDataSources();
   const [showAddModal, setShowAddModal] = useState(false);
+  const [modalInitialType, setModalInitialType] = useState<'gmail' | undefined>(undefined);
   const [refreshingId, setRefreshingId] = useState<string | null>(null);
 
   const discoveryMutation = useMutation<DiscoveryResult, Error, string>({
@@ -306,11 +307,13 @@ export default function DataSourcesRegistry() {
 
       <AddSourceModal
         isOpen={showAddModal}
-        onClose={() => setShowAddModal(false)}
+        onClose={() => { setShowAddModal(false); setModalInitialType(undefined); }}
         onSuccess={() => {
           setShowAddModal(false);
+          setModalInitialType(undefined);
           void queryClient.invalidateQueries({ queryKey: ['data-sources'] });
         }}
+        initialSourceType={modalInitialType}
       />
 
       {isLoading && <LoadingState variant="full-page" message="Loading data sources..." />}
@@ -341,7 +344,7 @@ export default function DataSourcesRegistry() {
           {/* Static documents card */}
           <DocumentsCard />
           {/* Gmail card */}
-          <GmailCard />
+          <GmailCard onFetchEmails={() => { setModalInitialType('gmail'); setShowAddModal(true); }} />
         </div>
       )}
 

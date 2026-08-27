@@ -21,10 +21,10 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import RAGBase
 
-# Default embedding dimension — matches OpenAI text-embedding-ada-002.
+# Default embedding dimension — matches sentence-transformers all-MiniLM-L6-v2.
 # Configurable at runtime via EMBEDDING_DIMENSION env var for validation,
 # but the database column is fixed at migration time.
-EMBEDDING_DIMENSION = 1536
+EMBEDDING_DIMENSION = 384
 
 
 class Document(RAGBase):

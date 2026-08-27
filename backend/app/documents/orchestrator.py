@@ -148,12 +148,17 @@ class IngestionOrchestrator:
             extra={"file_name": file_name, "chunk_count": len(chunks)},
         )
 
-        # Stage 5: Generate embeddings
-        chunk_texts = [chunk.text for chunk in chunks]
-        embeddings = await self._embedding_generator.generate(chunk_texts)
+        # Stage 5: Generate embeddings (filter out empty chunks)
+        non_empty_chunks = [chunk for chunk in chunks if chunk.text and chunk.text.strip()]
+        if non_empty_chunks:
+            chunk_texts = [chunk.text for chunk in non_empty_chunks]
+            embeddings = await self._embedding_generator.generate(chunk_texts)
+        else:
+            non_empty_chunks = []
+            embeddings = []
         logger.debug(
             "Embeddings generated",
-            extra={"file_name": file_name, "embedding_count": len(embeddings)},
+            extra={"file_name": file_name, "embedding_count": len(embeddings), "empty_chunks_skipped": len(chunks) - len(non_empty_chunks)},
         )
 
         # Stage 6: Persist to RAG_DB
@@ -163,7 +168,7 @@ class IngestionOrchestrator:
             file_size=file_size,
             project_id=project_id,
             uploaded_by=uploaded_by,
-            chunks=chunks,
+            chunks=non_empty_chunks,
             embeddings=embeddings,
         )
 

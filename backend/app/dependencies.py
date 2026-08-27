@@ -665,6 +665,9 @@ def initialize_provider_registry() -> "ProviderRegistry":
     registry.register_embedding_provider("azure_foundry", AzureFoundryTextGenerationProvider)
     registry.register_embedding_provider("mock", MockEmbeddingProvider)
 
+    from app.ai.providers.sentence_transformer_provider import SentenceTransformerEmbeddingProvider
+    registry.register_embedding_provider("sentence_transformers", SentenceTransformerEmbeddingProvider)
+
     _provider_registry = registry
     return registry
 
@@ -1321,6 +1324,10 @@ def _get_embedding_provider_config(settings: Settings, provider_name: str | None
     elif provider_name == "mock":
         return {
             "dimension": settings.embedding_dimension,
+        }
+    elif provider_name == "sentence_transformers":
+        return {
+            "model_name": settings.embedding_model or "all-MiniLM-L6-v2",
         }
     return {}
 

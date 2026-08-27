@@ -8,6 +8,7 @@ interface AddSourceModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: () => void;
+  initialSourceType?: 'postgresql' | 'mongodb' | 'jira' | 'files' | 'gmail';
 }
 
 interface ConnectionForm {
@@ -64,7 +65,7 @@ const DISCOVERY_STEPS = [
   '✓ Ready',
 ];
 
-export function AddSourceModal({ isOpen, onClose, onSuccess }: AddSourceModalProps) {
+export function AddSourceModal({ isOpen, onClose, onSuccess, initialSourceType }: AddSourceModalProps) {
   const [step, setStep] = useState<Step>('select-type');
   const [sourceType, setSourceType] = useState<SourceType | null>(null);
   const [form, setForm] = useState<ConnectionForm>({
@@ -107,6 +108,17 @@ export function AddSourceModal({ isOpen, onClose, onSuccess }: AddSourceModalPro
         .catch(() => {});
     }
   }, [step]);
+
+  // Handle initialSourceType when modal opens
+  useEffect(() => {
+    if (isOpen && initialSourceType) {
+      setSourceType(initialSourceType);
+      if (initialSourceType === 'gmail') {
+        checkGmailStatus();
+        setStep('gmail-fetch');
+      }
+    }
+  }, [isOpen, initialSourceType]);
 
   if (!isOpen) return null;
 

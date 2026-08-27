@@ -253,46 +253,59 @@ async def add_email_to_rag(
         chunks = chunker.chunk(email_text)
 
         if chunks:
-            try:
-                embedding_gen = DeterministicEmbeddingGenerator()
-                chunk_texts = [c.text for c in chunks]
-                embeddings = await embedding_gen.generate(chunk_texts)
+            # Filter empty chunks
+            chunks = [c for c in chunks if c.text and c.text.strip()]
+            if not chunks:
+                pass  # no non-empty chunks to embed
+            else:
+                try:
+                    # Use production embedding generator if available
+                    try:
+                        from app.dependencies import get_embedding_provider
+                        from app.documents.embedder import ProductionEmbeddingGenerator
+                        embedding_provider = get_embedding_provider()
+                        embedding_gen = ProductionEmbeddingGenerator(embedding_provider)
+                    except (RuntimeError, Exception):
+                        embedding_gen = DeterministicEmbeddingGenerator()
 
-                # Store directly via DocumentRepository
-                doc_repo = DocumentRepository(session)
-                document = Document(
-                    project_id=str(project_id) if project_id else str(SYSTEM_USER_ID),
-                    file_name=file_record.file_name,
-                    file_type="txt",
-                    file_size=len(email_text.encode()),
-                    uploaded_by=str(SYSTEM_USER_ID),
-                    processing_status="completed",
-                )
-                document = await doc_repo.create_document(document)
+                    chunk_texts = [c.text for c in chunks]
+                    embeddings = await embedding_gen.generate(chunk_texts)
 
-                for chunk_result, embedding_vector in zip(chunks, embeddings):
-                    chunk_record = DocumentChunk(
-                        document_id=str(document.id),
-                        chunk_index=chunk_result.chunk_index,
-                        content=chunk_result.text,
-                        page_number=chunk_result.page_number,
-                        section=chunk_result.section,
+                    # Store directly via DocumentRepository
+                    doc_repo = DocumentRepository(session)
+                    document = Document(
+                        project_id=str(project_id) if project_id else str(SYSTEM_USER_ID),
+                        file_name=file_record.file_name,
+                        file_type="txt",
+                        file_size=len(email_text.encode()),
+                        uploaded_by=str(SYSTEM_USER_ID),
+                        processing_status="completed",
                     )
-                    chunk_record = await doc_repo.create_chunk(chunk_record)
+                    document = await doc_repo.create_document(document)
 
-                    embedding_record = Embedding(
-                        chunk_id=str(chunk_record.id),
-                        embedding=embedding_vector,
-                        model_name="deterministic-stub",
-                        dimension=len(embedding_vector),
-                    )
-                    await doc_repo.create_embedding(embedding_record)
+                    for chunk_result, embedding_vector in zip(chunks, embeddings):
+                        chunk_record = DocumentChunk(
+                            document_id=str(document.id),
+                            chunk_index=chunk_result.chunk_index,
+                            content=chunk_result.text,
+                            page_number=chunk_result.page_number,
+                            section=chunk_result.section,
+                        )
+                        chunk_record = await doc_repo.create_chunk(chunk_record)
 
-                documents_indexed += len(chunks)
-                file_record.processing_status = "READY"
-            except Exception as e:
-                logger.error("Failed to index email body: %s", e)
-                file_record.processing_status = "FAILED"
+                        embedding_record = Embedding(
+                            chunk_id=str(chunk_record.id),
+                            embedding=embedding_vector,
+                            model_name="all-MiniLM-L6-v2",
+                            dimension=len(embedding_vector),
+                        )
+                        await doc_repo.create_embedding(embedding_record)
+
+                    documents_indexed += len(chunks)
+                    file_record.processing_status = "READY"
+                except Exception as e:
+                    logger.error("Failed to index email body: %s", e)
+                    file_record.processing_status = "FAILED"
 
             await session.flush()
 

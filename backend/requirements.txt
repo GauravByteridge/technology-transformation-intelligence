@@ -18,6 +18,7 @@ motor==3.6.0
 
 # --- Vector Embeddings ---
 pgvector==0.3.6
+sentence-transformers==3.4.1
 
 # --- Migrations ---
 alembic==1.15.2
