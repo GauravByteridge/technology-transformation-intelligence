@@ -278,6 +278,7 @@ async def add_email_to_rag(
                         file_name=file_record.file_name,
                         file_type="txt",
                         file_size=len(email_text.encode()),
+                        source_type="email",
                         uploaded_by=str(SYSTEM_USER_ID),
                         processing_status="completed",
                     )

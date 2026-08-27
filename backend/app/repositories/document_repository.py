@@ -147,6 +147,7 @@ class DocumentRepository(BaseRepository[Document]):
             select(
                 DocumentChunk.content.label("chunk_content"),
                 Document.file_name.label("file_name"),
+                Document.source_type.label("source_type"),
                 DocumentChunk.page_number.label("page_number"),
                 DocumentChunk.section.label("section"),
                 cosine_distance.label("cosine_distance"),
@@ -168,6 +169,7 @@ class DocumentRepository(BaseRepository[Document]):
             {
                 "chunk_content": row.chunk_content,
                 "file_name": row.file_name,
+                "source_type": row.source_type,
                 "page_number": row.page_number,
                 "section": row.section,
                 "similarity_score": round(1.0 - row.cosine_distance, 6),

@@ -45,6 +45,9 @@ class Document(RAGBase):
     file_name: Mapped[str] = mapped_column(sa.String(512), nullable=False)
     file_type: Mapped[str] = mapped_column(sa.String(50), nullable=False)
     file_size: Mapped[int] = mapped_column(sa.Integer, nullable=False)
+    source_type: Mapped[str] = mapped_column(
+        sa.String(50), nullable=False, default="upload", server_default="upload"
+    )
     processing_status: Mapped[str] = mapped_column(
         sa.String(50), nullable=False, default="pending"
     )

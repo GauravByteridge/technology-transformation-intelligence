@@ -520,6 +520,7 @@ class IngestionOrchestrator:
                 file_name=file_name,
                 file_type=file_type,
                 file_size=file_size,
+                source_type="upload",
                 uploaded_by=str(uploaded_by),
                 processing_status="completed",
             )
