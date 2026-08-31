@@ -101,12 +101,15 @@ class Settings(BaseSettings):
     google_client_secret: str | None = None
     google_redirect_uri: str = "http://localhost:8000/api/v1/gmail/auth/callback"
 
-    # Outlook / Microsoft Graph integration
-    # `microsoft_tenant` accepts "common" (personal + work/school),
+    # Outlook integration (delegated OAuth authorization-code flow via an
+    # existing Microsoft Entra App Registration — delegated Graph Mail.Read).
+    # The client secret is used server-side only and is never logged or
+    # returned to the frontend.
+    # `microsoft_tenant_id` accepts "common" (personal + work/school),
     # "organizations", "consumers", or a specific tenant ID.
+    microsoft_tenant_id: str | None = "common"
     microsoft_client_id: str | None = None
     microsoft_client_secret: str | None = None
-    microsoft_tenant: str = "common"
     microsoft_redirect_uri: str = "http://localhost:8000/api/v1/outlook/auth/callback"
 
     # =========================================================================

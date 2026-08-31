@@ -12,6 +12,8 @@
 *.key
 credentials.*
 secrets.*
+# OAuth token stores (Gmail/Outlook delegated tokens)
+*_token.json
 
 # =============================================================================
 # Python
