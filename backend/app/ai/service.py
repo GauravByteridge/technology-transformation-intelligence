@@ -534,7 +534,7 @@ class AIService:
             elif in_table:
                 break  # End of table
 
-        if len(table_rows) < 4:  # Need header + at least 3 data rows
+        if len(table_rows) < 3:  # Need header + at least 2 data rows
             return None
 
         headers = table_rows[0]
@@ -580,7 +580,23 @@ class AIService:
             any(kw in x_header_lower for kw in ['date', 'time', 'month', 'year', 'period', 'quarter'])
             or any(self._looks_like_date(str(v)) for v in x_values[:3])
         )
-        chart_type = "line" if is_time else "bar"
+
+        # Detect distribution/status data → pie chart
+        # (single numeric column + category-like X, <= 6 categories)
+        single_y = len(y_indices) == 1
+        is_distribution = (
+            single_y
+            and not is_time
+            and 2 <= len(chart_data) <= 6
+            and any(kw in x_header_lower for kw in ['status', 'category', 'type', 'severity', 'priority', 'state', 'distribution'])
+        )
+
+        if is_time:
+            chart_type = "line"
+        elif is_distribution:
+            chart_type = "pie"
+        else:
+            chart_type = "bar"
 
         # Limit line charts to 2 Y-series
         if is_time and len(y_indices) > 2:
