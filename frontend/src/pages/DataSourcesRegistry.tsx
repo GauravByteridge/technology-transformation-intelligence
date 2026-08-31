@@ -32,6 +32,8 @@ function getSourceIcon(sourceType: string): string {
       return '/icons/jira.png';
     case 'gmail':
       return '/icons/gmail.png';
+    case 'outlook':
+      return '/icons/outlook.png';
     case 'document':
     case 'files':
       return '/icons/document.png';
@@ -261,13 +263,50 @@ function GmailCard({ onFetchEmails }: { onFetchEmails: () => void }) {
   );
 }
 
+function OutlookCard({ onConnect }: { onConnect: () => void }) {
+  return (
+    <div className="bg-white dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700/50 rounded-lg p-6 hover:border-teal-500/30 transition-colors flex flex-col">
+      {/* Header */}
+      <div className="flex items-start justify-between mb-4">
+        <div className="flex items-center gap-3">
+          <img src="/icons/outlook.png" alt="Outlook" className="w-8 h-8 object-contain" />
+          <div>
+            <h3 className="text-base font-semibold text-gray-900 dark:text-white">Outlook</h3>
+            <p className="text-xs text-gray-500 dark:text-gray-400">Email integration (Microsoft Graph)</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Description */}
+      <div className="text-sm text-gray-600 dark:text-gray-300 mb-4">
+        Connect with Microsoft using delegated <span className="font-semibold text-gray-900 dark:text-white">Mail.Read</span> access.
+      </div>
+
+      <p className="text-xs text-gray-500 mb-4">
+        Sign in with your Microsoft account to authorize
+      </p>
+
+      {/* Actions */}
+      <div className="flex items-center gap-2 mt-auto">
+        <button
+          onClick={onConnect}
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md bg-teal-700 text-white hover:bg-teal-600 dark:bg-teal-600/20 dark:text-teal-300 dark:hover:bg-teal-600/30 transition-colors"
+        >
+          <Mail size={12} />
+          Connect Outlook
+        </button>
+      </div>
+    </div>
+  );
+}
+
 // ─── Main Component ─────────────────────────────────────────────────────────
 
 export default function DataSourcesRegistry() {
   const queryClient = useQueryClient();
   const { data: sources, isLoading, isError, refetch } = useDataSources();
   const [showAddModal, setShowAddModal] = useState(false);
-  const [modalInitialType, setModalInitialType] = useState<'gmail' | undefined>(undefined);
+  const [modalInitialType, setModalInitialType] = useState<'gmail' | 'outlook' | undefined>(undefined);
   const [refreshingId, setRefreshingId] = useState<string | null>(null);
 
   const discoveryMutation = useMutation<DiscoveryResult, Error, string>({
@@ -345,6 +384,8 @@ export default function DataSourcesRegistry() {
           <DocumentsCard />
           {/* Gmail card */}
           <GmailCard onFetchEmails={() => { setModalInitialType('gmail'); setShowAddModal(true); }} />
+          {/* Outlook card */}
+          <OutlookCard onConnect={() => { setModalInitialType('outlook'); setShowAddModal(true); }} />
         </div>
       )}
 

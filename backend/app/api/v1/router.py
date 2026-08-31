@@ -14,6 +14,7 @@ from app.api.v1.datasets import router as datasets_router
 from app.api.v1.discovery import router as discovery_router
 from app.api.v1.documents import router as documents_router
 from app.api.v1.gmail import router as gmail_router
+from app.api.v1.outlook import router as outlook_router
 from app.api.v1.health import router as health_router
 from app.api.v1.overview import router as overview_router
 from app.api.v1.pmo import router as pmo_router
@@ -46,3 +47,4 @@ api_router.include_router(datasets_router, prefix="/datasets", tags=["datasets"]
 api_router.include_router(catalog_router, prefix="/catalog", tags=["catalog"])
 api_router.include_router(query_history_router, prefix="/query-history", tags=["query-history"])
 api_router.include_router(gmail_router, prefix="/gmail", tags=["gmail"])
+api_router.include_router(outlook_router, prefix="/outlook", tags=["outlook"])
