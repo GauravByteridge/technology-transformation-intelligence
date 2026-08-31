@@ -305,7 +305,8 @@ export default function PMOOverview() {
                 <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Overall</th>
                 <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Schedule</th>
                 <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Budget</th>
-                <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Progress</th>
+                <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Actual</th>
+                <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Planned</th>
                 <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Open Risks</th>
                 <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Overdue</th>
                 <th className="px-4 py-3"></th>
@@ -342,14 +343,20 @@ export default function PMOOverview() {
                   </td>
                   <td className="px-4 py-3 text-center">
                     {project.actual_percent != null && project.planned_percent != null ? (
-                      <div className="text-xs">
-                        <span className={`font-bold ${
-                          project.actual_percent >= project.planned_percent ? 'text-green-400' : 'text-amber-400'
-                        }`}>
-                          {project.actual_percent}%
-                        </span>
-                        <span className="text-gray-500"> / {project.planned_percent}%</span>
-                      </div>
+                      <span className={`text-xs font-bold ${
+                        project.actual_percent >= project.planned_percent ? 'text-green-400' : 'text-amber-400'
+                      }`}>
+                        {project.actual_percent}%
+                      </span>
+                    ) : (
+                      <span className="text-xs text-gray-500">—</span>
+                    )}
+                  </td>
+                  <td className="px-4 py-3 text-center">
+                    {project.planned_percent != null ? (
+                      <span className="text-xs font-medium text-gray-500 dark:text-gray-400">
+                        {project.planned_percent}%
+                      </span>
                     ) : (
                       <span className="text-xs text-gray-500">—</span>
                     )}
