@@ -1,17 +1,13 @@
 import { NavLink } from 'react-router-dom';
 import {
-  LayoutDashboard,
   FolderKanban,
   Bot,
   Database,
-  BookOpen,
   Settings,
   ChevronLeft,
   ChevronRight,
   Menu,
   X,
-  History,
-  FileText,
   BarChart3,
 } from 'lucide-react';
 import { useTheme } from '../../context/ThemeContext';
@@ -24,14 +20,10 @@ interface SidebarProps {
 }
 
 const navItems = [
-  { to: '/', label: 'PMO Overview', icon: LayoutDashboard },
   { to: '/portfolio', label: 'Projects', icon: FolderKanban },
+  { to: '/sources', label: 'Data Sources', icon: Database },
   { to: '/ai', label: 'AI Query', icon: Bot },
   { to: '/dashboard', label: 'Analytics', icon: BarChart3 },
-  { to: '/sources', label: 'Data Sources', icon: Database },
-  { to: '/catalog', label: 'Data Catalog', icon: BookOpen },
-  { to: '/history', label: 'Query History', icon: History },
-  { to: '/briefs', label: 'Executive Briefs', icon: FileText },
 ];
 
 const bottomNavItems = [
