@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useDataSources } from '@/hooks';
@@ -263,7 +263,20 @@ function GmailCard({ onFetchEmails }: { onFetchEmails: () => void }) {
   );
 }
 
-function OutlookCard({ onConnect }: { onConnect: () => void }) {
+function OutlookCard({ onConnect, onFetchEmails }: { onConnect: () => void; onFetchEmails: () => void }) {
+  const [status, setStatus] = useState<{ connected: boolean; email?: string } | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch('http://localhost:8000/api/v1/outlook/status')
+      .then((res) => res.json())
+      .then((data) => { if (!cancelled) setStatus(data); })
+      .catch(() => { if (!cancelled) setStatus({ connected: false }); });
+    return () => { cancelled = true; };
+  }, []);
+
+  const isConnected = Boolean(status?.connected);
+
   return (
     <div className="bg-white dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700/50 rounded-lg p-6 hover:border-teal-500/30 transition-colors flex flex-col">
       {/* Header */}
@@ -275,27 +288,52 @@ function OutlookCard({ onConnect }: { onConnect: () => void }) {
             <p className="text-xs text-gray-500 dark:text-gray-400">Email integration (Microsoft Graph)</p>
           </div>
         </div>
+        {isConnected && (
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-green-500/15 text-green-400">
+            <CheckCircle2 size={12} />
+            CONNECTED ✓
+          </span>
+        )}
       </div>
 
-      {/* Description */}
-      <div className="text-sm text-gray-600 dark:text-gray-300 mb-4">
-        Connect with Microsoft using delegated <span className="font-semibold text-gray-900 dark:text-white">Mail.Read</span> access.
-      </div>
-
-      <p className="text-xs text-gray-500 mb-4">
-        Sign in with your Microsoft account to authorize
-      </p>
-
-      {/* Actions */}
-      <div className="flex items-center gap-2 mt-auto">
-        <button
-          onClick={onConnect}
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md bg-teal-700 text-white hover:bg-teal-600 dark:bg-teal-600/20 dark:text-teal-300 dark:hover:bg-teal-600/30 transition-colors"
-        >
-          <Mail size={12} />
-          Connect Outlook
-        </button>
-      </div>
+      {isConnected ? (
+        <>
+          <div className="text-sm text-gray-600 dark:text-gray-300 mb-4">
+            Connected via Microsoft Graph{status?.email ? <> as <span className="font-semibold text-gray-900 dark:text-white">{status.email}</span></> : ''}.
+          </div>
+          <p className="text-xs text-gray-500 mb-4">Delegated Mail.Read access authorized</p>
+          {/* Actions */}
+          <div className="flex items-center gap-2 mt-auto">
+            <button
+              onClick={onFetchEmails}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md bg-gray-200 text-gray-700 hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600 transition-colors"
+            >
+              <Mail size={12} />
+              Fetch Emails
+            </button>
+          </div>
+        </>
+      ) : (
+        <>
+          {/* Description */}
+          <div className="text-sm text-gray-600 dark:text-gray-300 mb-4">
+            Connect with Microsoft using delegated <span className="font-semibold text-gray-900 dark:text-white">Mail.Read</span> access.
+          </div>
+          <p className="text-xs text-gray-500 mb-4">
+            Sign in with your Microsoft account to authorize
+          </p>
+          {/* Actions */}
+          <div className="flex items-center gap-2 mt-auto">
+            <button
+              onClick={onConnect}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md bg-teal-700 text-white hover:bg-teal-600 dark:bg-teal-600/20 dark:text-teal-300 dark:hover:bg-teal-600/30 transition-colors"
+            >
+              <Mail size={12} />
+              Connect Outlook
+            </button>
+          </div>
+        </>
+      )}
     </div>
   );
 }
@@ -385,7 +423,10 @@ export default function DataSourcesRegistry() {
           {/* Gmail card */}
           <GmailCard onFetchEmails={() => { setModalInitialType('gmail'); setShowAddModal(true); }} />
           {/* Outlook card */}
-          <OutlookCard onConnect={() => { setModalInitialType('outlook'); setShowAddModal(true); }} />
+          <OutlookCard
+            onConnect={() => { setModalInitialType('outlook'); setShowAddModal(true); }}
+            onFetchEmails={() => { setModalInitialType('outlook'); setShowAddModal(true); }}
+          />
         </div>
       )}
 
